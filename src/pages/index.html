@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heróis da Saúde — Login</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    /* ── Página de Login ── */
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Blob decorativo extra no centro */
+    .login-page::before {
+      content: '';
+      position: fixed;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80vw;
+      height: 80vw;
+      max-width: 700px;
+      max-height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(46,196,169,0.07) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* ── Logo ── */
+    .logo-icon-wrap {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(145deg, #2ec4a9, #1a9e8a);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(46,196,169,0.45);
+      margin-bottom: 4px;
+    }
+
+    .logo-icon-wrap svg {
+      animation: heartbeat 1.8s ease-in-out infinite;
+    }
+
+    .logo-ring {
+      position: absolute;
+      inset: -5px;
+      border: 2px solid rgba(107,223,184,0.45);
+      border-radius: 25px;
+      animation: pulse-ring 2s ease-out infinite;
+    }
+
+    .logo-star {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 22px;
+      height: 22px;
+      background: linear-gradient(135deg, #f9c74f, #f4a01e);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(249,199,79,0.5);
+      font-size: 10px;
+    }
+
+    .logo-title {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.3px;
+      text-shadow: 0 2px 16px rgba(46,196,169,0.4);
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    .logo-sub {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(107,223,184,0.85);
+      margin-top: 4px;
+    }
+
+    /* ── ECG ── */
+    .ecg-wrap {
+      width: 100%;
+      height: 32px;
+      margin-top: 14px;
+    }
+
+    .ecg-path {
+      stroke-dasharray: 400;
+      stroke-dashoffset: 400;
+      animation: ecg-draw 2.6s ease-out forwards 0.7s;
+    }
+
+    @keyframes ecg-draw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* ── Login card ── */
+    .login-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 430px;
+      background: rgba(255,255,255,0.10);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 32px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+      padding: 44px 40px 40px;
+      animation: slide-up 0.6s ease-out forwards;
+    }
+
+    /* ── Form ── */
+    .form { display: flex; flex-direction: column; gap: 16px; }
+
+    .field-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(107,223,184,0.8);
+      margin-bottom: 6px;
+    }
+
+    .field-wrap { position: relative; }
+
+    .field-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: rgba(107,223,184,0.6);
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+
+    .field-input {
+      width: 100%;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      padding: 12px 44px 12px 42px;
+      font-size: 14px;
+      font-family: var(--font-body);
+      color: #fff;
+      outline: none;
+      transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+    }
+
+    .field-input::placeholder { color: rgba(255,255,255,0.38); }
+
+    .field-input:focus {
+      border-color: #6bdfb8;
+      background: rgba(255,255,255,0.13);
+      box-shadow: 0 0 0 3px rgba(107,223,184,0.18);
+    }
+
+    .field-input:focus ~ .field-icon { color: #6bdfb8; }
+
+    .toggle-pass {
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: rgba(107,223,184,0.5);
+      display: flex;
+      align-items: center;
+      padding: 0;
+      transition: color 0.2s;
+    }
+    .toggle-pass:hover { color: #6bdfb8; }
+
+    /* ── Forgot ── */
+    .forgot-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: -6px;
+    }
+
+    .forgot-link {
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(107,223,184,0.7);
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color 0.2s;
+      padding: 0;
+      font-family: var(--font-body);
+    }
+    .forgot-link:hover { color: #6bdfb8; text-decoration: underline; }
+
+    /* ── Submit button ── */
+    .btn-submit {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #2ec4a9 0%, #1a9e8a 50%, #159d8a 100%);
+      border: none;
+      border-radius: 14px;
+      padding: 14px 24px;
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(46,196,169,0.4);
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      margin-top: 4px;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(46,196,169,0.55); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+    /* ── XP badge ── */
+    .xp-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    /* ── Register link ── */
+    .register-row {
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255,255,255,0.48);
+      font-family: var(--font-body);
+    }
+
+    .register-link {
+      font-weight: 700;
+      color: #6bdfb8;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: inherit;
+      padding: 0;
+      transition: opacity 0.2s;
+    }
+    .register-link:hover { text-decoration: underline; }
+
+    /* ── Alert inline ── */
+    .form-alert {
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      animation: slide-up 0.3s ease-out;
+    }
+    .form-alert.show { display: flex; }
+    .form-alert.error   { background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.3); color: #ff8080; }
+    .form-alert.success { background: rgba(107,223,184,0.14); border: 1px solid rgba(107,223,184,0.3); color: #6bdfb8; }
+
+    /* ── Floating icons ── */
+    .fi {
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      color: rgba(107,223,184,0.22);
+    }
+    .fi-1  { top: 10%; left:  7%;  animation: float  6.0s ease-in-out infinite; }
+    .fi-2  { top:  6%; left: 83%;  animation: float2 7.5s ease-in-out infinite; }
+    .fi-3  { top: 70%; left:  5%;  animation: float  8.0s ease-in-out infinite 1s; }
+    .fi-4  { top: 74%; left: 87%;  animation: float2 9.0s ease-in-out infinite 2s; }
+    .fi-5  { top: 40%; left: 90%;  animation: float  5.5s ease-in-out infinite 0.5s; }
+    .fi-6  { top: 88%; left: 50%;  animation: float2 10s  ease-in-out infinite 3s; }
+    .fi-7  { top: 20%; left: 45%;  animation: float  7.0s ease-in-out infinite 1.5s; opacity: 0.12; }
+    .fi-8  { top: 55%; left: 14%;  animation: float2 6.5s ease-in-out infinite 0.8s; opacity: 0.15; }
+
+    /* ── Spinner ── */
+    .spin {
+      width: 17px; height: 17px;
+      border: 2.5px solid rgba(255,255,255,0.25);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .login-card { padding: 32px 22px 28px; }
+      .logo-title { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Blobs de luz -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <!-- Ícones flutuantes -->
+  <div class="fi fi-1">
+    <svg width="38" height="38" viewBox="0 0 24 24" fill="currentColor">
+      <rect x="9" y="2" width="6" height="20" rx="2"/>
+      <rect x="2" y="9" width="20" height="6" rx="2"/>
+    </svg>
+  </div>
+  <div class="fi fi-2">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+    </svg>
+  </div>
+  <div class="fi fi-3">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2L3 7v5c0 5.25 3.75 10.17 9 11.33C17.25 22.17 21 17.25 21 12V7l-9-5z"/>
+    </svg>
+  </div>
+  <div class="fi fi-4">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+    </svg>
+  </div>
+  <div class="fi fi-5">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M4.22 11.29l6.36-6.36a5 5 0 0 1 7.07 7.07l-6.36 6.36a5 5 0 1 1-7.07-7.07z"/>
+    </svg>
+  </div>
+  <div class="fi fi-6">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+      <rect x="9" y="2" width="6" height="20" rx="2"/>
+      <rect x="2" y="9" width="20" height="6" rx="2"/>
+    </svg>
+  </div>
+  <div class="fi fi-7">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+    </svg>
+  </div>
+  <div class="fi fi-8">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2L3 7v5c0 5.25 3.75 10.17 9 11.33C17.25 22.17 21 17.25 21 12V7l-9-5z"/>
+    </svg>
+  </div>
+
+  <!-- Página de login -->
+  <main class="login-page">
+    <div class="login-card">
+
+      <!-- Logo -->
+      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:28px;">
+        <div class="logo-icon-wrap">
+          <div class="logo-ring"></div>
+          <div class="logo-star">⭐</div>
+          <!-- Coração animado -->
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="#fff">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </div>
+
+        <h1 class="logo-title">HERÓIS DA SAÚDE</h1>
+        <p class="logo-sub">Sua missão de saúde começa aqui</p>
+
+        <!-- ECG animado -->
+        <div class="ecg-wrap">
+          <svg viewBox="0 0 280 40" fill="none" width="100%" preserveAspectRatio="none">
+            <polyline
+              class="ecg-path"
+              points="0,20 30,20 40,6 52,34 62,20 74,20 88,3 100,37 112,20 122,20 152,20 162,11 172,29 182,20 210,20 222,8 234,32 244,20 280,20"
+              stroke="#6bdfb8"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Alerta de feedback -->
+      <div class="form-alert" id="form-alert" role="alert"></div>
+
+      <!-- Formulário -->
+      <form class="form" id="login-form" novalidate>
+
+        <!-- E-mail -->
+        <div>
+          <label class="field-label" for="email">E-mail</label>
+          <div class="field-wrap">
+            <input
+              class="field-input"
+              type="email"
+              id="email"
+              name="email"
+              placeholder="heroi@saude.com"
+              autocomplete="email"
+              required
+            />
+            <span class="field-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </span>
+          </div>
+        </div>
+
+        <!-- Senha -->
+        <div>
+          <label class="field-label" for="password">Senha</label>
+          <div class="field-wrap">
+            <input
+              class="field-input"
+              type="password"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+            />
+            <span class="field-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </span>
+            <button type="button" class="toggle-pass" id="toggle-pass" aria-label="Mostrar senha">
+              <!-- ícone eye (padrão) -->
+              <svg id="eye-open" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <!-- ícone eye-off (oculto por padrão) -->
+              <svg id="eye-closed" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Esqueci senha -->
+        <div class="forgot-row">
+          <button type="button" class="forgot-link" id="forgot-btn">Esqueci minha senha</button>
+        </div>
+
+        <!-- Botão entrar -->
+        <button type="submit" class="btn-submit" id="submit-btn">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="rgba(255,255,255,0.85)">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <span id="btn-label">Entrar no Jogo</span>
+          <span class="spin" id="btn-spin"></span>
+        </button>
+
+      </form>
+
+      <!-- Divisor -->
+      <div class="divider" style="margin:20px 0 16px"><span>ou</span></div>
+
+      <!-- Criar conta -->
+      <p class="register-row">
+        Novo herói? <button class="register-link" id="register-btn">Criar conta gratuita</button>
+      </p>
+
+      <!-- XP badge -->
+      <div class="xp-row">
+        <div class="xp-badge">
+          ⭐ Ganhe +50 XP ao fazer login hoje!
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Carregar auth.js e api.js opcionalmente -->
+  <script src="../js/api.js" defer></script>
+  <script src="../js/auth.js" defer></script>
+
+</body>
+</html>

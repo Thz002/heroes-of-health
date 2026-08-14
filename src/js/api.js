@@ -1,0 +1,291 @@
+/**
+ * api.js — Heróis da Saúde
+ * Camada de comunicação HTTP com o backend.
+ * Expõe o objeto global `API`.
+ */
+
+const API = (() => {
+  // ── Configuração ───────────────────────────
+  const BASE_URL = (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+  )
+    ? 'http://localhost:3000/api'
+    : '/api';
+
+  const DEFAULT_TIMEOUT = 12000; // ms
+
+  // ── Helpers internos ───────────────────────
+  function getToken() {
+    return localStorage.getItem('herois_token') || '';
+  }
+
+  function buildHeaders(extra = {}) {
+    const headers = { 'Content-Type': 'application/json', ...extra };
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  }
+
+  function buildError(status, message, data = null) {
+    const err = new Error(message);
+    err.status = status;
+    err.data   = data;
+    err.offline = status === 0;
+    return err;
+  }
+
+  async function request(method, endpoint, body = null, options = {}) {
+    const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      options.timeout ?? DEFAULT_TIMEOUT
+    );
+
+    const init = {
+      method,
+      headers: buildHeaders(options.headers),
+      signal: controller.signal,
+    };
+
+    if (body !== null) {
+      init.body = JSON.stringify(body);
+    }
+
+    try {
+      const res = await fetch(url, init);
+      clearTimeout(timeoutId);
+
+      // Sem conteúdo (204)
+      if (res.status === 204) return null;
+
+      let data;
+      try { data = await res.json(); } catch (_) { data = null; }
+
+      if (!res.ok) {
+        throw buildError(
+          res.status,
+          data?.message ?? `Erro ${res.status}`,
+          data
+        );
+      }
+
+      return data;
+    } catch (err) {
+      clearTimeout(timeoutId);
+
+      if (err.name === 'AbortError') {
+        throw buildError(0, 'A requisição demorou muito. Verifique sua conexão.');
+      }
+      if (err.status) throw err; // já formatado
+
+      // Sem internet / CORS / servidor offline
+      const offlineErr = buildError(0, 'Sem conexão com o servidor.');
+      offlineErr.offline = true;
+      throw offlineErr;
+    }
+  }
+
+  // ── Métodos públicos ───────────────────────
+  function get(endpoint, options = {}) {
+    return request('GET', endpoint, null, options);
+  }
+
+  function post(endpoint, body, options = {}) {
+    return request('POST', endpoint, body, options);
+  }
+
+  function put(endpoint, body, options = {}) {
+    return request('PUT', endpoint, body, options);
+  }
+
+  function patch(endpoint, body, options = {}) {
+    return request('PATCH', endpoint, body, options);
+  }
+
+  function del(endpoint, options = {}) {
+    return request('DELETE', endpoint, null, options);
+  }
+
+  // ── Endpoints do jogo ──────────────────────
+
+  /** Busca todos os pontos de saúde no mapa */
+  async function getHealthPoints() {
+    try {
+      return await get('/health-points');
+    } catch (_) {
+      // dados mock para modo offline
+      return MOCK.healthPoints;
+    }
+  }
+
+  /** Busca missões disponíveis para o usuário */
+  async function getMissions(userId) {
+    try {
+      return await get(`/missions?userId=${userId}`);
+    } catch (_) {
+      return MOCK.missions;
+    }
+  }
+
+  /** Envia resposta de quiz */
+  async function submitQuizAnswer(userId, questionId, answerId) {
+    try {
+      return await post('/quiz/answer', { userId, questionId, answerId });
+    } catch (_) {
+      // fallback local — valida na camada de quiz
+      return null;
+    }
+  }
+
+  /** Atualiza XP e nível do usuário */
+  async function updateUserXP(userId, xpGained) {
+    try {
+      return await patch(`/users/${userId}/xp`, { xp: xpGained });
+    } catch (_) {
+      // atualiza local
+      const stored = localStorage.getItem('herois_user');
+      if (stored) {
+        const user = JSON.parse(stored);
+        user.xp = (user.xp || 0) + xpGained;
+        user.level = Math.floor(user.xp / 100) + 1;
+        localStorage.setItem('herois_user', JSON.stringify(user));
+        return user;
+      }
+      return null;
+    }
+  }
+
+  /** Busca ranking de jogadores */
+  async function getRanking(limit = 10) {
+    try {
+      return await get(`/ranking?limit=${limit}`);
+    } catch (_) {
+      return MOCK.ranking;
+    }
+  }
+
+  /** Busca perguntas do quiz por categoria */
+  async function getQuizQuestions(category = 'geral', limit = 5) {
+    try {
+      return await get(`/quiz/questions?category=${category}&limit=${limit}`);
+    } catch (_) {
+      return MOCK.questions.filter(q => category === 'geral' || q.category === category).slice(0, limit);
+    }
+  }
+
+  // ── Dados mock (modo offline) ──────────────
+  const MOCK = {
+    healthPoints: [
+      { id: 1, name: 'UBS Centro',          lat: -23.5505, lng: -46.6333, type: 'ubs',      xp: 30 },
+      { id: 2, name: 'Hospital das Clínicas', lat: -23.5576, lng: -46.6709, type: 'hospital', xp: 80 },
+      { id: 3, name: 'Farmácia Popular',     lat: -23.5489, lng: -46.6388, type: 'farmacia', xp: 20 },
+      { id: 4, name: 'CAPS Norte',           lat: -23.5202, lng: -46.6299, type: 'caps',     xp: 50 },
+      { id: 5, name: 'Pronto Socorro Leste', lat: -23.5678, lng: -46.5899, type: 'ps',       xp: 60 },
+    ],
+
+    missions: [
+      { id: 1, title: 'Primeiros Socorros',   description: 'Aprenda RCP e salvamento básico.',     xp: 100, category: 'emergencia', completed: false },
+      { id: 2, title: 'Nutrição Saudável',    description: 'Identifique grupos alimentares.',        xp: 80,  category: 'nutricao',   completed: false },
+      { id: 3, title: 'Higiene Pessoal',      description: 'Práticas de saúde diárias.',            xp: 60,  category: 'higiene',     completed: true  },
+      { id: 4, title: 'Doenças Infecciosas',  description: 'Como prevenir e reconhecer infecções.', xp: 120, category: 'doencas',    completed: false },
+    ],
+
+    ranking: [
+      { position: 1, name: 'Ana Clara',    xp: 1840, level: 19 },
+      { position: 2, name: 'Bruno Melo',   xp: 1620, level: 17 },
+      { position: 3, name: 'Carla Souza',  xp: 1490, level: 15 },
+      { position: 4, name: 'Diego Alves',  xp: 1320, level: 14 },
+      { position: 5, name: 'Elena Costa',  xp: 1200, level: 13 },
+    ],
+
+    questions: [
+      {
+        id: 1, category: 'geral',
+        question: 'Qual o primeiro passo no atendimento de uma vítima inconsciente?',
+        options: [
+          { id: 'a', text: 'Verificar se o local é seguro' },
+          { id: 'b', text: 'Iniciar massagem cardíaca imediatamente' },
+          { id: 'c', text: 'Ligar para familiares' },
+          { id: 'd', text: 'Dar água à vítima' },
+        ],
+        correct: 'a',
+        explanation: 'A segurança do socorrista é prioridade. Verifique o ambiente antes de se aproximar.',
+        xp: 20,
+      },
+      {
+        id: 2, category: 'nutricao',
+        question: 'Quantos copos de água são recomendados por dia para um adulto?',
+        options: [
+          { id: 'a', text: '4 a 5 copos' },
+          { id: 'b', text: '6 a 8 copos' },
+          { id: 'c', text: '8 a 10 copos' },
+          { id: 'd', text: 'Mais de 12 copos' },
+        ],
+        correct: 'c',
+        explanation: 'A OMS recomenda entre 8 e 10 copos (2 a 2,5 litros) de água por dia para adultos saudáveis.',
+        xp: 15,
+      },
+      {
+        id: 3, category: 'geral',
+        question: 'Qual dessas doenças é transmitida pelo mosquito Aedes aegypti?',
+        options: [
+          { id: 'a', text: 'Gripe' },
+          { id: 'b', text: 'Cólera' },
+          { id: 'c', text: 'Dengue' },
+          { id: 'd', text: 'Tuberculose' },
+        ],
+        correct: 'c',
+        explanation: 'O Aedes aegypti transmite dengue, zika e chikungunya. Elimine água parada para prevenir.',
+        xp: 20,
+      },
+      {
+        id: 4, category: 'higiene',
+        question: 'Quantos segundos deve durar a lavagem correta das mãos?',
+        options: [
+          { id: 'a', text: '5 segundos' },
+          { id: 'b', text: '10 segundos' },
+          { id: 'c', text: '20 a 30 segundos' },
+          { id: 'd', text: '60 segundos' },
+        ],
+        correct: 'c',
+        explanation: 'A lavagem deve durar de 20 a 30 segundos, cobrindo palmas, dorso, dedos e unhas.',
+        xp: 15,
+      },
+      {
+        id: 5, category: 'emergencia',
+        question: 'O que fazer em caso de engasgo em adulto consciente?',
+        options: [
+          { id: 'a', text: 'Dar tapas nas costas e aplicar manobra de Heimlich' },
+          { id: 'b', text: 'Oferecer água imediatamente' },
+          { id: 'c', text: 'Pedir para a pessoa tossir e não intervir' },
+          { id: 'd', text: 'Deitar a pessoa no chão' },
+        ],
+        correct: 'a',
+        explanation: 'A manobra de Heimlich (compressões abdominais) associada a tapas nas costas é o protocolo correto.',
+        xp: 25,
+      },
+    ],
+  };
+
+  // ── API pública ─────────────────────────────
+  return {
+    get,
+    post,
+    put,
+    patch,
+    delete: del,
+
+    // Endpoints
+    getHealthPoints,
+    getMissions,
+    submitQuizAnswer,
+    updateUserXP,
+    getRanking,
+    getQuizQuestions,
+
+    // Dados mock acessíveis externamente
+    MOCK,
+  };
+})();

@@ -1,0 +1,30 @@
+{
+  "name": "trabalho-interdiciplinar",
+  "version": "1.0.0",
+  "description": "> **Documentação de Contexto do Sistema para o Claude Code / Agentes de IA**   > **Projeto Interdisciplinar II** | Ciência da Computação (PUC Minas - 2º Período) & Medicina (PUC Betim - 2º Período)   > **Prazo de Entrega Final:** 20 de Outubro de 2026   > **Stack Principal:** Node.js (JavaScript puro + Express + EJS) + MySQL (`mysql2`) + Bootstrap / CSS3",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/server": "^1.4.1",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.3",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "mysql2": "^3.23.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
