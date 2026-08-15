@@ -52,72 +52,59 @@ const AUTH = (() => {
 
   // ── Cadastro ───────────────────────────────────
   /**
-   * Cria a conta e o cadastro do jogo, nesta ordem:
-   *   1. o Supabase cria a conta e devolve um identificador
-   *   2. se for professor criando escola nova, a escola é criada
-   *   3. a linha da pessoa entra na tabela usuarios, usando aquele identificador
+   * Cria a conta. UMA chamada só.
+   *
+   * Antes eram três escritas separadas: criar a conta, criar a escola, e
+   * inserir a linha em `usuarios`. Como não formavam uma transação, quando
+   * a terceira falhava sobrava uma conta que fazia login mas que o jogo
+   * não conhecia — o usuário aparecia na aba "Users" do Supabase e não
+   * aparecia na tabela `usuarios`.
+   *
+   * Agora os dados do perfil viajam junto, dentro de `options.data`, e
+   * quem cria a linha em `usuarios` é um gatilho no banco (migração 03,
+   * função `criar_perfil_do_novo_usuario`). Se algo falhar, falha tudo
+   * junto e não sobra conta órfã.
    *
    * Recebe o objeto montado pelo auth.js e devolve { ok, message }.
    */
   async function register(dados) {
-    // 1. A conta
+    // Tudo aqui é lido pelo gatilho, do lado do banco. E é lá que os
+    // valores são conferidos: o que vem do navegador é informação que a
+    // própria pessoa controla, então 'ADMIN' é rebaixado para 'ALUNO'.
+    const perfil = {
+      nome: dados.nome,
+      tipo: dados.tipo
+    };
+
+    if (dados.tipo === 'ALUNO') {
+      perfil.idade    = String(dados.idade ?? '');
+      perfil.turma_id = String(dados.turma_id ?? '');
+    } else {
+      if (dados.escola_id)   perfil.escola_id   = String(dados.escola_id);
+      if (dados.escola_nome) perfil.escola_nome = dados.escola_nome;
+    }
+
     const conta = await SUPA.auth.signUp({
       email: dados.email,
-      password: dados.password
+      password: dados.password,
+      options: { data: perfil }
     });
 
     if (conta.error) {
       return { ok: false, message: traduzir(conta.error.message) };
     }
 
-    // Sem sessão aqui significa que o Supabase está exigindo confirmação
-    // por e-mail. Como os e-mails dos alunos são institucionais e podem
-    // não receber mensagem, isso trava o cadastro.
+    // O perfil já existe neste ponto — o gatilho rodou dentro da mesma
+    // transação que criou a conta. Sem sessão significa apenas que o
+    // Supabase está exigindo confirmação por e-mail antes de deixar
+    // entrar. Os e-mails escolares muitas vezes não recebem a mensagem.
     if (!conta.data.session) {
       return {
         ok: false,
-        message: 'Conta criada, mas falta confirmar o e-mail. ' +
-                 'Desligue "Confirm email" no painel do Supabase.'
+        message: 'Conta criada! Falta confirmar o e-mail para entrar. ' +
+                 'Se o e-mail não chegar, peça ao professor para desligar ' +
+                 '"Confirm email" no painel do Supabase.'
       };
-    }
-
-    const identificador = conta.data.user.id;
-
-    // 2. A escola nova, quando o professor pediu para criar uma
-    let escolaId = dados.escola_id ?? null;
-
-    if (dados.tipo === 'PROFESSOR' && dados.escola_nome) {
-      const nova = await SUPA
-        .from('escolas')
-        .insert({ nome: dados.escola_nome })
-        .select('id')
-        .single();
-
-      if (nova.error) {
-        return { ok: false, message: traduzir(nova.error.message) };
-      }
-      escolaId = nova.data.id;
-    }
-
-    // 3. O cadastro no jogo
-    const perfil = {
-      id: identificador,       // o mesmo identificador da conta — é o que liga os dois
-      nome: dados.nome,
-      tipo: dados.tipo
-    };
-
-    if (dados.tipo === 'ALUNO') {
-      perfil.idade    = dados.idade;
-      perfil.turma_id = dados.turma_id;
-      // escola_id fica em branco: a escola do aluno se descobre pela turma
-    } else {
-      perfil.escola_id = escolaId;
-    }
-
-    const gravou = await SUPA.from('usuarios').insert(perfil);
-
-    if (gravou.error) {
-      return { ok: false, message: traduzir(gravou.error.message) };
     }
 
     return { ok: true };
@@ -167,5 +154,20 @@ const AUTH = (() => {
     return conta;
   }
 
-  return { register, login, logout, contaAtual, perfilAtual, exigirLogin, traduzir };
+  /**
+   * O token da sessão atual, ou string vazia.
+   *
+   * É o crachá que o api.js manda ao servidor Express. Quem o emitiu foi
+   * o Supabase Auth, e é o Supabase que o servidor consulta para saber se
+   * ele vale — o servidor não guarda senha nem inventa sessão própria.
+   */
+  async function tokenAtual() {
+    const r = await SUPA.auth.getSession();
+    return r.data.session ? r.data.session.access_token : '';
+  }
+
+  return {
+    register, login, logout,
+    contaAtual, perfilAtual, exigirLogin, tokenAtual, traduzir
+  };
 })();
