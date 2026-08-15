@@ -25,7 +25,7 @@ Implementado:
 - `src/js/api.js` — camada de dados; as funções de escola/turma falam direto com o Supabase
 - `src/js/auth.js` — controle da tela de login/cadastro
 - `src/css/style.css`
-- `db/schema.sql` (PostgreSQL), `db/seed.sql`, `db/migracao-01-usuarios-auth.sql`, `db/migracao-02-seguranca.sql`
+- `db/schema.sql` (PostgreSQL), `db/seed.sql`, `db/01-userAuth.sql`, `db/02-security.sql`
 
 Ainda vazios: `src/pages/mapa.html`, `src/pages/missao.html`, `src/pages/dashboard.html`, `src/js/quiz.js`, `src/js/mapa.js`, `docs/personas.md`, `docs/user-story-map.md`.
 
@@ -49,7 +49,7 @@ O `.env` guarda `SUPABASE_URL` e `SUPABASE_ANON_KEY`, e está no `.gitignore`. M
 
 Não há build nem servidor. As páginas abrem direto no navegador (`file://`), e a biblioteca do Supabase é carregada de `node_modules/@supabase/supabase-js/dist/umd/supabase.js`.
 
-Os arquivos de `db/` rodam no **SQL Editor** do dashboard do Supabase, nesta ordem em um projeto novo: `schema.sql` → `migracao-02-seguranca.sql` → `seed.sql`. Num banco já existente, escreva uma migração nova em vez de rodar o `schema.sql`.
+Os arquivos de `db/` rodam no **SQL Editor** do dashboard do Supabase, nesta ordem em um projeto novo: `schema.sql` → `02-security.sql` → `seed.sql`. Num banco já existente, escreva uma migração nova em vez de rodar o `schema.sql`. O número no começo do nome indica a ordem de execução — migrações já executadas nunca são alteradas.
 
 ## Modelo de domínio
 
