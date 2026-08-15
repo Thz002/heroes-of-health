@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste do Supabase</title>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #101a24;
+      color: #e8eef4;
+      margin: 0;
+      padding: 32px 20px;
+      line-height: 1.6;
+    }
+    .caixa {
+      max-width: 520px;
+      margin: 0 auto;
+      background: #17222e;
+      border: 1px solid #24384a;
+      border-radius: 16px;
+      padding: 28px;
+    }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .subtitulo { color: #8fa6b8; font-size: 14px; margin: 0 0 24px; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #8fa6b8;
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      background: #101a24;
+      border: 1px solid #2c4257;
+      border-radius: 8px;
+      padding: 11px 13px;
+      color: #e8eef4;
+      font-size: 15px;
+      margin-bottom: 16px;
+    }
+    input:focus { outline: 2px solid #2ec4a9; border-color: transparent; }
+
+    button {
+      background: #2ec4a9;
+      color: #06231d;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    button:hover { background: #6bdfb8; }
+    button.secundario { background: #2c4257; color: #e8eef4; }
+    button.secundario:hover { background: #3a566f; }
+
+    #resultado {
+      margin-top: 20px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: none;
+      white-space: pre-wrap;
+    }
+    #resultado.ok   { display: block; background: rgba(46,196,169,0.12); border: 1px solid #2ec4a9; }
+    #resultado.erro { display: block; background: rgba(255,107,107,0.12); border: 1px solid #ff6b6b; }
+    #resultado.info { display: block; background: rgba(143,166,184,0.12); border: 1px solid #4a6478; }
+
+    #detalhe {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #7d93a5;
+      font-family: ui-monospace, Consolas, monospace;
+      display: none;
+    }
+    #detalhe.visivel { display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="caixa">
+    <h1>Teste do Supabase</h1>
+    <p class="subtitulo">
+      Esta página não faz parte do jogo. Ela existe só para conferir se o login
+      pelo Supabase funciona antes de mexermos no projeto de verdade.
+    </p>
+
+    <label for="email">E-mail do usuário de teste</label>
+    <input type="email" id="email" placeholder="teste@heroisdasaude.local" />
+
+    <label for="senha">Senha</label>
+    <input type="password" id="senha" placeholder="a senha que você criou no painel" />
+
+    <button id="btn-entrar">Tentar entrar</button>
+    <button id="btn-quem" class="secundario">Quem está logado?</button>
+    <button id="btn-sair" class="secundario">Sair</button>
+
+    <div id="resultado"></div>
+    <div id="detalhe"></div>
+  </div>
+
+  <!-- Carrega o Supabase que já está instalado na pasta node_modules do projeto.
+       Não precisa de internet para carregar este arquivo. -->
+  <script src="node_modules/@supabase/supabase-js/dist/umd/supabase.js"></script>
+
+  <script>
+    // =====================================================================
+    //  PREENCHA A LINHA DA CHAVE ABAIXO
+    //
+    //  ATENÇÃO: existem DUAS chaves no painel do Supabase.
+    //
+    //    sb_publishable_...  <- é ESTA que vai aqui.
+    //                           Ela pode aparecer no navegador, foi feita
+    //                           para isso.
+    //
+    //    sb_secret_...       <- esta NUNCA pode vir para cá. É a chave de
+    //                           administrador. O próprio Supabase bloqueia
+    //                           o uso dela no navegador.
+    //
+    //  Onde encontrar: painel do Supabase -> Project Settings -> API Keys
+    // =====================================================================
+
+    const ENDERECO = "https://xmdmzmuhorlrptifgfhz.supabase.co";
+    const CHAVE    = "sb_publishable_CF0Sre41ZkH_a05rEko5SA_lvr740Yd";
+
+    // =====================================================================
+    //  A partir daqui você não precisa mexer em nada.
+    // =====================================================================
+
+    const caixaResultado = document.getElementById("resultado");
+    const caixaDetalhe   = document.getElementById("detalhe");
+
+    // Mostra uma mensagem colorida na tela.
+    // tipo pode ser: "ok" (verde), "erro" (vermelho) ou "info" (cinza)
+    function mostrar(mensagem, tipo, detalheTecnico) {
+      caixaResultado.textContent = mensagem;
+      caixaResultado.className = tipo;
+
+      if (detalheTecnico) {
+        caixaDetalhe.textContent = "Detalhe técnico: " + detalheTecnico;
+        caixaDetalhe.className = "visivel";
+      } else {
+        caixaDetalhe.className = "";
+      }
+    }
+
+    // Traduz as mensagens de erro do Supabase, que vêm em inglês,
+    // para uma explicação do que provavelmente aconteceu.
+    function explicarErro(mensagem) {
+      const m = (mensagem || "").toLowerCase();
+
+      if (m.includes("invalid login credentials")) {
+        return "O e-mail ou a senha estão errados.\n\n" +
+               "Confira se digitou igual ao que você cadastrou no painel do Supabase.";
+      }
+      if (m.includes("email not confirmed")) {
+        return "O usuário existe, mas o Supabase está esperando uma confirmação por e-mail.\n\n" +
+               "Como o e-mail de teste é inventado, essa confirmação nunca vai chegar.\n" +
+               "No painel, vá em Authentication > Sign In / Providers > Email e desligue\n" +
+               "a opção 'Confirm email'. Depois tente de novo.";
+      }
+      if (m.includes("failed to fetch") || m.includes("networkerror")) {
+        return "O navegador não conseguiu falar com o Supabase.\n\n" +
+               "As causas mais comuns são: o endereço do projeto está errado,\n" +
+               "ou o computador está sem internet.";
+      }
+      if (m.includes("invalid api key") || m.includes("no api key")) {
+        return "A chave de acesso não foi aceita.\n\n" +
+               "Confira se você colou a chave inteira, sem faltar nenhum pedaço.";
+      }
+      return "Não deu certo, e este não é um erro que eu saiba explicar.\n" +
+             "Me mostre o detalhe técnico abaixo que eu te ajudo.";
+    }
+
+    // Confere se você já preencheu o endereço e a chave lá em cima.
+    function faltaPreencher() {
+      if (ENDERECO.startsWith("COLE_AQUI") || CHAVE.startsWith("COLE_AQUI")) {
+        mostrar(
+          "Antes de testar, abra este arquivo em um editor e preencha as duas\n" +
+          "linhas marcadas no começo do script: ENDERECO e CHAVE.",
+          "info"
+        );
+        return true;
+      }
+
+      // A chave de administrador começa com "sb_secret_". Ela não pode ser
+      // usada aqui, então avisamos antes de tentar, em vez de deixar falhar.
+      if (CHAVE.startsWith("sb_secret_") || CHAVE.startsWith("service_role")) {
+        mostrar(
+          "Essa é a chave de ADMINISTRADOR, e ela não pode ser usada no navegador.\n\n" +
+          "Volte no painel do Supabase e procure a outra chave, a que começa\n" +
+          "com 'sb_publishable_'. É ela que vai aqui.\n\n" +
+          "E troque essa chave de administrador no painel: ela já saiu do lugar\n" +
+          "seguro, então o certo é gerar uma nova.",
+          "erro"
+        );
+        return true;
+      }
+
+      return false;
+    }
+
+    // Cria a conexão com o Supabase. É isso que a linha abaixo faz:
+    // entrega o endereço e a chave, e recebe de volta um objeto que sabe
+    // conversar com o seu banco de dados.
+    let conexao = null;
+    if (!ENDERECO.startsWith("COLE_AQUI")) {
+      conexao = supabase.createClient(ENDERECO, CHAVE);
+    }
+
+    // ---- Botão "Tentar entrar" ----
+    document.getElementById("btn-entrar").addEventListener("click", async () => {
+      if (faltaPreencher()) return;
+
+      const email = document.getElementById("email").value.trim();
+      const senha = document.getElementById("senha").value;
+
+      if (!email || !senha) {
+        mostrar("Preencha o e-mail e a senha.", "info");
+        return;
+      }
+
+      mostrar("Conversando com o Supabase...", "info");
+
+      try {
+        // Esta é a linha que faz o login. Ela manda o e-mail e a senha
+        // para o Supabase e espera a resposta.
+        const resposta = await conexao.auth.signInWithPassword({
+          email: email,
+          password: senha
+        });
+
+        if (resposta.error) {
+          mostrar(explicarErro(resposta.error.message), "erro", resposta.error.message);
+          return;
+        }
+
+        mostrar(
+          "Funcionou! O Supabase aceitou o login.\n\n" +
+          "E-mail: " + resposta.data.user.email + "\n" +
+          "Identificador do usuário: " + resposta.data.user.id + "\n\n" +
+          "Esse identificador é o número de matrícula que o Supabase deu para essa\n" +
+          "pessoa. É por ele que a gente vai ligar a conta aos dados do jogo.\n\n" +
+          "Agora feche esta página, abra de novo e clique em 'Quem está logado?'.\n" +
+          "Você vai continuar logado, sem digitar a senha outra vez.",
+          "ok"
+        );
+      } catch (erro) {
+        mostrar(explicarErro(erro.message), "erro", erro.message);
+      }
+    });
+
+    // ---- Botão "Quem está logado?" ----
+    document.getElementById("btn-quem").addEventListener("click", async () => {
+      if (faltaPreencher()) return;
+
+      const resposta = await conexao.auth.getSession();
+
+      if (!resposta.data.session) {
+        mostrar("Ninguém está logado nesta página no momento.", "info");
+        return;
+      }
+
+      mostrar(
+        "Você está logado como: " + resposta.data.session.user.email + "\n\n" +
+        "Repare que você não digitou a senha agora. O Supabase guardou essa\n" +
+        "informação no seu navegador sozinho, sem a gente escrever código para isso.",
+        "ok"
+      );
+    });
+
+    // ---- Botão "Sair" ----
+    document.getElementById("btn-sair").addEventListener("click", async () => {
+      if (faltaPreencher()) return;
+
+      await conexao.auth.signOut();
+      mostrar("Você saiu. Clique em 'Quem está logado?' para confirmar.", "info");
+    });
+
+    // Ao abrir a página, já avisa se falta preencher.
+    faltaPreencher();
+  </script>
+
+</body>
+</html>

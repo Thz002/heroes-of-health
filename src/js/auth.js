@@ -1,124 +1,96 @@
 /**
  * auth.js — Heróis da Saúde
- * Login e cadastro (aluno / professor) na tela index.html.
- * Depende do objeto global `API` (src/js/api.js), carregado antes deste arquivo.
+ * Controla a tela index.html, que serve tanto para LOGIN quanto para CADASTRO.
+ * Depende do objeto global API (src/js/api.js), carregado antes deste arquivo.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-  let isLogin = true;
 
-  // Faixa etária atendida pelo jogo. Fora dela o aluno não teria nenhuma
-  // missão compatível, porque missoes.nivel_etario só cobre 7–18 anos.
+  // Faixa etária atendida pelo jogo. Fora dela o aluno não teria missão
+  // nenhuma compatível, porque as missões só cobrem de 7 a 18 anos.
   const IDADE_MIN = 7;
   const IDADE_MAX = 18;
 
-  // ── Referências aos elementos do DOM ──
-  const mainForm = document.getElementById('main-form');
-  const boxRole = document.getElementById('box-role');
-  const boxNome = document.getElementById('box-nome');
-  const boxAluno = document.getElementById('box-aluno');
-  const boxProfessor = document.getElementById('box-professor');
-  const forgotRow = document.getElementById('forgot-row');
-  const btnLabel = document.getElementById('btn-label');
-  const toggleText = document.getElementById('toggle-text');
-  const toggleModeBtn = document.getElementById('toggle-mode-btn');
-  const logoSub = document.getElementById('logo-sub');
-  const xpBadge = document.getElementById('xp-badge');
-  const radioPerfis = document.querySelectorAll('input[name="tipo"]');
-  const passInput = document.getElementById('password');
-  const alertEl = document.getElementById('form-alert');
+  // ── Estado da tela ────────────────────────────
+  let isLogin = true;          // true = tela de login, false = tela de cadastro
+  let usandoCodigo = false;    // o aluno está digitando o código em vez de escolher na lista
+  let escolasCarregadas = false;
+  let turmaPorCodigo = null;   // a turma que o código digitado resolveu
 
-  // Campos de aluno
-  const idadeInput = document.getElementById('idade');
-  const idadeHint = document.getElementById('idade-hint');
+  // ── Elementos da tela ─────────────────────────
+  const form           = document.getElementById('login-form');
+  const alertEl        = document.getElementById('form-alert');
+  const emailInput     = document.getElementById('email');
+  const passInput      = document.getElementById('password');
+  const submitBtn      = document.getElementById('submit-btn');
+  const btnLabel       = document.getElementById('btn-label');
+  const btnSpin        = document.getElementById('btn-spin');
+
+  const toggleBtn      = document.getElementById('toggle-pass');
+  const eyeOpen        = document.getElementById('eye-open');
+  const eyeClosed      = document.getElementById('eye-closed');
+
+  const boxRole        = document.getElementById('box-role');
+  const boxNome        = document.getElementById('box-nome');
+  const boxAluno       = document.getElementById('box-aluno');
+  const boxProfessor   = document.getElementById('box-professor');
+  const nomeInput      = document.getElementById('nome');
+  const radioPerfis    = document.querySelectorAll('input[name="tipo"]');
+
+  const idadeInput     = document.getElementById('idade');
+  const idadeHint      = document.getElementById('idade-hint');
   const selectEscolaAluno = document.getElementById('escola-aluno');
-  const selectTurma = document.getElementById('turma');
-  const modoSelecao = document.getElementById('modo-selecao');
-  const modoCodigo = document.getElementById('modo-codigo');
-  const codigoInput = document.getElementById('codigo-turma');
-  const codigoHint = document.getElementById('codigo-hint');
-  const btnModoTurma = document.getElementById('btn-modo-turma');
+  const selectTurma    = document.getElementById('turma');
+  const modoSelecao    = document.getElementById('modo-selecao');
+  const modoCodigo     = document.getElementById('modo-codigo');
+  const codigoInput    = document.getElementById('codigo-turma');
+  const codigoHint     = document.getElementById('codigo-hint');
+  const btnModoTurma   = document.getElementById('btn-modo-turma');
 
-  // Campos de professor
   const selectEscolaProf = document.getElementById('escola');
-  const boxNovaEscola = document.getElementById('box-nova-escola');
+  const boxNovaEscola  = document.getElementById('box-nova-escola');
   const novaEscolaInput = document.getElementById('nova-escola');
 
-  // ── Estado do vínculo com a turma ──
-  let usandoCodigo = false;      // false = cascata escola->turma, true = código
-  let escolasCarregadas = false;
-  let turmaPorCodigo = null;     // turma resolvida a partir do código digitado
+  const forgotRow      = document.getElementById('forgot-row');
+  const forgotBtn      = document.getElementById('forgot-btn');
+  const registerBtn    = document.getElementById('register-btn');
+  const toggleText     = document.getElementById('toggle-text');
+  const logoSub        = document.getElementById('logo-sub');
+  const xpRow          = document.getElementById('xp-row');
 
-  // Criar dinamicamente o ícone de olho e spinner no HTML se não existirem,
-  // garantindo compatibilidade com as funções de toggle e loading.
-  if (passInput && !document.getElementById('toggle-pass')) {
-    const wrap = passInput.parentElement;
-    wrap.style.position = 'relative';
-    const toggleBtn = document.createElement('button');
-    toggleBtn.type = 'button';
-    toggleBtn.id = 'toggle-pass';
-    toggleBtn.className = 'input-toggle';
-    toggleBtn.setAttribute('aria-label', 'Mostrar senha');
-    toggleBtn.innerHTML = `
-      <svg id="eye-open" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-      <svg id="eye-closed" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-    `;
-    wrap.appendChild(toggleBtn);
-  }
-
-  const submitBtn = document.getElementById('submit-btn');
-  if (submitBtn && !document.getElementById('btn-spin')) {
-    const spin = document.createElement('span');
-    spin.id = 'btn-spin';
-    spin.className = 'spinner';
-    spin.style.display = 'none';
-    spin.style.marginLeft = '8px';
-    submitBtn.appendChild(spin);
-  }
-
-  // ── Toggle senha ──
-  const toggleBtn = document.getElementById('toggle-pass');
-  const eyeOpen = document.getElementById('eye-open');
-  const eyeClosed = document.getElementById('eye-closed');
-
+  // ── Mostrar / esconder a senha ────────────────
   if (toggleBtn && passInput) {
     toggleBtn.addEventListener('click', () => {
-      const visible = passInput.type === 'text';
-      passInput.type = visible ? 'password' : 'text';
-      if (eyeOpen) eyeOpen.style.display = visible ? '' : 'none';
-      if (eyeClosed) eyeClosed.style.display = visible ? 'none' : '';
-      toggleBtn.setAttribute('aria-label', visible ? 'Mostrar senha' : 'Ocultar senha');
+      const visivel = passInput.type === 'text';
+      passInput.type = visivel ? 'password' : 'text';
+      if (eyeOpen)   eyeOpen.style.display   = visivel ? ''     : 'none';
+      if (eyeClosed) eyeClosed.style.display = visivel ? 'none' : '';
+      toggleBtn.setAttribute('aria-label', visivel ? 'Mostrar senha' : 'Ocultar senha');
     });
   }
 
-  // ── Alertas ──
-  function showAlert(message, type) {
+  // ── Mensagens de aviso ────────────────────────
+  function showAlert(mensagem, tipo) {
     if (!alertEl) return;
-    alertEl.textContent = message;
-    alertEl.className = `alert ${type === 'success' ? 'alert--success' : 'alert--error'}`;
-    alertEl.style.display = 'flex';
-    if (type === 'success') {
-      setTimeout(hideAlert, 3500);
-    }
+    alertEl.textContent = mensagem;
+    alertEl.className = `form-alert show ${tipo}`;
+    if (tipo === 'success') setTimeout(hideAlert, 3500);
   }
 
   function hideAlert() {
-    if (!alertEl) return;
-    alertEl.style.display = 'none';
+    if (alertEl) alertEl.classList.remove('show');
   }
 
-  // ── Loading state ──
-  function setLoading(on) {
+  // ── Botão travado enquanto espera resposta ────
+  function setLoading(ligado) {
     if (!submitBtn) return;
-    const label = document.getElementById('btn-label');
-    const spin = document.getElementById('btn-spin');
-    submitBtn.disabled = on;
-    if (label) {
-      label.textContent = on
+    submitBtn.disabled = ligado;
+    if (btnLabel) {
+      btnLabel.textContent = ligado
         ? (isLogin ? 'Entrando...' : 'Cadastrando...')
-        : (isLogin ? 'Entrar no Jogo' : (perfilAtual() === 'PROFESSOR' ? 'Cadastrar Professor' : 'Cadastrar Aluno'));
+        : textoDoBotao();
     }
-    if (spin) spin.style.display = on ? 'inline-block' : 'none';
+    if (btnSpin) btnSpin.style.display = ligado ? 'block' : 'none';
   }
 
   function perfilAtual() {
@@ -126,11 +98,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return marcado ? marcado.value : 'ALUNO';
   }
 
-  // ── Validação de idade ─────────────────────
-  /**
-   * A idade é digitada livremente; a regra de negócio (7–18) mora aqui e
-   * precisa ser repetida no servidor — o `min`/`max` do HTML é só conveniência.
-   */
+  function textoDoBotao() {
+    if (isLogin) return 'Entrar no Jogo';
+    return perfilAtual() === 'PROFESSOR' ? 'Cadastrar Professor' : 'Cadastrar Aluno';
+  }
+
+  // ── Idade ─────────────────────────────────────
+  // A idade é digitada livremente. A regra dos 7 aos 18 mora aqui, e o banco
+  // repete a mesma regra do outro lado — nunca confie só na tela.
   function validarIdade(valor) {
     const bruto = String(valor ?? '').trim();
     if (!bruto) return { ok: false, msg: 'Informe sua idade.' };
@@ -143,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return { ok: true, idade };
   }
 
-  /** Faixa de missões liberada pela idade (missoes.nivel_etario) */
+  // A idade define quais missões o aluno vê.
   function nivelEtario(idade) {
     if (idade <= 10) return { nivel: 1, faixa: '7 a 10 anos' };
     if (idade <= 14) return { nivel: 2, faixa: '11 a 14 anos' };
@@ -159,17 +134,17 @@ document.addEventListener("DOMContentLoaded", () => {
   if (idadeInput) {
     idadeInput.addEventListener('input', () => {
       const bruto = idadeInput.value.trim();
-      if (!bruto) return setHint(idadeHint, '');
+      if (!bruto) { setHint(idadeHint, ''); return; }
 
       const r = validarIdade(bruto);
-      if (!r.ok) return setHint(idadeHint, r.msg, 'err');
+      if (!r.ok) { setHint(idadeHint, r.msg, 'err'); return; }
 
       const { nivel, faixa } = nivelEtario(r.idade);
       setHint(idadeHint, `Nível ${nivel} — missões de ${faixa}.`, 'ok');
     });
   }
 
-  // ── Cascata Escola → Turma ─────────────────
+  // ── Escola → Turma (lista que depende da outra) ──
 
   function opcaoPlaceholder(texto) {
     const opt = document.createElement('option');
@@ -192,16 +167,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /** Carrega a lista de escolas uma única vez, ao abrir o cadastro. */
+  // Carrega a lista de escolas uma vez só, ao abrir o cadastro.
   async function carregarEscolas() {
     if (escolasCarregadas) return;
     try {
       const escolas = await API.getEscolas();
 
       preencherSelect(selectEscolaAluno, escolas, 'Selecione a escola');
-      preencherSelect(selectEscolaProf, escolas, 'Selecione a escola');
+      preencherSelect(selectEscolaProf,  escolas, 'Selecione a escola');
 
-      // Só o professor pode cadastrar uma escola nova.
+      // Só o professor pode criar escola nova.
       if (selectEscolaProf) {
         const optNova = document.createElement('option');
         optNova.value = 'novo';
@@ -212,14 +187,12 @@ document.addEventListener("DOMContentLoaded", () => {
       escolasCarregadas = true;
     } catch (_) {
       preencherSelect(selectEscolaAluno, [], 'Não foi possível carregar as escolas');
-      preencherSelect(selectEscolaProf, [], 'Não foi possível carregar as escolas');
+      preencherSelect(selectEscolaProf,  [], 'Não foi possível carregar as escolas');
     }
   }
 
-  /**
-   * Segundo passo da cascata: as turmas só existem no contexto de uma escola
-   * (turmas.escola_id é FK obrigatória), por isso o select nasce desabilitado.
-   */
+  // Uma turma só existe dentro de uma escola. Por isso a lista de turmas
+  // começa desabilitada e só é preenchida depois que a escola é escolhida.
   async function carregarTurmas(escolaId) {
     if (!selectTurma) return;
 
@@ -246,13 +219,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (selectEscolaAluno) {
     selectEscolaAluno.addEventListener('change', () => {
-      // Trocar de escola invalida a turma escolhida antes — sem isso o form
-      // enviaria um turma_id que pertence a outra escola.
+      // Trocar de escola limpa a turma anterior. Sem isso o formulário
+      // enviaria uma turma que pertence a outra escola.
       carregarTurmas(selectEscolaAluno.value);
     });
   }
 
-  // ── Escola nova (professor) ────────────────
+  // ── Escola nova (só professor) ────────────────
   if (selectEscolaProf) {
     selectEscolaProf.addEventListener('change', () => {
       const criandoNova = selectEscolaProf.value === 'novo';
@@ -261,15 +234,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ── Vínculo por código da turma ────────────
-
-  /** Alterna entre "escolher escola e turma" e "digitar o código". */
+  // ── Código da turma ───────────────────────────
   function alternarModoTurma() {
     usandoCodigo = !usandoCodigo;
     turmaPorCodigo = null;
 
     if (modoSelecao) modoSelecao.classList.toggle('hidden', usandoCodigo);
-    if (modoCodigo) modoCodigo.classList.toggle('hidden', !usandoCodigo);
+    if (modoCodigo)  modoCodigo.classList.toggle('hidden', !usandoCodigo);
     if (btnModoTurma) {
       btnModoTurma.textContent = usandoCodigo
         ? 'Escolher escola e turma na lista'
@@ -291,18 +262,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnModoTurma) btnModoTurma.addEventListener('click', alternarModoTurma);
 
-  /** Resolve o código em uma turma real e mostra escola + turma para confirmação. */
+  // Descobre a turma a partir do código e mostra o nome para confirmação.
   async function resolverCodigo() {
     if (!codigoInput) return;
     const codigo = codigoInput.value.trim().toUpperCase();
     turmaPorCodigo = null;
 
-    if (!codigo) return setHint(codigoHint, 'Peça o código ao seu professor.');
+    if (!codigo) { setHint(codigoHint, 'Peça o código ao seu professor.'); return; }
 
     setHint(codigoHint, 'Procurando turma...');
     try {
       const turma = await API.getTurmaPorCodigo(codigo);
-      if (!turma) return setHint(codigoHint, 'Código não encontrado. Confira com seu professor.', 'err');
+      if (!turma) {
+        setHint(codigoHint, 'Código não encontrado. Confira com seu professor.', 'err');
+        return;
+      }
 
       turmaPorCodigo = turma;
       const escola = turma.escola_nome ? ` — ${turma.escola_nome}` : '';
@@ -313,33 +287,36 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (codigoInput) {
-    let debounce;
+    // Espera a pessoa parar de digitar antes de consultar, em vez de
+    // consultar a cada tecla.
+    let espera;
     codigoInput.addEventListener('input', () => {
       turmaPorCodigo = null;
-      clearTimeout(debounce);
-      debounce = setTimeout(resolverCodigo, 450);
+      clearTimeout(espera);
+      espera = setTimeout(resolverCodigo, 450);
     });
     codigoInput.addEventListener('blur', () => {
-      clearTimeout(debounce);
+      clearTimeout(espera);
       resolverCodigo();
     });
   }
 
-  // ── Validação geral ────────────────────────
-  function validarCredenciais(email, password) {
+  // ── Validação ─────────────────────────────────
+  function validarCredenciais(email, senha) {
     if (!email.trim()) return 'Informe seu e-mail.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'E-mail inválido.';
-    if (!password) return 'Informe sua senha.';
-    if (password.length < 6) return 'A senha deve ter pelo menos 6 caracteres.';
+    if (!senha) return 'Informe sua senha.';
+    if (senha.length < 6) return 'A senha deve ter pelo menos 6 caracteres.';
     return null;
   }
 
-  /** Monta o payload de cadastro ou devolve a primeira mensagem de erro. */
-  function montarCadastro(nome, email, password) {
-    if (!nome || !nome.trim()) return { erro: 'Informe seu nome completo.' };
+  // Junta os dados do cadastro, ou devolve a primeira mensagem de erro.
+  function montarCadastro(email, senha) {
+    const nome = nomeInput ? nomeInput.value.trim() : '';
+    if (!nome) return { erro: 'Informe seu nome completo.' };
 
     const tipo = perfilAtual();
-    const base = { nome: nome.trim(), email: email.trim(), password, tipo };
+    const base = { nome, email: email.trim(), password: senha, tipo };
 
     if (tipo === 'PROFESSOR') {
       const escola = selectEscolaProf ? selectEscolaProf.value : '';
@@ -348,8 +325,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (escola === 'novo') {
         const nomeEscola = novaEscolaInput ? novaEscolaInput.value.trim() : '';
         if (nomeEscola.length < 3) return { erro: 'Informe o nome da nova escola.' };
-        // A escola é criada pelo servidor na mesma transação do cadastro:
-        // criar antes deixaria escolas órfãs se o cadastro falhasse depois.
+        // A escola nova é criada junto com a conta, do outro lado. Criar antes
+        // deixaria escolas soltas no banco se o cadastro falhasse depois.
         return { dados: { ...base, escola_id: null, escola_nome: nomeEscola } };
       }
       return { dados: { ...base, escola_id: Number(escola) } };
@@ -369,42 +346,43 @@ document.addEventListener("DOMContentLoaded", () => {
       turmaId = Number(selectTurma.value);
     }
 
-    // escola_id não vai no payload do aluno: é derivável por turma_id -> turmas.escola_id.
+    // O aluno não envia a escola: ela se descobre pela turma.
     return { dados: { ...base, idade: r.idade, turma_id: turmaId } };
   }
 
-  // ── Alternância Login / Cadastro ───────────
-  if (toggleModeBtn) {
-    toggleModeBtn.addEventListener('click', (e) => {
+  // ── Alternar entre Login e Cadastro ───────────
+  function irParaCadastro() {
+    if (logoSub) logoSub.textContent = 'Crie sua conta para começar';
+    if (boxRole) boxRole.classList.remove('hidden');
+    if (boxNome) boxNome.classList.remove('hidden');
+    if (forgotRow) forgotRow.classList.add('hidden');
+    if (xpRow) xpRow.classList.add('hidden');
+    if (toggleText) toggleText.textContent = 'Já tem uma conta?';
+    if (registerBtn) registerBtn.textContent = 'Fazer login';
+
+    carregarEscolas();
+    alternarPerfil();
+  }
+
+  function irParaLogin() {
+    if (logoSub) logoSub.textContent = 'Sua missão de saúde começa aqui';
+    if (boxRole) boxRole.classList.add('hidden');
+    if (boxNome) boxNome.classList.add('hidden');
+    if (boxAluno) boxAluno.classList.add('hidden');
+    if (boxProfessor) boxProfessor.classList.add('hidden');
+    if (forgotRow) forgotRow.classList.remove('hidden');
+    if (xpRow) xpRow.classList.remove('hidden');
+    if (toggleText) toggleText.textContent = 'Novo herói?';
+    if (registerBtn) registerBtn.textContent = 'Criar conta gratuita';
+    if (btnLabel) btnLabel.textContent = 'Entrar no Jogo';
+  }
+
+  if (registerBtn) {
+    registerBtn.addEventListener('click', (e) => {
       e.preventDefault();
       isLogin = !isLogin;
       hideAlert();
-
-      if (!isLogin) {
-        logoSub.innerText = "Crie sua conta para começar";
-        boxRole.classList.remove('hidden');
-        boxNome.classList.remove('hidden');
-        forgotRow.classList.add('hidden');
-        xpBadge.classList.add('hidden');
-
-        toggleText.innerText = "Já tem uma conta?";
-        toggleModeBtn.innerText = "Fazer login";
-
-        carregarEscolas();
-        alternarPerfil();
-      } else {
-        logoSub.innerText = "Sua missão de saúde começa aqui";
-        boxRole.classList.add('hidden');
-        boxNome.classList.add('hidden');
-        boxAluno.classList.add('hidden');
-        boxProfessor.classList.add('hidden');
-        forgotRow.classList.remove('hidden');
-        xpBadge.classList.remove('hidden');
-
-        btnLabel.innerText = "Entrar no Jogo";
-        toggleText.innerText = "Novo herói?";
-        toggleModeBtn.innerText = "Criar conta gratuita";
-      }
+      if (isLogin) irParaLogin(); else irParaCadastro();
     });
   }
 
@@ -413,35 +391,28 @@ document.addEventListener("DOMContentLoaded", () => {
   function alternarPerfil() {
     if (isLogin) return;
     const ehAluno = perfilAtual() === 'ALUNO';
-    boxAluno.classList.toggle('hidden', !ehAluno);
-    boxProfessor.classList.toggle('hidden', ehAluno);
-    btnLabel.innerText = ehAluno ? "Cadastrar Aluno" : "Cadastrar Professor";
+    if (boxAluno) boxAluno.classList.toggle('hidden', !ehAluno);
+    if (boxProfessor) boxProfessor.classList.toggle('hidden', ehAluno);
+    if (btnLabel) btnLabel.textContent = textoDoBotao();
   }
 
-  // ── Submit Unificado (Login & Cadastro) ──
-  if (mainForm) {
-    mainForm.addEventListener('submit', async (e) => {
+  // ── Envio do formulário ───────────────────────
+  if (form) {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideAlert();
 
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const nomeInput = document.getElementById('nome');
-      const nome = nomeInput ? nomeInput.value : '';
+      const email = emailInput ? emailInput.value : '';
+      const senha = passInput ? passInput.value : '';
 
-      const erroCredenciais = validarCredenciais(email, password);
-      if (erroCredenciais) {
-        showAlert(erroCredenciais, 'error');
-        return;
-      }
+      const erroCredenciais = validarCredenciais(email, senha);
+      if (erroCredenciais) { showAlert(erroCredenciais, 'error'); return; }
 
+      // No cadastro, valida tudo ANTES de travar o botão.
       let dadosCadastro = null;
       if (!isLogin) {
-        const { erro, dados } = montarCadastro(nome, email, password);
-        if (erro) {
-          showAlert(erro, 'error');
-          return;
-        }
+        const { erro, dados } = montarCadastro(email, senha);
+        if (erro) { showAlert(erro, 'error'); return; }
         dadosCadastro = dados;
       }
 
@@ -450,31 +421,28 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         if (isLogin) {
           if (typeof AUTH !== 'undefined' && typeof AUTH.login === 'function') {
-            const result = await AUTH.login(email, password);
-            if (result.ok) {
+            const r = await AUTH.login(email, senha);
+            if (r.ok) {
               showAlert('Bem-vindo, Herói! 🎉', 'success');
               setTimeout(() => { window.location.href = 'mapa.html'; }, 1100);
             } else {
-              showAlert(result.message || 'E-mail ou senha incorretos.', 'error');
+              showAlert(r.message || 'E-mail ou senha incorretos.', 'error');
             }
           } else {
-            await new Promise(r => setTimeout(r, 1200));
-            showAlert('Bem-vindo, Herói! 🎉', 'success');
-            setTimeout(() => { window.location.href = 'mapa.html'; }, 1100);
+            // Ainda não existe ninguém para autenticar de verdade.
+            showAlert('O login ainda não está ligado ao Supabase.', 'error');
           }
         } else {
           if (typeof AUTH !== 'undefined' && typeof AUTH.register === 'function') {
-            const result = await AUTH.register(dadosCadastro);
-            if (result.ok) {
+            const r = await AUTH.register(dadosCadastro);
+            if (r.ok) {
               showAlert('Conta criada com sucesso! Redirecionando...', 'success');
               setTimeout(() => { window.location.href = 'mapa.html'; }, 1100);
             } else {
-              showAlert(result.message || 'Erro ao realizar cadastro.', 'error');
+              showAlert(r.message || 'Erro ao realizar cadastro.', 'error');
             }
           } else {
-            await new Promise(r => setTimeout(r, 1400));
-            showAlert('Conta criada com sucesso! Bem-vindo ao jogo! 🚀', 'success');
-            setTimeout(() => { window.location.href = 'mapa.html'; }, 1100);
+            showAlert('O cadastro ainda não está ligado ao Supabase.', 'error');
           }
         }
       } catch (_) {
@@ -485,15 +453,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ── Esqueci senha ──
-  const forgotBtn = document.querySelector('#forgot-row .forgot-link');
+  // ── Esqueci minha senha ───────────────────────
   if (forgotBtn) {
     forgotBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value.trim();
+      const email = emailInput ? emailInput.value.trim() : '';
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         showAlert('Digite seu e-mail primeiro para recuperar a senha.', 'error');
-        document.getElementById('email').focus();
+        if (emailInput) emailInput.focus();
         return;
       }
       showAlert(`Link de recuperação enviado para ${email}!`, 'success');

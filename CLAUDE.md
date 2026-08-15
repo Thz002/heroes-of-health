@@ -8,51 +8,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 O idioma do projeto é **português (pt-BR)**: nomes de tabelas, colunas, variáveis, rotas e textos de UI seguem o português (`usuarios`, `missoes`, `resposta_correta`, `acertou`). Mantenha essa convenção em qualquer código novo.
 
+## Arquitetura — decidida
+
+**Front-end estático + Supabase.** Páginas `.html` soltas em `src/pages/`, JavaScript puro em `src/js/`, e o navegador conversa **direto** com o Supabase. Não há servidor próprio, e não deve ser criado sem alinhar antes.
+
+**O banco é PostgreSQL** (Supabase), não MySQL. Qualquer DDL novo precisa ser escrito em dialeto PostgreSQL. As dependências `express`, `ejs`, `mysql2` e `express-session` continuam no `package.json` mas são resquício da arquitetura antiga — não use.
+
+A fonte da verdade do banco é o projeto no dashboard do Supabase. Os arquivos em `db/` são o registro escrito dele.
+
 ## Estado atual do repositório
 
-**O projeto ainda é um esqueleto.** Todos os arquivos abaixo existem mas estão **vazios (0 bytes)**:
+Implementado:
 
-- `src/pages/index.html`, `src/pages/mapa.html`, `src/pages/missao.html`
+- `src/pages/index.html` — tela única de login e cadastro, com escola → turma em cascata e entrada por código de turma
+- `src/js/supabase.js` — conexão única (`SUPA`) e autenticação (`AUTH`)
+- `src/js/api.js` — camada de dados; as funções de escola/turma falam direto com o Supabase
+- `src/js/auth.js` — controle da tela de login/cadastro
 - `src/css/style.css`
-- `src/js/api.js`, `src/js/auth.js`, `src/js/quiz.js`, `src/js/mapa.js`
-- `db/schema.sql`, `.env`, `.gitignore`
-- `docs/` (diretório vazio)
+- `db/schema.sql` (PostgreSQL), `db/seed.sql`, `db/migracao-01-usuarios-auth.sql`, `db/migracao-02-seguranca.sql`
 
-Não existe `server.js`, nem `routes/`, `controllers/`, `views/`, `db/seed.sql` ou `.env.example`. As dependências já estão instaladas em `node_modules/`.
+Ainda vazios: `src/pages/mapa.html`, `src/pages/missao.html`, `src/pages/dashboard.html`, `src/js/quiz.js`, `src/js/mapa.js`, `docs/personas.md`, `docs/user-story-map.md`.
 
-O [README.md](README.md) é a **especificação** do sistema, não a descrição do que existe. Trate-o como fonte da verdade para schema, regras de negócio e escopo — e confirme na árvore de arquivos antes de assumir que algo foi implementado.
+O [README.md](README.md) é a **especificação** original e está desatualizado em relação à arquitetura: ele descreve Express + EJS + MySQL. Use-o para regras de negócio e escopo, não para stack nem para DDL.
 
-## Ambiguidade de arquitetura a resolver
+## Autenticação
 
-O README se contradiz e isso muda materialmente o que deve ser escrito. Antes de implementar a camada de dados ou as telas, alinhe com o usuário:
+Quem guarda a senha é o **Supabase Auth**, na tabela interna `auth.users`. A tabela `usuarios` é um **perfil**: sua chave primária é um `uuid` que referencia `auth.users(id)`, e ela **não tem colunas `senha` nem `email`**. Não reintroduza essas colunas nem `bcryptjs`.
 
-| Fonte | Arquitetura descrita |
-|---|---|
-| Cabeçalho + §2 + §6 do README, e as dependências instaladas | Monolito **MVC server-side**: Express + EJS (`routes/`, `controllers/`, `views/`), MySQL via `mysql2`, sessão via `express-session`, `npx nodemon server.js` |
-| §4 do README e os arquivos já criados em `src/` | **Front-end estático**: páginas `.html` soltas, `src/js/supabase.js` como cliente único, Tailwind |
+Consequência prática: `auth.uid()` identifica quem está logado, e é isso que faz o **RLS (Row Level Security)** funcionar. Toda tabela nova precisa de RLS ligado e políticas explícitas — sem isso ela fica aberta a qualquer visitante com a chave publishable.
 
-A stack instalada (`express`, `ejs`, `mysql2`, `express-session`, `bcryptjs`) só sustenta a primeira opção — **não há Supabase nem Tailwind no `package.json`**, e o cabeçalho do README diz Bootstrap, não Tailwind. Assuma MVC com Express + EJS + MySQL a menos que o usuário diga o contrário, e não introduza Supabase.
+`escolas` e `turmas` são legíveis por `anon` de propósito: o aluno escolhe a escola **antes** de ter conta.
+
+## Chaves e ambiente
+
+O `.env` guarda `SUPABASE_URL` e `SUPABASE_ANON_KEY`, e está no `.gitignore`. Mas páginas estáticas não leem `.env` — a URL e a chave **publishable** ficam no topo de `src/js/supabase.js`, o que é o uso correto (essa chave é pública por design).
+
+**Nunca** coloque a chave `sb_secret_` em nenhum arquivo do front-end. O Supabase bloqueia o uso dela no navegador, e ela dá acesso irrestrito ao banco.
 
 ## Comandos
 
-Não há scripts npm úteis definidos (`npm test` apenas falha com `exit 1`). O README documenta:
+Não há build nem servidor. As páginas abrem direto no navegador (`file://`), e a biblioteca do Supabase é carregada de `node_modules/@supabase/supabase-js/dist/umd/supabase.js`.
 
-```bash
-npm install                      # dependências já constam no package.json
-npx nodemon server.js            # dev server, http://localhost:3000
-```
-
-O `db/schema.sql` está vazio; o DDL completo vive na §3 do README e precisa ser copiado para lá antes de importar no MySQL (Workbench, phpMyAdmin ou `mysql -u root -p < db/schema.sql`).
-
-Variáveis de `.env` esperadas: `PORT`, `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME`, `SESSION_SECRET`.
-
-O `.gitignore` está vazio e o repositório ainda não é um repo git — `node_modules/` e `.env` precisam ser ignorados antes do primeiro commit.
+Os arquivos de `db/` rodam no **SQL Editor** do dashboard do Supabase, nesta ordem em um projeto novo: `schema.sql` → `migracao-02-seguranca.sql` → `seed.sql`. Num banco já existente, escreva uma migração nova em vez de rodar o `schema.sql`.
 
 ## Modelo de domínio
 
 Onze tabelas (DDL na §3 do README), organizadas em três eixos:
 
-- **Institucional:** `escolas` → `turmas` → `usuarios` (ENUM `tipo`: ALUNO / PROFESSOR / ADMIN; senha com `bcryptjs`).
+- **Institucional:** `escolas` → `turmas` → `usuarios` (`tipo` com check: ALUNO / PROFESSOR / ADMIN). `turmas` tem `codigo` (o código curto que o professor entrega à sala) e `professor_id`. `usuarios.escola_id` só é preenchido para PROFESSOR; para ALUNO a escola se deriva de `turma_id → turmas.escola_id`.
 - **Conteúdo do jogo:** `cenarios` (pontos do bairro, identificados por `slug`: `ubs`, `mercado`, `farmacia`, `escola`…) → `missoes` (com `nivel_etario` 1–3 e flag `eh_especial`) → `questoes` (múltipla escolha A–D + `explicacao`).
 - **Progresso do aluno:** `progresso_areas` (única por `usuario_id` + `area_nome`), `respostas_alunos` (histórico), `pacientes_virtuais` (1:1 com o aluno), `quizzes_professores` (quizzes ao vivo estilo Kahoot, com `tempo_limite_segundos`).
 

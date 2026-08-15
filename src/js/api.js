@@ -176,51 +176,99 @@ const API = (() => {
   }
 
   // ── Escolas e Turmas ───────────────────────
+  //
+  // Estas quatro funções falam DIRETO com o Supabase, e não com o servidor
+  // REST das funções acima (que ainda não existe).
+  //
+  // Repare que elas NÃO caem nos dados de mentira quando dá erro. Isso é de
+  // propósito: se o banco falhar, você precisa VER o erro. Um fallback aqui
+  // faria toda falha parecer sucesso, que é o pior tipo de bug para achar.
 
-  /** Lista todas as escolas cadastradas (para popular o select) */
+  /** true quando o supabase.js foi carregado antes deste arquivo */
+  function temSupabase() {
+    return typeof SUPA !== 'undefined' && SUPA !== null;
+  }
+
+  /** Lista todas as escolas cadastradas, para preencher a lista suspensa */
   async function getEscolas() {
-    try {
-      return await get('/escolas');
-    } catch (_) {
-      return MOCK.escolas;
-    }
+    if (!temSupabase()) return MOCK.escolas;
+
+    const { data, error } = await SUPA
+      .from('escolas')
+      .select('id, nome')
+      .order('nome');
+
+    if (error) throw buildError(500, error.message, error);
+    return data;
   }
 
   /**
-   * Lista as turmas de UMA escola. É o segundo passo da cascata:
-   * o aluno escolhe a escola e só então as turmas dela são carregadas.
+   * Lista as turmas de UMA escola. É o segundo passo da cascata: o aluno
+   * escolhe a escola e só então as turmas dela são carregadas.
    */
   async function getTurmasPorEscola(escolaId) {
     if (!escolaId) return [];
-    try {
-      return await get(`/escolas/${encodeURIComponent(escolaId)}/turmas`);
-    } catch (_) {
+    if (!temSupabase()) {
       return MOCK.turmas.filter(t => String(t.escola_id) === String(escolaId));
     }
+
+    const { data, error } = await SUPA
+      .from('turmas')
+      .select('id, nome')
+      .eq('escola_id', escolaId)
+      .order('nome');
+
+    if (error) throw buildError(500, error.message, error);
+    return data;
   }
 
   /**
-   * Resolve um código de turma (ex: '7B-K3M9') em { id, nome, escola_id, escola_nome }.
-   * Retorna null quando o código não existe.
+   * Descobre a turma a partir do código curto (ex: '7B-K3M9').
+   * Devolve null quando o código não existe.
    */
   async function getTurmaPorCodigo(codigo) {
     const limpo = String(codigo || '').trim().toUpperCase();
     if (!limpo) return null;
-    try {
-      return await get(`/turmas/codigo/${encodeURIComponent(limpo)}`);
-    } catch (err) {
-      if (err.status === 404) return null;
-      // Sem servidor: resolve pelo mock para o fluxo continuar demonstrável
-      const turma = MOCK.turmas.find(t => t.codigo === limpo);
-      if (!turma) return null;
-      const escola = MOCK.escolas.find(e => e.id === turma.escola_id);
-      return { ...turma, escola_nome: escola ? escola.nome : '' };
+
+    if (!temSupabase()) {
+      const t = MOCK.turmas.find(x => x.codigo === limpo);
+      if (!t) return null;
+      const e = MOCK.escolas.find(x => x.id === t.escola_id);
+      return { ...t, escola_nome: e ? e.nome : '' };
     }
+
+    // "escolas ( nome )" traz junto o nome da escola dona da turma,
+    // numa consulta só, para poder mostrar "7º Ano B — Colégio Santa Maria".
+    const { data, error } = await SUPA
+      .from('turmas')
+      .select('id, nome, escola_id, escolas ( nome )')
+      .eq('codigo', limpo)
+      .maybeSingle();
+
+    if (error) throw buildError(500, error.message, error);
+    if (!data) return null;
+
+    return {
+      id: data.id,
+      nome: data.nome,
+      escola_id: data.escola_id,
+      escola_nome: data.escolas ? data.escolas.nome : ''
+    };
   }
 
-  /** Cria uma escola nova (usado no cadastro do professor) */
+  /** Cria uma escola nova. Exige estar logado (ver regras de segurança do banco). */
   async function criarEscola(nome) {
-    return post('/escolas', { nome: String(nome || '').trim() });
+    const limpo = String(nome || '').trim();
+    if (!temSupabase()) throw buildError(0, 'Supabase não está carregado.');
+
+    const { data, error } = await SUPA
+      .from('escolas')
+      .insert({ nome: limpo })
+      .select('id, nome')
+      .single();
+
+    if (error) throw buildError(500, error.message, error);
+    return data;
   }
 
   // ── Dados mock (modo offline) ──────────────
@@ -232,9 +280,9 @@ const API = (() => {
     ],
 
     turmas: [
-      { id: 1, escola_id: 1, nome: '6º Ano A', codigo: '6A-P2LT' },
-      { id: 2, escola_id: 1, nome: '7º Ano B', codigo: '7B-K3M9' },
-      { id: 3, escola_id: 2, nome: '8º Ano C', codigo: '8C-W7QX' },
+      { id: 1, escola_id: 1, nome: '6º Ano A',              codigo: '6A-P2LT' },
+      { id: 2, escola_id: 1, nome: '7º Ano B',              codigo: '7B-K3M9' },
+      { id: 3, escola_id: 2, nome: '8º Ano C',              codigo: '8C-W7QX' },
       { id: 4, escola_id: 3, nome: '1º Ano — Ensino Médio', codigo: '1EM-Z4RB' },
     ],
 

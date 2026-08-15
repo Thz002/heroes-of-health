@@ -1,134 +1,188 @@
--- ESQUEMA DO BANCO DE DADOS DO PROJETO
+-- =====================================================================
+--  ESQUEMA DO BANCO — Heróis da Saúde
+--
+--  Banco: PostgreSQL, hospedado no Supabase.
+--  (A versão anterior deste arquivo estava escrita em MySQL e não rodava
+--   no Supabase. Foi reescrita.)
+--
+--  Este arquivo descreve o banco COMO ELE É HOJE, depois das migrações
+--  01 e 02. Serve para alguém recriar tudo do zero num projeto novo do
+--  Supabase, na ordem certa:
+--
+--     1. este arquivo        -> cria as tabelas
+--     2. migracao-02-seguranca.sql -> liga as regras de segurança
+--     3. seed.sql            -> coloca escolas, turmas e cenários
+--
+--  Se o seu banco JÁ existe, não rode este arquivo: ele é o retrato, não
+--  o comando. Para mudanças em banco existente, escreva uma migração nova.
+--
+--  Onde rodar: painel do Supabase -> SQL Editor
+-- =====================================================================
 
 
+-- ── Institucional ────────────────────────────────────────────────────
 
-CREATE DATABASE IF NOT EXISTS herois_da_saude DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE herois_da_saude;
-
--- Tabela de Escolas
-CREATE TABLE IF NOT EXISTS escolas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    -- UNIQUE porque quem cadastra escola é o professor: sem isso o banco
-    -- encheria de duplicatas ('Santa Maria', 'Colegio Santa Maria', ...).
-    nome VARCHAR(150) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+create table if not exists escolas (
+  id bigint primary key generated always as identity,
+  -- UNIQUE porque quem cadastra escola é o professor: sem isso o banco
+  -- encheria de duplicatas ('Santa Maria', 'Colegio Santa Maria', ...).
+  nome varchar(150) not null unique,
+  created_at timestamptz not null default now()
 );
 
--- Tabela de Turmas
-CREATE TABLE IF NOT EXISTS turmas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(50) NOT NULL, -- Ex: '7º Ano B'
-    escola_id INT NOT NULL,
-    -- Código curto gerado no cadastro da turma (ex: '7B-K3M9'). O professor
-    -- entrega esse código à sala e o aluno entra direto na turma certa,
-    -- sem precisar percorrer a cascata escola -> turma.
-    codigo VARCHAR(12) UNIQUE NULL,
-    professor_id INT NULL, -- quem criou a turma
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (escola_id) REFERENCES escolas(id) ON DELETE CASCADE,
-    UNIQUE KEY uq_turma_por_escola (escola_id, nome)
+create table if not exists turmas (
+  id bigint primary key generated always as identity,
+  nome varchar(50) not null,                   -- ex: '7º Ano B'
+  escola_id bigint not null references escolas(id) on delete cascade,
+
+  -- Código curto que o professor entrega para a sala (ex: '7B-K3M9').
+  -- O aluno digita só isso no cadastro e entra direto na turma certa,
+  -- sem precisar percorrer a lista de escolas.
+  codigo varchar(12) unique,
+
+  -- Quem criou a turma. Vira NULL se o professor for removido.
+  -- A ligação com usuarios é feita mais abaixo, porque usuarios ainda
+  -- não existe neste ponto do arquivo.
+  professor_id uuid,
+
+  created_at timestamptz not null default now(),
+
+  -- Não existem duas turmas com o mesmo nome dentro da mesma escola.
+  -- Em escolas diferentes pode repetir à vontade.
+  unique (escola_id, nome)
 );
 
--- Tabela de Usuários (Alunos e Professores)
-CREATE TABLE IF NOT EXISTS usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    tipo ENUM('ALUNO', 'PROFESSOR', 'ADMIN') DEFAULT 'ALUNO',
-    idade INT NULL, -- 7 a 18; define o nivel_etario das missões liberadas
-    -- ALUNO: fica NULL. A escola dele é derivada por turma_id -> turmas.escola_id.
-    -- PROFESSOR: escola onde atua, definida no cadastro.
-    escola_id INT NULL,
-    turma_id INT NULL, -- preenchido apenas para ALUNO
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (escola_id) REFERENCES escolas(id) ON DELETE SET NULL,
-    FOREIGN KEY (turma_id) REFERENCES turmas(id) ON DELETE SET NULL,
-    CONSTRAINT chk_idade CHECK (idade IS NULL OR idade BETWEEN 7 AND 18)
+
+-- ── Pessoas ──────────────────────────────────────────────────────────
+
+create table if not exists usuarios (
+  -- O identificador NÃO é inventado por esta tabela: é o mesmo que o
+  -- Supabase cria quando a pessoa faz o cadastro de login.
+  --
+  -- "references auth.users(id)" amarra os dois: fica impossível existir
+  -- alguém no jogo que não consegue entrar.
+  id uuid primary key references auth.users(id) on delete cascade,
+
+  nome varchar(100) not null,
+
+  -- Não existe coluna "senha" nem "email" aqui, de propósito: as duas
+  -- vivem do lado do Supabase, junto com o login. Guardar senha em dois
+  -- lugares é justamente o erro que este desenho evita.
+
+  tipo text not null default 'ALUNO'
+       check (tipo in ('ALUNO', 'PROFESSOR', 'ADMIN')),
+
+  -- O jogo só tem missões de 7 a 18 anos. O check faz o próprio banco
+  -- recusar valores fora disso, mesmo que a tela deixe passar.
+  idade int check (idade between 7 and 18),
+
+  -- ALUNO deixa em branco: a escola dele se descobre pela turma.
+  -- PROFESSOR preenche com a escola onde trabalha.
+  escola_id bigint references escolas(id) on delete set null,
+
+  -- Só o ALUNO preenche.
+  turma_id bigint references turmas(id) on delete set null,
+
+  created_at timestamptz not null default now()
 );
 
--- Tabela de Progresso por Área Temática do Jogo
-CREATE TABLE IF NOT EXISTS progresso_areas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    area_nome VARCHAR(50) NOT NULL, -- Saúde, Educação, Vacinação, Vetores, Limpeza, Alimentação, Exercícios, Felicidade
-    porcentagem FLOAT DEFAULT 0.0,
-    pontos INT DEFAULT 0,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-    UNIQUE KEY uq_usuario_area (usuario_id, area_nome)
+-- A ligação turmas -> usuarios fica aqui porque as duas tabelas dependem
+-- uma da outra: turmas precisa apontar para o professor, e usuarios
+-- precisa apontar para a turma. Uma das duas tem que vir depois.
+alter table turmas
+  drop constraint if exists turmas_professor_fk;
+
+alter table turmas
+  add constraint turmas_professor_fk
+  foreign key (professor_id) references usuarios(id) on delete set null;
+
+
+-- ── Conteúdo do jogo ─────────────────────────────────────────────────
+
+-- Os pontos do bairro que aparecem no mapa.
+create table if not exists cenarios (
+  id bigint primary key generated always as identity,
+  slug varchar(50) not null unique,   -- 'ubs', 'mercado', 'farmacia', 'escola'...
+  nome varchar(100) not null,
+  descricao text not null
 );
 
--- Tabela de Cenários do Mapa (Bairro)
-CREATE TABLE IF NOT EXISTS cenarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    slug VARCHAR(50) UNIQUE NOT NULL, -- ex: 'ubs', 'mercado', 'farmacia', 'escola'
-    nome VARCHAR(100) NOT NULL,
-    descricao TEXT NOT NULL
+create table if not exists missoes (
+  id bigint primary key generated always as identity,
+  cenario_id bigint not null references cenarios(id) on delete cascade,
+  titulo varchar(150) not null,
+  descricao text not null,
+
+  -- Faixa etária da missão, comparada com usuarios.idade:
+  --   1 = 7 a 10 anos, 2 = 11 a 14 anos, 3 = 15 a 18 anos
+  nivel_etario int not null default 1 check (nivel_etario between 1 and 3),
+
+  eh_especial boolean not null default false
 );
 
--- Tabela de Missões do Jogo
-CREATE TABLE IF NOT EXISTS missoes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    cenario_id INT NOT NULL,
-    titulo VARCHAR(150) NOT NULL,
-    descricao TEXT NOT NULL,
-    nivel_etario INT NOT NULL DEFAULT 1, -- 1 (7-10 anos), 2 (11-14 anos), 3 (15-18 anos)
-    eh_especial BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (cenario_id) REFERENCES cenarios(id) ON DELETE CASCADE
+create table if not exists questoes (
+  id bigint primary key generated always as identity,
+  missao_id bigint not null references missoes(id) on delete cascade,
+  enunciado text not null,
+  opcao_a varchar(255) not null,
+  opcao_b varchar(255) not null,
+  opcao_c varchar(255) not null,
+  opcao_d varchar(255) not null,
+  resposta_correta char(1) not null check (resposta_correta in ('A','B','C','D')),
+
+  -- Texto educativo mostrado depois da resposta, escrito pela equipe de
+  -- Medicina. Aparece também quando o aluno erra, em tom de incentivo.
+  explicacao text not null
 );
 
--- Tabela de Questões/Perguntas
-CREATE TABLE IF NOT EXISTS questoes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    missao_id INT NOT NULL,
-    enunciado TEXT NOT NULL,
-    opcao_a VARCHAR(255) NOT NULL,
-    opcao_b VARCHAR(255) NOT NULL,
-    opcao_c VARCHAR(255) NOT NULL,
-    opcao_d VARCHAR(255) NOT NULL,
-    resposta_correta CHAR(1) NOT NULL, -- 'A', 'B', 'C' ou 'D'
-    explicacao TEXT NOT NULL, -- Feedback educativo após responder
-    FOREIGN KEY (missao_id) REFERENCES missoes(id) ON DELETE CASCADE
+
+-- ── Progresso do aluno ───────────────────────────────────────────────
+
+-- As 8 barras fixas: Saúde, Educação, Vacinação, Vetores, Limpeza,
+-- Alimentação, Exercícios e Felicidade.
+create table if not exists progresso_areas (
+  id bigint primary key generated always as identity,
+  usuario_id uuid not null references usuarios(id) on delete cascade,
+  area_nome varchar(50) not null,
+  porcentagem real default 0,
+  pontos int default 0,
+  unique (usuario_id, area_nome)
 );
 
--- Tabela de Histórico de Respostas dos Alunos
-CREATE TABLE IF NOT EXISTS respostas_alunos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    questao_id INT NOT NULL,
-    acertou BOOLEAN NOT NULL,
-    data_resposta TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-    FOREIGN KEY (questao_id) REFERENCES questoes(id) ON DELETE CASCADE
+create table if not exists respostas_alunos (
+  id bigint primary key generated always as identity,
+  usuario_id uuid not null references usuarios(id) on delete cascade,
+  questao_id bigint not null references questoes(id) on delete cascade,
+  acertou boolean not null,
+  data_resposta timestamptz not null default now()
 );
 
--- Tabela do Paciente Virtual
-CREATE TABLE IF NOT EXISTS pacientes_virtuais (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT UNIQUE NOT NULL,
-    nome_paciente VARCHAR(100) NOT NULL,
-    idade_paciente INT NOT NULL,
-    estado_saude VARCHAR(100) DEFAULT 'Estável',
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+-- Um paciente por aluno. O estado_saude evolui conforme ele avança nas
+-- missões da UBS e da Farmácia.
+create table if not exists pacientes_virtuais (
+  id bigint primary key generated always as identity,
+  usuario_id uuid unique not null references usuarios(id) on delete cascade,
+  nome_paciente varchar(100) not null,
+  idade_paciente int not null,
+  estado_saude varchar(100) default 'Estável'
 );
 
--- Tabela de Quizzes Customizados criados pelo Professor
-CREATE TABLE IF NOT EXISTS quizzes_professores (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    turma_id INT NOT NULL,
-    professor_id INT NOT NULL,
-    titulo VARCHAR(150) NOT NULL,
-    tempo_limite_segundos INT DEFAULT 15,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (turma_id) REFERENCES turmas(id) ON DELETE CASCADE,
-    FOREIGN KEY (professor_id) REFERENCES usuarios(id) ON DELETE CASCADE
+-- Quizzes ao vivo que o professor monta para a turma, estilo Kahoot.
+create table if not exists quizzes_professores (
+  id bigint primary key generated always as identity,
+  turma_id bigint not null references turmas(id) on delete cascade,
+  professor_id uuid not null references usuarios(id) on delete cascade,
+  titulo varchar(150) not null,
+  tempo_limite_segundos int default 15,
+  created_at timestamptz not null default now()
 );
 
--- A FK de turmas.professor_id é criada aqui porque `turmas` é declarada antes
--- de `usuarios` (usuarios.turma_id depende de turmas) — a dependência é circular.
--- Atenção: ao reimportar este arquivo em um banco já criado, esta linha falha
--- com "Duplicate foreign key constraint name". É esperado; ignore ou rode
--- ALTER TABLE turmas DROP FOREIGN KEY fk_turma_professor; antes.
-ALTER TABLE turmas
-    ADD CONSTRAINT fk_turma_professor
-    FOREIGN KEY (professor_id) REFERENCES usuarios(id) ON DELETE SET NULL;
+
+-- =====================================================================
+--  IMPORTANTE: as regras de segurança NÃO estão neste arquivo.
+--
+--  Criar as tabelas deixa todas elas ABERTAS — qualquer pessoa com a
+--  chave pública consegue ler e escrever pelo navegador. Quem tranca é
+--  o arquivo migracao-02-seguranca.sql, que precisa ser rodado logo
+--  depois deste.
+-- =====================================================================
