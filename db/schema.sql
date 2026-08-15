@@ -8,7 +8,9 @@ USE herois_da_saude;
 -- Tabela de Escolas
 CREATE TABLE IF NOT EXISTS escolas (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(150) NOT NULL,
+    -- UNIQUE porque quem cadastra escola é o professor: sem isso o banco
+    -- encheria de duplicatas ('Santa Maria', 'Colegio Santa Maria', ...).
+    nome VARCHAR(150) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -17,8 +19,14 @@ CREATE TABLE IF NOT EXISTS turmas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(50) NOT NULL, -- Ex: '7º Ano B'
     escola_id INT NOT NULL,
+    -- Código curto gerado no cadastro da turma (ex: '7B-K3M9'). O professor
+    -- entrega esse código à sala e o aluno entra direto na turma certa,
+    -- sem precisar percorrer a cascata escola -> turma.
+    codigo VARCHAR(12) UNIQUE NULL,
+    professor_id INT NULL, -- quem criou a turma
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (escola_id) REFERENCES escolas(id) ON DELETE CASCADE
+    FOREIGN KEY (escola_id) REFERENCES escolas(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_turma_por_escola (escola_id, nome)
 );
 
 -- Tabela de Usuários (Alunos e Professores)
@@ -28,10 +36,15 @@ CREATE TABLE IF NOT EXISTS usuarios (
     email VARCHAR(100) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL,
     tipo ENUM('ALUNO', 'PROFESSOR', 'ADMIN') DEFAULT 'ALUNO',
-    idade INT NULL,
-    turma_id INT NULL,
+    idade INT NULL, -- 7 a 18; define o nivel_etario das missões liberadas
+    -- ALUNO: fica NULL. A escola dele é derivada por turma_id -> turmas.escola_id.
+    -- PROFESSOR: escola onde atua, definida no cadastro.
+    escola_id INT NULL,
+    turma_id INT NULL, -- preenchido apenas para ALUNO
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (turma_id) REFERENCES turmas(id) ON DELETE SET NULL
+    FOREIGN KEY (escola_id) REFERENCES escolas(id) ON DELETE SET NULL,
+    FOREIGN KEY (turma_id) REFERENCES turmas(id) ON DELETE SET NULL,
+    CONSTRAINT chk_idade CHECK (idade IS NULL OR idade BETWEEN 7 AND 18)
 );
 
 -- Tabela de Progresso por Área Temática do Jogo
@@ -110,3 +123,12 @@ CREATE TABLE IF NOT EXISTS quizzes_professores (
     FOREIGN KEY (turma_id) REFERENCES turmas(id) ON DELETE CASCADE,
     FOREIGN KEY (professor_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
+
+-- A FK de turmas.professor_id é criada aqui porque `turmas` é declarada antes
+-- de `usuarios` (usuarios.turma_id depende de turmas) — a dependência é circular.
+-- Atenção: ao reimportar este arquivo em um banco já criado, esta linha falha
+-- com "Duplicate foreign key constraint name". É esperado; ignore ou rode
+-- ALTER TABLE turmas DROP FOREIGN KEY fk_turma_professor; antes.
+ALTER TABLE turmas
+    ADD CONSTRAINT fk_turma_professor
+    FOREIGN KEY (professor_id) REFERENCES usuarios(id) ON DELETE SET NULL;

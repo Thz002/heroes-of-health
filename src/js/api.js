@@ -175,8 +175,69 @@ const API = (() => {
     }
   }
 
+  // ── Escolas e Turmas ───────────────────────
+
+  /** Lista todas as escolas cadastradas (para popular o select) */
+  async function getEscolas() {
+    try {
+      return await get('/escolas');
+    } catch (_) {
+      return MOCK.escolas;
+    }
+  }
+
+  /**
+   * Lista as turmas de UMA escola. É o segundo passo da cascata:
+   * o aluno escolhe a escola e só então as turmas dela são carregadas.
+   */
+  async function getTurmasPorEscola(escolaId) {
+    if (!escolaId) return [];
+    try {
+      return await get(`/escolas/${encodeURIComponent(escolaId)}/turmas`);
+    } catch (_) {
+      return MOCK.turmas.filter(t => String(t.escola_id) === String(escolaId));
+    }
+  }
+
+  /**
+   * Resolve um código de turma (ex: '7B-K3M9') em { id, nome, escola_id, escola_nome }.
+   * Retorna null quando o código não existe.
+   */
+  async function getTurmaPorCodigo(codigo) {
+    const limpo = String(codigo || '').trim().toUpperCase();
+    if (!limpo) return null;
+    try {
+      return await get(`/turmas/codigo/${encodeURIComponent(limpo)}`);
+    } catch (err) {
+      if (err.status === 404) return null;
+      // Sem servidor: resolve pelo mock para o fluxo continuar demonstrável
+      const turma = MOCK.turmas.find(t => t.codigo === limpo);
+      if (!turma) return null;
+      const escola = MOCK.escolas.find(e => e.id === turma.escola_id);
+      return { ...turma, escola_nome: escola ? escola.nome : '' };
+    }
+  }
+
+  /** Cria uma escola nova (usado no cadastro do professor) */
+  async function criarEscola(nome) {
+    return post('/escolas', { nome: String(nome || '').trim() });
+  }
+
   // ── Dados mock (modo offline) ──────────────
   const MOCK = {
+    escolas: [
+      { id: 1, nome: 'Colégio Santa Maria' },
+      { id: 2, nome: 'E. E. Professor Aníbal Machado' },
+      { id: 3, nome: 'PUC Minas — Coração Eucarístico' },
+    ],
+
+    turmas: [
+      { id: 1, escola_id: 1, nome: '6º Ano A', codigo: '6A-P2LT' },
+      { id: 2, escola_id: 1, nome: '7º Ano B', codigo: '7B-K3M9' },
+      { id: 3, escola_id: 2, nome: '8º Ano C', codigo: '8C-W7QX' },
+      { id: 4, escola_id: 3, nome: '1º Ano — Ensino Médio', codigo: '1EM-Z4RB' },
+    ],
+
     healthPoints: [
       { id: 1, name: 'UBS Centro',          lat: -23.5505, lng: -46.6333, type: 'ubs',      xp: 30 },
       { id: 2, name: 'Hospital das Clínicas', lat: -23.5576, lng: -46.6709, type: 'hospital', xp: 80 },
@@ -284,6 +345,12 @@ const API = (() => {
     updateUserXP,
     getRanking,
     getQuizQuestions,
+
+    // Escolas e turmas
+    getEscolas,
+    getTurmasPorEscola,
+    getTurmaPorCodigo,
+    criarEscola,
 
     // Dados mock acessíveis externamente
     MOCK,
