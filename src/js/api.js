@@ -19,12 +19,17 @@
 
 const API = (() => {
   // ── Configuração ───────────────────────────
-  const BASE_URL = (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-  )
+  //
+  // Quando a página é servida pelo próprio Express (http://localhost:3000/pages/...
+  // ou pelo IP da máquina na rede local), a API está na mesma origem — um
+  // caminho relativo funciona em qualquer host, sem hardcoded.
+  //
+  // O fallback fixo em localhost:3000 só entra em jogo se a página ainda
+  // for aberta direto por file:// (Origin: null), onde não existe origem
+  // própria para montar um caminho relativo.
+  const BASE_URL = (window.location.protocol === 'file:')
     ? 'http://localhost:3000/api'
-    : 'http://localhost:3000/api';   // as páginas abrem por file://
+    : '/api';
 
   const DEFAULT_TIMEOUT = 12000; // ms
 
