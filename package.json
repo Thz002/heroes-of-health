@@ -28,5 +28,13 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Thz002/heroes-of-health.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Thz002/heroes-of-health/issues"
+  },
+  "homepage": "https://github.com/Thz002/heroes-of-health#readme"
 }

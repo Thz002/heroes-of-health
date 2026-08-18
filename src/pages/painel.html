@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Heróis da Saúde</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    html, body { min-height: 100%; }
+
+    /* ── Layout ── */
+    .page-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 36px 24px 60px;
+      max-width: 1140px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── Grid principal ── */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto;
+      gap: 20px;
+    }
+
+    .col-full  { grid-column: 1 / -1; }
+    .col-2     { grid-column: span 2; }
+    .col-1     { grid-column: span 1; }
+
+    /* ── Boas-vindas ── */
+    .welcome-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .welcome-text h2 {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .welcome-text p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin: 4px 0 0;
+    }
+
+    .welcome-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(249,199,79,0.12);
+      border: 1px solid rgba(249,199,79,0.28);
+      border-radius: 12px;
+      padding: 10px 16px;
+      white-space: nowrap;
+    }
+
+    .welcome-badge span {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--gold);
+    }
+
+    /* ── Avatar card ── */
+    .avatar-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+
+    .avatar-ring {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+
+    .avatar-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid rgba(46,196,169,0.5);
+    }
+
+    .avatar-fallback {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2ec4a9, #1a9e8a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 900;
+      color: #fff;
+      border: 3px solid rgba(107,223,184,0.4);
+    }
+
+    .avatar-level {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 26px;
+      height: 26px;
+      background: linear-gradient(135deg, #f9c74f, #f4a01e);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 900;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(249,199,79,0.5);
+    }
+
+    .avatar-name {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0;
+    }
+
+    .avatar-title {
+      font-size: 12px;
+      color: rgba(107,223,184,0.75);
+      margin: -8px 0 0;
+    }
+
+    .avatar-xp-bar {
+      width: 100%;
+    }
+
+    /* ── Stat cards ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    /* ── Missões ── */
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title span {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+    }
+
+    .missions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mission-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 14px 16px;
+      transition: background 0.2s, transform 0.2s, border-color 0.2s;
+      cursor: pointer;
+    }
+
+    .mission-item:hover {
+      background: rgba(107,223,184,0.08);
+      border-color: rgba(107,223,184,0.22);
+      transform: translateX(4px);
+    }
+
+    .mission-item.completed {
+      opacity: 0.55;
+    }
+
+    .mission-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .mission-info { flex: 1; min-width: 0; }
+
+    .mission-name {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mission-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mission-xp {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 800;
+      color: #6bdfb8;
+      white-space: nowrap;
+    }
+
+    .mission-done {
+      color: rgba(107,223,184,0.5);
+      font-size: 18px;
+    }
+
+    /* ── Ranking ── */
+    .ranking-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ranking-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: background 0.2s;
+    }
+
+    .ranking-item:hover { background: rgba(107,223,184,0.07); }
+
+    .ranking-item.me {
+      background: rgba(46,196,169,0.1);
+      border-color: rgba(46,196,169,0.25);
+    }
+
+    .rank-pos {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 900;
+      width: 24px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .rank-pos.gold   { color: #f9c74f; }
+    .rank-pos.silver { color: #c0c0c0; }
+    .rank-pos.bronze { color: #cd7f32; }
+    .rank-pos.other  { color: var(--text-muted); }
+
+    .rank-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2ec4a9, #1a9e8a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .rank-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .rank-xp {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 800;
+      color: #6bdfb8;
+    }
+
+    .rank-level {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    /* ── Atividade recente ── */
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .activity-item:last-child { border-bottom: none; }
+
+    .activity-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    .activity-text {
+      flex: 1;
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      line-height: 1.5;
+    }
+
+    .activity-text strong { color: #fff; font-weight: 600; }
+
+    .activity-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    /* ── Mapa preview ── */
+    .map-preview {
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--glass-border);
+      background: rgba(7,55,62,0.7);
+      position: relative;
+      height: 200px;
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+
+    .map-preview:hover { box-shadow: 0 8px 28px rgba(46,196,169,0.2); }
+
+    .map-preview-bg {
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 30% 50%, rgba(46,196,169,0.2) 0%, transparent 50%),
+        radial-gradient(circle at 70% 30%, rgba(107,223,184,0.15) 0%, transparent 50%),
+        linear-gradient(145deg, #07373e, #0d5c63);
+      position: relative;
+    }
+
+    /* Pontos simulados no mapa */
+    .map-dot {
+      position: absolute;
+      border-radius: 50%;
+      animation: pulse-ring 2.5s ease-out infinite;
+    }
+
+    .map-preview-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .map-preview-label span {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .map-preview-label small {
+      font-size: 12px;
+      color: rgba(107,223,184,0.7);
+    }
+
+    /* ── Quiz card ── */
+    .quick-quiz {
+      background: linear-gradient(145deg, rgba(46,196,169,0.15), rgba(107,223,184,0.08));
+      border: 1px solid rgba(46,196,169,0.25);
+      border-radius: 20px;
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .quiz-category-wrap {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .quiz-cat-btn {
+      background: rgba(255,255,255,0.07);
+      border: 1.5px solid rgba(255,255,255,0.14);
+      border-radius: 99px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font-body);
+    }
+
+    .quiz-cat-btn:hover,
+    .quiz-cat-btn.active {
+      background: rgba(46,196,169,0.18);
+      border-color: rgba(46,196,169,0.4);
+      color: #6bdfb8;
+    }
+
+    .quiz-start-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #2ec4a9, #1a9e8a);
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 18px rgba(46,196,169,0.38);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .quiz-start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(46,196,169,0.5);
+    }
+
+    /* ── ECG widget ── */
+    .ecg-widget {
+      width: 100%;
+      height: 44px;
+      margin: 4px 0;
+    }
+
+    .ecg-widget-path {
+      stroke-dasharray: 600;
+      stroke-dashoffset: 600;
+      animation: ecg-anim 2.2s ease-out forwards;
+    }
+
+    @keyframes ecg-anim {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* ── Animações de entrada ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fade-up-in 0.5s ease-out forwards;
+    }
+
+    @keyframes fade-up-in {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-up:nth-child(1)  { animation-delay: 0.05s; }
+    .fade-up:nth-child(2)  { animation-delay: 0.12s; }
+    .fade-up:nth-child(3)  { animation-delay: 0.19s; }
+    .fade-up:nth-child(4)  { animation-delay: 0.26s; }
+    .fade-up:nth-child(5)  { animation-delay: 0.33s; }
+    .fade-up:nth-child(6)  { animation-delay: 0.40s; }
+    .fade-up:nth-child(7)  { animation-delay: 0.47s; }
+
+    /* ── Responsive ── */
+    @media (max-width: 960px) {
+      .dashboard-grid { grid-template-columns: 1fr 1fr; }
+      .col-2 { grid-column: span 2; }
+      .col-1 { grid-column: span 1; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .col-2, .col-1, .col-full { grid-column: 1 / -1; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .welcome-bar { flex-direction: column; align-items: flex-start; }
+      .main-content { padding: 24px 16px 48px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Blobs de fundo ── -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <!-- ── Ícones flutuantes ── -->
+  <div style="position:fixed;top:8%;left:4%;pointer-events:none;z-index:0;color:rgba(107,223,184,0.12);animation:float 7s ease-in-out infinite;">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><rect x="9" y="2" width="6" height="20" rx="2"/><rect x="2" y="9" width="20" height="6" rx="2"/></svg>
+  </div>
+  <div style="position:fixed;top:80%;right:4%;pointer-events:none;z-index:0;color:rgba(107,223,184,0.1);animation:float2 9s ease-in-out infinite 2s;">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L3 7v5c0 5.25 3.75 10.17 9 11.33C17.25 22.17 21 17.25 21 12V7l-9-5z"/></svg>
+  </div>
+
+  <div class="page-wrap">
+
+    <!-- ── Navbar ── -->
+    
+
+        <ul class="navbar__links">
+          <li><a href="dashboard.html" class="active">🏠 Dashboard</a></li>
+          <li><a href="mapa.html">🗺 Mapa</a></li>
+          <li><a href="missao.html">⚔️ Missões</a></li>
+          <li><a href="#">🏆 Ranking</a></li>
+        </ul>
+
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="xp-badge" id="nav-xp">⭐ 480 XP</div>
+          <button
+            id="logout-btn"
+            style="background:none;border:1px solid rgba(255,255,255,0.14);border-radius:8px;
+                   padding:6px 14px;color:rgba(255,255,255,0.55);font-size:13px;cursor:pointer;
+                   font-family:var(--font-body);transition:all .2s;"
+            onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.3)'"
+            onmouseout="this.style.color='rgba(255,255,255,0.55)';this.style.borderColor='rgba(255,255,255,0.14)'"
+          >Sair</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ── Conteúdo ── -->
+    <main class="main-content">
+
+      <!-- Boas-vindas -->
+      <div class="welcome-bar">
+        <div class="welcome-text">
+          <h2>Olá, <span id="user-name">Herói</span>! 👋</h2>
+          <p id="welcome-date">Segunda-feira, 18 de agosto de 2026</p>
+        </div>
+        <div class="welcome-badge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#f9c74f">
+            <path d="M12 2L3 7v5c0 5.25 3.75 10.17 9 11.33C17.25 22.17 21 17.25 21 12V7l-9-5z"/>
+          </svg>
+          <span>Nível <span id="user-level">5</span> · Explorador da Saúde</span>
+        </div>
+      </div>
+
+      <!-- Grid -->
+      <div class="dashboard-grid">
+
+        <!-- Stats row -->
+        <div class="col-full fade-up">
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-card__icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff">
+                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+                </svg>
+              </div>
+              <div>
+                <div class="stat-card__value" id="stat-xp">480</div>
+                <div class="stat-card__label">XP Total</div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card__icon" style="background:linear-gradient(145deg,#6b8eff,#4f6ef7);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff">
+                  <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <div>
+                <div class="stat-card__value" id="stat-missions">3</div>
+                <div class="stat-card__label">Missões concluídas</div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card__icon" style="background:linear-gradient(145deg,#f9c74f,#f4a01e);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="stat-card__value" id="stat-streak">7</div>
+                <div class="stat-card__label">Dias consecutivos</div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card__icon" style="background:linear-gradient(145deg,#f472b6,#e11d88);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <div>
+                <div class="stat-card__value" id="stat-rank">#4</div>
+                <div class="stat-card__label">Posição no ranking</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Avatar + progresso -->
+        <div class="col-1 fade-up">
+          <div class="avatar-card">
+            <div class="avatar-ring">
+              <div class="avatar-fallback" id="avatar-letter">H</div>
+              <div class="avatar-level" id="avatar-level">5</div>
+            </div>
+
+            <div>
+              <p class="avatar-name" id="avatar-name">Herói da Saúde</p>
+              <p class="avatar-title">🛡️ Explorador da Saúde</p>
+            </div>
+
+            <div class="avatar-xp-bar progress-wrap">
+              <div class="progress-label">
+                <span>Progresso nível 5</span>
+                <span id="xp-label">480 / 500 XP</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-bar" id="xp-bar" style="width: 96%"></div>
+              </div>
+            </div>
+
+            <!-- ECG mini -->
+            <svg class="ecg-widget" viewBox="0 0 260 44" fill="none" preserveAspectRatio="none">
+              <polyline
+                class="ecg-widget-path"
+                points="0,22 28,22 38,6 50,38 60,22 72,22 84,4 96,40 108,22 120,22 148,22 158,12 168,32 178,22 200,22 212,8 224,36 236,22 260,22"
+                stroke="#6bdfb8"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+              />
+            </svg>
+
+            <div style="width:100%;display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);">
+                <span>Conquistas desbloqueadas</span>
+                <span style="color:#6bdfb8;font-weight:700;">8 / 24</span>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <span title="Primeiro login" style="font-size:20px;cursor:default;">🏅</span>
+                <span title="5 dias seguidos" style="font-size:20px;cursor:default;">🔥</span>
+                <span title="Quiz perfeito" style="font-size:20px;cursor:default;">💯</span>
+                <span title="Explorador" style="font-size:20px;cursor:default;">🗺️</span>
+                <span title="Socorrista" style="font-size:20px;cursor:default;">🚑</span>
+                <span style="font-size:20px;opacity:.25;cursor:default;">🔒</span>
+                <span style="font-size:20px;opacity:.25;cursor:default;">🔒</span>
+                <span style="font-size:20px;opacity:.25;cursor:default;">🔒</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Missões ativas -->
+        <div class="col-2 fade-up">
+          <div class="card" style="padding:24px;">
+            <h3 class="section-title">
+              ⚔️ Missões Ativas
+              <span>2 disponíveis</span>
+            </h3>
+            <div class="missions-list" id="missions-list">
+
+              <div class="mission-item">
+                <div class="mission-icon" style="background:rgba(255,107,107,0.15);">🚑</div>
+                <div class="mission-info">
+                  <div class="mission-name">Primeiros Socorros</div>
+                  <div class="mission-desc">Aprenda RCP e técnicas de salvamento básico</div>
+                  <div style="margin-top:6px;">
+                    <div class="progress-track" style="height:4px;">
+                      <div class="progress-bar" style="width:60%;"></div>
+                    </div>
+                  </div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="mission-xp">+100 XP</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">60%</div>
+                </div>
+              </div>
+
+              <div class="mission-item">
+                <div class="mission-icon" style="background:rgba(107,223,184,0.14);">🥗</div>
+                <div class="mission-info">
+                  <div class="mission-name">Nutrição Saudável</div>
+                  <div class="mission-desc">Identifique os principais grupos alimentares</div>
+                  <div style="margin-top:6px;">
+                    <div class="progress-track" style="height:4px;">
+                      <div class="progress-bar" style="width:30%;background:linear-gradient(90deg,#6b8eff,#a5b4fc);"></div>
+                    </div>
+                  </div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="mission-xp">+80 XP</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">30%</div>
+                </div>
+              </div>
+
+              <div class="mission-item completed">
+                <div class="mission-icon" style="background:rgba(107,223,184,0.1);">🧼</div>
+                <div class="mission-info">
+                  <div class="mission-name">Higiene Pessoal</div>
+                  <div class="mission-desc">Práticas essenciais de saúde diária</div>
+                </div>
+                <div class="mission-done">✓</div>
+              </div>
+
+              <div class="mission-item">
+                <div class="mission-icon" style="background:rgba(249,199,79,0.14);">🦠</div>
+                <div class="mission-info">
+                  <div class="mission-name">Doenças Infecciosas</div>
+                  <div class="mission-desc">Prevenção e reconhecimento de infecções</div>
+                  <div style="margin-top:6px;">
+                    <div class="progress-track" style="height:4px;">
+                      <div class="progress-bar" style="width:0%;"></div>
+                    </div>
+                  </div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="mission-xp">+120 XP</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Nova</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz rápido -->
+        <div class="col-1 fade-up">
+          <div class="card" style="padding:24px;">
+            <h3 class="section-title">🧠 Quiz Rápido</h3>
+            <div class="quick-quiz">
+              <p style="font-size:13px;color:var(--text-muted);margin:0;">Escolha uma categoria e teste seus conhecimentos!</p>
+              <div class="quiz-category-wrap">
+                <button class="quiz-cat-btn active" data-cat="geral">🌐 Geral</button>
+                <button class="quiz-cat-btn" data-cat="nutricao">🥗 Nutrição</button>
+                <button class="quiz-cat-btn" data-cat="emergencia">🚑 Emergência</button>
+                <button class="quiz-cat-btn" data-cat="higiene">🧼 Higiene</button>
+              </div>
+              <button class="quiz-start-btn" onclick="window.location.href='quiz.html'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff">
+                  <polygon points="5,3 19,12 5,21"/>
+                </svg>
+                Iniciar Quiz
+              </button>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);">
+                <span>5 questões · ~2 min</span>
+                <span style="color:#6bdfb8;font-weight:600;">+20–50 XP</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mapa preview -->
+        <div class="col-1 fade-up">
+          <div class="card" style="padding:24px;">
+            <h3 class="section-title">🗺️ Mapa de Saúde</h3>
+            <div class="map-preview" onclick="window.location.href='mapa.html'">
+              <div class="map-preview-bg">
+                <!-- Pontos simulados -->
+                <div class="map-dot" style="width:12px;height:12px;background:#2ec4a9;top:38%;left:28%;"></div>
+                <div class="map-dot" style="width:10px;height:10px;background:#6b8eff;top:55%;left:60%;animation-delay:.8s;"></div>
+                <div class="map-dot" style="width:9px;height:9px;background:#f9c74f;top:25%;left:70%;animation-delay:1.6s;"></div>
+                <div class="map-dot" style="width:11px;height:11px;background:#f472b6;top:65%;left:20%;animation-delay:2.4s;"></div>
+                <div class="map-dot" style="width:8px;height:8px;background:#f87171;top:45%;left:80%;animation-delay:1.2s;"></div>
+              </div>
+              <div class="map-preview-label">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="rgba(107,223,184,0.7)">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="rgba(255,255,255,0.9)"/>
+                </svg>
+                <span>5 pontos próximos</span>
+                <small>Clique para explorar</small>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#2ec4a9;display:inline-block;"></span>UBS</span>
+              <span style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#6b8eff;display:inline-block;"></span>Hospital</span>
+              <span style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#f9c74f;display:inline-block;"></span>Farmácia</span>
+              <span style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#f87171;display:inline-block;"></span>Pronto S.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ranking -->
+        <div class="col-1 fade-up">
+          <div class="card" style="padding:24px;">
+            <h3 class="section-title">🏆 Ranking Semanal</h3>
+            <div class="ranking-list">
+
+              <div class="ranking-item">
+                <span class="rank-pos gold">1</span>
+                <div class="rank-avatar" style="background:linear-gradient(145deg,#f9c74f,#f4a01e);">A</div>
+                <div>
+                  <div class="rank-name">Ana Clara</div>
+                  <div class="rank-level">Nível 19</div>
+                </div>
+                <div class="rank-xp">1.840 XP</div>
+              </div>
+
+              <div class="ranking-item">
+                <span class="rank-pos silver">2</span>
+                <div class="rank-avatar" style="background:linear-gradient(145deg,#c0c0c0,#888);">B</div>
+                <div>
+                  <div class="rank-name">Bruno Melo</div>
+                  <div class="rank-level">Nível 17</div>
+                </div>
+                <div class="rank-xp">1.620 XP</div>
+              </div>
+
+              <div class="ranking-item">
+                <span class="rank-pos bronze">3</span>
+                <div class="rank-avatar" style="background:linear-gradient(145deg,#cd7f32,#a0521e);">C</div>
+                <div>
+                  <div class="rank-name">Carla Souza</div>
+                  <div class="rank-level">Nível 15</div>
+                </div>
+                <div class="rank-xp">1.490 XP</div>
+              </div>
+
+              <div class="ranking-item me">
+                <span class="rank-pos other">4</span>
+                <div class="rank-avatar">H</div>
+                <div>
+                  <div class="rank-name" id="ranking-me-name">Você</div>
+                  <div class="rank-level">Nível 5</div>
+                </div>
+                <div class="rank-xp">480 XP</div>
+              </div>
+
+              <div class="ranking-item">
+                <span class="rank-pos other">5</span>
+                <div class="rank-avatar" style="background:linear-gradient(145deg,#f472b6,#e11d88);">E</div>
+                <div>
+                  <div class="rank-name">Elena Costa</div>
+                  <div class="rank-level">Nível 13</div>
+                </div>
+                <div class="rank-xp">440 XP</div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Atividade recente -->
+        <div class="col-1 fade-up">
+          <div class="card" style="padding:24px;">
+            <h3 class="section-title">🕐 Atividade Recente</h3>
+            <div class="activity-list">
+
+              <div class="activity-item">
+                <div class="activity-dot" style="background:#6bdfb8;"></div>
+                <div class="activity-text">
+                  <strong>+20 XP</strong> — Quiz de Higiene concluído com 100%
+                </div>
+                <div class="activity-time">Hoje, 09:14</div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-dot" style="background:#6b8eff;"></div>
+                <div class="activity-text">
+                  Visitou <strong>UBS Centro</strong> no mapa e coletou +30 XP
+                </div>
+                <div class="activity-time">Ontem</div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-dot" style="background:#f9c74f;"></div>
+                <div class="activity-text">
+                  Subiu para <strong>Nível 5</strong> — Explorador da Saúde
+                </div>
+                <div class="activity-time">Dom, 16/08</div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-dot" style="background:#f87171;"></div>
+                <div class="activity-text">
+                  Missão <strong>Higiene Pessoal</strong> concluída com sucesso
+                </div>
+                <div class="activity-time">Sáb, 15/08</div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-dot" style="background:#6bdfb8;"></div>
+                <div class="activity-text">
+                  Sequência de <strong>7 dias</strong> consecutivos atingida 🔥
+                </div>
+                <div class="activity-time">Sex, 14/08</div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ── Preencher dados do usuário ──────────────
+    function loadUser() {
+      try {
+        const raw = localStorage.getItem('herois_user');
+        if (!raw) return;
+        const user = JSON.parse(raw);
+
+        const name   = user.name   || 'Herói';
+        const xp     = user.xp    ?? 480;
+        const level  = user.level ?? 5;
+        const letter = name.charAt(0).toUpperCase();
+
+        document.getElementById('user-name').textContent      = name.split(' ')[0];
+        document.getElementById('user-level').textContent     = level;
+        document.getElementById('avatar-name').textContent    = name;
+        document.getElementById('avatar-level').textContent   = level;
+        document.getElementById('avatar-letter').textContent  = letter;
+        document.getElementById('stat-xp').textContent        = xp.toLocaleString('pt-BR');
+        document.getElementById('xp-label').textContent       = `${xp} / ${level * 100} XP`;
+        document.getElementById('nav-xp').textContent         = `⭐ ${xp} XP`;
+        document.getElementById('ranking-me-name').textContent = name.split(' ')[0];
+
+        const pct = Math.min(100, Math.round((xp % 100)));
+        document.getElementById('xp-bar').style.width = pct + '%';
+      } catch (_) {}
+    }
+
+    // ── Data atual ──────────────────────────────
+    function setDate() {
+      const d = new Date();
+      const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+      const str  = d.toLocaleDateString('pt-BR', opts);
+      document.getElementById('welcome-date').textContent =
+        str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    // ── Quiz categoria ──────────────────────────
+    document.querySelectorAll('.quiz-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.quiz-cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    // ── Logout ──────────────────────────────────
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.removeItem('herois_user');
+      localStorage.removeItem('herois_token');
+      window.location.href = 'index.html';
+    });
+
+    // ── Init ────────────────────────────────────
+    loadUser();
+    setDate();
+  </script>
+
+  <script src="../js/api.js" defer></script>
+  <script src="../js/auth.js" defer></script>
+
+</body>
+</html>

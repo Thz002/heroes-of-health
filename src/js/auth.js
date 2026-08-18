@@ -424,7 +424,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const r = await AUTH.login(email, senha);
             if (r.ok) {
               showAlert('Bem-vindo, Herói! 🎉', 'success');
-              setTimeout(() => { window.location.href = 'mapa.html'; }, 1100);
+              setTimeout(() => { window.location.href = 'dashboard.html'; }, 1100);
             } else {
               showAlert(r.message || 'E-mail ou senha incorretos.', 'error');
             }
