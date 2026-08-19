@@ -77,19 +77,6 @@
 <body>
    <nav class="nav_bar">
      <div class="topLine">
-        <ul class="navbar__links">
-          <li><a href="mapa.html"> Perssonalizar</a></li>
-          <li><a href="missao.html"> Turmas</a></li>
-          <li><a href="mapa.html"> Quizes</a></li>
-        </ul>
-        
-        <ul class="navbar__links">
-          <li><a href="mapa.html"> Mapa</a></li>
-          <li><a href="missao.html"> Missões</a></li>
-          <li><a href="#"> Ranking</a></li>
-        </ul>
-         
-        <div class="navbar__inner">
         <div class="navbar__logo">
           <div class="navbar__logo-dot">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
@@ -98,17 +85,30 @@
           </div>
           HERÓIS DA SAÚDE
         </div>
-    </div>
 
-     <div style="display:flex;align-items:center;gap:12px;">
-          <button
-            id="logout-btn"
-            style="background:none;border:1px solid rgba(255,255,255,0.14);border-radius:8px;
-                   padding:6px 14px;color:rgba(255,255,255,0.55);font-size:13px;cursor:pointer;
-                   font-family:var(--font-body);transition:all .2s;"
-            onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.3)'"
-            onmouseout="this.style.color='rgba(255,255,255,0.55)';this.style.borderColor='rgba(255,255,255,0.14)'"
-          >Sair</button>
+        <div style="display:flex;align-items:center;gap:24px;">
+          <ul class="navbar__links">
+            <li><a href="mapa.html"> Perssonalizar</a></li>
+            <li><a href="missao.html"> Turmas</a></li>
+            <li><a href="mapa.html"> Quizes</a></li>
+          </ul>
+
+          <ul class="navbar__links">
+            <li><a href="mapa.html"> Mapa</a></li>
+            <li><a href="missao.html"> Missões</a></li>
+            <li><a href="#"> Ranking</a></li>
+          </ul>
+
+          <div style="display:flex;align-items:center;gap:12px;">
+            <button
+              id="logout-btn"
+              style="background:none;border:1px solid rgba(255,255,255,0.14);border-radius:8px;
+                     padding:6px 14px;color:rgba(255,255,255,0.55);font-size:13px;cursor:pointer;
+                     font-family:var(--font-body);transition:all .2s;"
+              onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.3)'"
+              onmouseout="this.style.color='rgba(255,255,255,0.55)';this.style.borderColor='rgba(255,255,255,0.14)'"
+            >Sair</button>
+          </div>
         </div>
       </div>
    </nav>
