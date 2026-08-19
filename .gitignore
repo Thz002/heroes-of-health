@@ -1,5 +1,5 @@
 .env
 node_modules/
 CLAUDE.md
-painel.html
-teste-supabase.html
+pages/painel.html
+pages/teste-supabase.html
