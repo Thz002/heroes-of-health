@@ -108,11 +108,49 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
               <p class="empty-state__title">Você ainda não possui turmas</p>
               <p class="empty-state__hint">Clique em “+ Criar nova turma” para começar.</p>
             </div>
-
           </section>
     </main>
   </div>
 
+  <div class="modal" id="modal-turma" hidden>
+    <div class="modal__caixa" role="dialog" arial-model="true" aria-labelledby="modal-turma-title"
+      aria-describedby="modal-turma-desc">
+      <div class="modal-header">
+        <h3 id="modal-titulo">Nova turma</h3>
+        <button class="modal__fechar" id="btn-fechar" aria-label="Fechar">&times;</button>
+      </div>
+      <label class="campo">
+        <span class="campo__label">Nome da turma</span>
+        <input type="text" id="in-nome" placeholder="7º ano B" maxlength="30" autocomplete="off">
+      </label>
+
+      <label class="campo">
+        <span class="campo__label">Ano escolar</span>
+        <select id="in-ano">
+          <option value="6º ano">6º ano</option>
+          <option value="7º ano">7º ano</option>
+          <option value="8º ano">8º ano</option>
+          <option value="9º ano">9º ano</option>
+        </select>
+      </label>
+
+       <div class="campo">
+      <span class="campo__label">Cor da turma</span>
+      <div class="cores" id="seletor-cores">
+        <button type="button" class="cor cor--ativa" data-cor="#14b8a6" style="--c:#14b8a6" aria-label="Verde"></button>
+        <button type="button" class="cor" data-cor="#3b82f6" style="--c:#3b82f6" aria-label="Azul"></button>
+        <button type="button" class="cor" data-cor="#f9c74f" style="--c:#f9c74f" aria-label="Amarelo"></button>
+        <button type="button" class="cor" data-cor="#f472b6" style="--c:#f472b6" aria-label="Rosa"></button>
+        <button type="button" class="cor" data-cor="#a78bfa" style="--c:#a78bfa" aria-label="Roxo"></button>
+        <button type="button" class="cor" data-cor="#fb923c" style="--c:#fb923c" aria-label="Laranja"></button>
+      </div>
+    </div>
+    <div class="modal__acoes">
+      <button class="btn-ghost" id="btn-cancelar">Cancelar</button>
+      <button class="btn-primary" id="btn-salvar">Criar turma</button>
+    </div>
+    </div>
+  </div>
 </body>
 
 </html>
