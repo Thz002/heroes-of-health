@@ -199,7 +199,8 @@ const API = (() => {
 
   // ── Professor ──────────────────────────────
   const getMinhasTurmas = () => get('/professor/turmas');
-  const criarTurma      = (nome) => post('/professor/turmas', { nome });
+  const criarTurma      = ({ nome, cor, ano_escolar }) =>
+    post('/professor/turmas', { nome, cor, ano_escolar });
   const getAlunosDaTurma = (turmaId) => get(`/professor/turmas/${turmaId}/alunos`);
 
   // ── API pública ─────────────────────────────

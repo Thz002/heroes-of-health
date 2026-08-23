@@ -84,6 +84,16 @@ create table if not exists turmas (
 create unique index if not exists turmas_codigo_unico   on turmas (codigo);
 create unique index if not exists turmas_nome_por_escola on turmas (escola_id, nome);
 
+-- Cor e ano escolar são só de exibição no painel do professor (dashboard).
+-- A cor tem check com a mesma lista de 6 opções do seletor na tela, como
+-- segunda trava além da validação do servidor. O ano fica livre (sem
+-- check) porque as opções do <select> podem crescer sem precisar migração.
+alter table turmas add column if not exists cor varchar(9)
+  not null default '#14b8a6'
+  check (cor in ('#14b8a6','#3b82f6','#f9c74f','#f472b6','#a78bfa','#fb923c'));
+
+alter table turmas add column if not exists ano_escolar varchar(10);
+
 
 -- ── Pessoas ──────────────────────────────────────────────────────────
 

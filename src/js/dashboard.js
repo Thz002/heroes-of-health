@@ -10,3 +10,5 @@ document.getElementById('logout-btn').addEventListener('click', () => {
       localStorage.removeItem('herois_token');
       window.location.href = 'index.html';
     });
+
+

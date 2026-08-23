@@ -28,16 +28,46 @@ async function turmaEhMinha(usuario, turmaId) {
   return Boolean(data);
 }
 
+// Mesma lista de cores do seletor em dashboard.html, e o check espelhado
+// no banco (db/setup.sql). Quem manda a cor é o navegador, então ela
+// precisa ser conferida contra uma lista fechada antes de gravar.
+const CORES_VALIDAS = ['#14b8a6', '#3b82f6', '#f9c74f', '#f472b6', '#a78bfa', '#fb923c'];
+const ANOS_VALIDOS  = ['6º ano', '7º ano', '8º ano', '9º ano'];
+
+// Quantos alunos cabem numa turma, para o "x/10" do card. Fixo por
+// enquanto — se um dia precisar variar por turma, vira coluna no banco.
+const LIMITE_ALUNOS_POR_TURMA = 10;
+
 // ── As turmas do professor, com o código para entregar à sala ────────
 rotas.get('/turmas', async (req, res) => {
   const { data, error } = await admin
     .from('turmas')
-    .select('id, nome, codigo, escola_id')
+    .select('id, nome, codigo, escola_id, cor, ano_escolar')
     .eq('professor_id', req.usuario.id)
     .order('nome');
 
   if (error) return res.status(500).json({ message: 'Não foi possível carregar suas turmas.' });
-  res.json(data);
+
+  const ids = data.map(t => t.id);
+  const contagem = new Map(ids.map(id => [id, 0]));
+
+  if (ids.length > 0) {
+    const alunos = await admin
+      .from('usuarios')
+      .select('turma_id')
+      .in('turma_id', ids)
+      .eq('tipo', 'ALUNO');
+
+    for (const a of alunos.data || []) {
+      contagem.set(a.turma_id, (contagem.get(a.turma_id) || 0) + 1);
+    }
+  }
+
+  res.json(data.map(t => ({
+    ...t,
+    total_alunos: contagem.get(t.id) || 0,
+    limite_alunos: LIMITE_ALUNOS_POR_TURMA
+  })));
 });
 
 // ── Criar turma ──────────────────────────────────────────────────────
@@ -51,6 +81,12 @@ rotas.post('/turmas', async (req, res) => {
     return res.status(400).json({ message: 'Seu cadastro não tem escola. Avise o administrador.' });
   }
 
+  // Cor e ano vêm do navegador, então são conferidos contra uma lista
+  // fechada antes de gravar — o mesmo dado inválido também cairia no
+  // check do banco, mas é melhor barrar aqui com uma mensagem clara.
+  const cor = CORES_VALIDAS.includes(req.body?.cor) ? req.body.cor : CORES_VALIDAS[0];
+  const ano_escolar = ANOS_VALIDOS.includes(req.body?.ano_escolar) ? req.body.ano_escolar : null;
+
   // O código é gerado aqui, e não no navegador: ele é a credencial que
   // deixa um aluno entrar na turma, então quem o inventa tem que ser o
   // lado confiável.
@@ -62,9 +98,11 @@ rotas.post('/turmas', async (req, res) => {
       nome,
       escola_id: req.usuario.escola_id,
       professor_id: req.usuario.id,
-      codigo
+      codigo,
+      cor,
+      ano_escolar
     })
-    .select('id, nome, codigo, escola_id')
+    .select('id, nome, codigo, escola_id, cor, ano_escolar')
     .single();
 
   if (error) {
@@ -74,7 +112,7 @@ rotas.post('/turmas', async (req, res) => {
     return res.status(500).json({ message: 'Não foi possível criar a turma.' });
   }
 
-  res.status(201).json(data);
+  res.status(201).json({ ...data, total_alunos: 0, limite_alunos: LIMITE_ALUNOS_POR_TURMA });
 });
 
 /** Monta um código curto tipo '7B-K3M9'. Sem letras que confundem (O/0, I/1). */
