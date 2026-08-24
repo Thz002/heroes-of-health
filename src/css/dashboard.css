@@ -446,3 +446,87 @@ body {
     transform: translateY(0);
     /*---> ANALISAR*/
 }
+.turma-card{
+    display: flex;
+    flex-direction: column;
+    min-height: 118px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 14px;
+    box-shadow: 5px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform .18s ease, border-color .18s ease;
+}
+.turma-card::after { /*---> ANALISAR E ESTUDAR AFTER*/
+  content: '';
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: var(--cor);
+  opacity: 0.07;
+  pointer-events: none;
+}
+.turma-card:hover{
+    transform: translateY(-3px);
+    border-color: var(--cor);
+}
+
+.turma-card__tarja {
+  display: block;
+  height: 4px;
+  background: var(--cor);
+}
+
+.turma-card_nome{
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    line-height: 1.25;
+}
+.turma-card__ano {
+  display: inline-block;
+  background: color-mix(in srgb, var(--cor) 18%, transparent);
+  color: color-mix(in srgb, var(--cor) 65%, white);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  margin: 6px 0 0;
+}
+.turma-card__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+}
+.turma-card__alunos {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.4);
+}
+.turma-card__codigo{
+    border-radius: 14px;
+    border: #fff 1px solid;
+    transition: transform .18s ease, border-color .18s ease;
+    background: rgba(255,255,255,0.06);
+    color: floralwhite;
+    padding: 4px 9px;
+    cursor: pointer;
+    font-family: var(--font-mono, monospace);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+}
+
+.turma-card__codigo:hover{
+    color: #fff;
+    border-color: rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.1);
+}

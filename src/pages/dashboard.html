@@ -93,7 +93,17 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
           <section class="painel">
 
             <div class="lista-turmas" id="lista-turmas">
-              <!-- Turmas inseridas via JavaScript -->
+              <article class="turma-card" style="--cor:#3b82f6">
+                <span class="turma-card__tarja"></span>
+                <div class="turma-card__info">
+                  <h4 class="turma-card__nome">Turminha 7 ano</h4>
+                  <p class="turma-card__ano">7º ano</p>
+                </div>
+                <span class="turma-card__alunos">0/10</span>
+                <button type="button" class="turma-card__codigo">
+                  <span class="turma-card__codigo-txt">7B-K3M9</span>
+                </button>
+              </article>
             </div>
 
             <div class="empty-state" id="empty-turmas">
@@ -134,21 +144,22 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
         </select>
       </label>
 
-       <div class="campo">
-      <span class="campo__label">Cor da turma</span>
-      <div class="cores" id="seletor-cores">
-        <button type="button" class="cor cor--ativa" data-cor="#14b8a6" style="--c:#14b8a6" aria-label="Verde"></button>
-        <button type="button" class="cor" data-cor="#3b82f6" style="--c:#3b82f6" aria-label="Azul"></button>
-        <button type="button" class="cor" data-cor="#f9c74f" style="--c:#f9c74f" aria-label="Amarelo"></button>
-        <button type="button" class="cor" data-cor="#f472b6" style="--c:#f472b6" aria-label="Rosa"></button>
-        <button type="button" class="cor" data-cor="#a78bfa" style="--c:#a78bfa" aria-label="Roxo"></button>
-        <button type="button" class="cor" data-cor="#fb923c" style="--c:#fb923c" aria-label="Laranja"></button>
+      <div class="campo">
+        <span class="campo__label">Cor da turma</span>
+        <div class="cores" id="seletor-cores">
+          <button type="button" class="cor cor--ativa" data-cor="#14b8a6" style="--c:#14b8a6"
+            aria-label="Verde"></button>
+          <button type="button" class="cor" data-cor="#3b82f6" style="--c:#3b82f6" aria-label="Azul"></button>
+          <button type="button" class="cor" data-cor="#f9c74f" style="--c:#f9c74f" aria-label="Amarelo"></button>
+          <button type="button" class="cor" data-cor="#f472b6" style="--c:#f472b6" aria-label="Rosa"></button>
+          <button type="button" class="cor" data-cor="#a78bfa" style="--c:#a78bfa" aria-label="Roxo"></button>
+          <button type="button" class="cor" data-cor="#fb923c" style="--c:#fb923c" aria-label="Laranja"></button>
+        </div>
       </div>
-    </div>
-    <div class="modal__acoes">
-      <button class="btn-ghost" id="btn-cancelar">Cancelar</button>
-      <button class="btn-primary" id="btn-salvar">Criar turma</button>
-    </div>
+      <div class="modal__acoes">
+        <button class="btn-ghost" id="btn-cancelar">Cancelar</button>
+        <button class="btn-primary" id="btn-salvar">Criar turma</button>
+      </div>
     </div>
   </div>
 </body>
