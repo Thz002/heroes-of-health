@@ -670,10 +670,6 @@
     </div>
   </main>
 
-  <!-- A ordem importa: cada arquivo usa o que o anterior definiu.
-       supabase.js -> cria a conexão (SUPA) e o login (AUTH)
-       api.js      -> usa SUPA para buscar escolas e turmas
-       auth.js     -> usa API e AUTH para controlar a tela -->
   <script src="/vendor/supabase.js"></script>
   <script src="../js/supabase.js" defer></script>
   <script src="../js/api.js" defer></script>

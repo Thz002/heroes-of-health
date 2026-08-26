@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome! - Start Menu</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <script src="../js/supabase.js" defer></script>
+    <script src="../js/api.js" defer></script>
+    <script src="../js/auth.js" defer></script>
+
+    <style>
+        .page-main {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: min(260px, 80vw);
+        }
+
+        .menu__acoes {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            /* espaço ENTRE os botões */
+            margin-top: 34px;
+            /* afasta do texto acima */
+        }
+
+        .menu__btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform .16s, background .16s, border-color .16s;
+        }
+
+        .menu__btn:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.11);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .menu__btn:active {
+            transform: translateY(0);
+        }
+
+        .menu__btn--primario {
+            background: var(--cor-primaria, #14b8a6);
+            border-color: transparent;
+            color: #05201d;
+        }
+
+        .menu__btn--primario:hover {
+            background: var(--cor-primaria, #14b8a6);
+            filter: brightness(1.08);
+        }
+
+        .new_msg {
+            text-align: center;
+            font-family: var(--font-display);
+        }
+
+        @keyframes surgir {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes flutuar {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .menu__logo {
+            animation: surgir .6s ease both;
+        }
+
+        .menu__acoes {
+            animation: surgir .6s ease .25s both;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page-main">
+        <div class="menu">
+            <div class="menu__logo">
+                <span class="menu__emblema">🩺</span>
+                <h1 class="menu__titulo">Heróis<br><span>da Saúde</span></h1>
+                <p class="menu__tagline">Salve o bairro, aprenda sobre saúde</p>
+            </div>
+
+            <div class="menu__acoes">
+                <button class="menu__btn menu__btn--primario">▶ Jogar</button>
+                <button class="menu__btn">Opções</button>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>
