@@ -396,6 +396,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnLabel) btnLabel.textContent = textoDoBotao();
   }
 
+  async function destinoDepoisDeEntrar(tipoDeclarado = null) {
+    let tipo = tipoDeclarado;
+
+    try {
+      const perfil = await AUTH.perfilAtual();
+      if (perfil && perfil.tipo) tipo = perfil.tipo;
+    } catch (_) { /* fica com o tipo declarado */ }
+
+    return (tipo === 'PROFESSOR' || tipo === 'ADMIN')
+      ? { pagina: 'dashboard.html', saudacao: 'Bem-vindo, Mestre! ' }
+      : { pagina: 'mapa.html',      saudacao: 'Bem-vindo, Herói! ' };
+  }
+
   // ── Envio do formulário ───────────────────────
   if (form) {
     form.addEventListener('submit', async (e) => {
@@ -423,8 +436,9 @@ document.addEventListener("DOMContentLoaded", () => {
           if (typeof AUTH !== 'undefined' && typeof AUTH.login === 'function') {
             const r = await AUTH.login(email, senha);
             if (r.ok) {
-              showAlert('Bem-vindo, Herói! 🎉', 'success');
-              setTimeout(() => { window.location.href = 'dashboard.html'; }, 1100);
+              const destino = await destinoDepoisDeEntrar();
+              showAlert(destino.saudacao, 'success');
+              setTimeout(() => { window.location.href = destino.pagina; }, 1100);
             } else {
               showAlert(r.message || 'E-mail ou senha incorretos.', 'error');
             }
@@ -436,8 +450,9 @@ document.addEventListener("DOMContentLoaded", () => {
           if (typeof AUTH !== 'undefined' && typeof AUTH.register === 'function') {
             const r = await AUTH.register(dadosCadastro);
             if (r.ok) {
-              showAlert('Conta criada com sucesso! Redirecionando...', 'success');
-              setTimeout(() => { window.location.href = 'mapa.html'; }, 1100);
+              const destino = await destinoDepoisDeEntrar(dadosCadastro.tipo);
+              showAlert(`Conta criada! ${destino.saudacao}`, 'success');
+              setTimeout(() => { window.location.href = destino.pagina; }, 1100);
             } else {
               showAlert(r.message || 'Erro ao realizar cadastro.', 'error');
             }
