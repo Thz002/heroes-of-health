@@ -534,3 +534,519 @@ body {
     border-color: rgba(255,255,255,0.25);
     background: rgba(255,255,255,0.1);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   FUNDO VIVO
+   Bolhas que sobem devagar, só com CSS. Cada <span> traz suas próprias
+   medidas em variáveis (--x, --tam, --dur, --atraso), então a mesma
+   regra serve para todas e nenhuma sobe igual à outra.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.blob-3 {
+    top: 35%;
+    left: 45%;
+    width: 32vw;
+    height: 32vw;
+    background: radial-gradient(circle, rgba(249, 199, 79, 0.07) 0%, transparent 70%);
+    animation: respirar 14s ease-in-out infinite;
+}
+
+@keyframes respirar {
+    0%, 100% { transform: scale(1)    translate(0, 0); }
+    50%      { transform: scale(1.15) translate(-2%, 3%); }
+}
+
+.fundo-vivo {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.fundo-vivo span {
+    position: absolute;
+    bottom: -40px;
+    left: var(--x);
+    width: var(--tam);
+    height: var(--tam);
+    border-radius: 50%;
+    background: rgba(107, 223, 184, 0.16);
+    border: 1px solid rgba(107, 223, 184, 0.22);
+    animation: subir-bolha var(--dur) linear infinite;
+    animation-delay: var(--atraso);
+}
+
+@keyframes subir-bolha {
+    0%   { transform: translateY(0) translateX(0) scale(0.6); opacity: 0; }
+    10%  { opacity: 0.7; }
+    50%  { transform: translateY(-45vh) translateX(22px) scale(1); }
+    90%  { opacity: 0.5; }
+    100% { transform: translateY(-100vh) translateX(-14px) scale(0.8); opacity: 0; }
+}
+
+.page-wrap { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) {
+    .fundo-vivo span,
+    .blob-3,
+    .turma-card { animation: none !important; }
+}
+
+.turma-card {
+    animation: card-entra .38s ease-out backwards;
+    animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+@keyframes card-entra {
+    from { opacity: 0; transform: translateY(14px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.turma-card__corpo {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 14px 16px 15px;
+}
+
+.turma-card__topo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+/* Estava escrito com um traço só (.turma-card_nome) e por isso nunca
+   pegava — o JS escreve .turma-card__nome, com dois. */
+.turma-card__nome {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    line-height: 1.25;
+}
+
+
+.turma-card__pistas {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 17px;
+    line-height: 1;
+    transition: color .18s, background .18s;
+}
+
+.turma-card:hover .turma-card__pistas,
+.turma-card.menu-aberto .turma-card__pistas {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.turma-card.menu-aberto {
+    border-color: var(--cor);
+    transform: translateY(-3px);
+}
+
+.turma-card__codigo.copiado {
+    background: color-mix(in srgb, var(--cor) 25%, transparent);
+    border-color: var(--cor);
+    color: #fff;
+}
+
+.turma-card.saindo {
+    animation: card-sai .28s ease-in forwards;
+}
+
+@keyframes card-sai {
+    to { opacity: 0; transform: scale(.92); }
+}
+
+.turmas-erro {
+    grid-column: 1 / -1;
+    font-size: 13.5px;
+    color: #fca5a5;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.22);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 0;
+}
+
+.menu-turma {
+    position: absolute;
+    z-index: 9998;
+    min-width: 210px;
+    padding: 7px;
+    background: #10312c;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    animation: menu-abre .16s ease-out;
+}
+
+.menu-turma[hidden] { display: none; }
+
+@keyframes menu-abre {
+    from { opacity: 0; transform: translateY(-6px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.menu-turma__titulo {
+    font-family: var(--font-display);
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.34);
+    padding: 6px 10px 8px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 240px;
+}
+
+.menu-turma__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.82);
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    text-align: left;
+    cursor: pointer;
+    transition: background .15s, color .15s, padding-left .15s;
+}
+
+.menu-turma__item:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+    padding-left: 14px;
+}
+
+.menu-turma__item svg { flex-shrink: 0; opacity: 0.7; }
+.menu-turma__item:hover svg { opacity: 1; }
+
+.menu-turma__risco {
+    display: block;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 5px 8px;
+}
+
+.menu-turma__item--perigo { color: #fca5a5; }
+
+.menu-turma__item--perigo:hover {
+    background: rgba(220, 38, 38, 0.14);
+    color: #fecaca;
+}
+
+.modal__caixa--estreita { width: min(430px, 100%); }
+
+.modal__sub {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.45);
+    margin: -12px 0 18px;
+}
+
+.modal__texto {
+    font-size: 14.5px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.6;
+    margin: 0 0 6px;
+}
+
+.modal__texto strong { color: #fff; }
+
+.modal__resumo {
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(107, 223, 184, 0.9);
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(107, 223, 184, 0.2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin: 0 0 4px;
+    white-space: pre-wrap;
+}
+
+.modal__resumo[hidden] { display: none; }
+
+.campo__dica {
+    font-weight: 500;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.campo-duplo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+/* ── Chips: as etiquetas que ligam e desligam ─────────────────────── */
+.opcoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.chip {
+    padding: 6px 12px;
+    border-radius: 99px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.6);
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: transform .14s, border-color .16s, background .16s, color .16s;
+}
+
+.chip:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.chip--ativo {
+    background: var(--accent-soft);
+    border-color: var(--primary);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.btn-perigo {
+    border-radius: 20px;
+    padding: 6px 14px;
+    background: #b91c1c;
+    border: 2px solid transparent;
+    color: #fff;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.btn-perigo:hover {
+    transform: translateY(-2px);
+    background: #dc2626;
+    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
+}
+
+.btn-perigo:disabled,
+.btn-primary:disabled {
+    opacity: 0.55;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+}
+
+.turma-topo {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-left: 4px solid var(--cor, var(--primary));
+    border-radius: 14px;
+    padding: 18px 22px 20px;
+    margin-bottom: 26px;
+}
+
+.turma-topo__voltar {
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.45);
+    text-decoration: none;
+}
+
+.turma-topo__voltar:hover {
+    color: #fff;
+    text-decoration: none;
+}
+
+.turma-topo__linha {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.turma-topo__nome {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+    margin: 0;
+    line-height: 1.15;
+}
+
+.turma-topo__ano {
+    font-size: 13.5px;
+    color: rgba(255, 255, 255, 0.42);
+    margin: 4px 0 0;
+}
+
+.turma-topo__dados {
+    display: flex;
+    gap: 12px;
+}
+
+.dado {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 92px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dado__num {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.02em;
+}
+
+.dado__rot {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.3);
+    margin-top: 2px;
+}
+
+.rank__cabecalho,
+.rank__linha {
+    display: grid;
+    grid-template-columns: 34px minmax(120px, 1.4fr) minmax(80px, 2fr) 64px;
+    align-items: center;
+    gap: 12px;
+}
+
+.rank__cabecalho {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.28);
+    padding: 0 12px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.rank__pontos-rotulo { text-align: right; }
+
+.rank {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.rank__linha {
+    padding: 11px 12px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: background .16s, border-color .16s, transform .16s;
+}
+
+.rank__linha:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(3px);
+}
+
+.rank__pos {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.3);
+    text-align: center;
+}
+
+.rank__aluno {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.rank__avatar {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    border: 1px solid rgba(107, 223, 184, 0.25);
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.rank__nome {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rank__barra {
+    height: 7px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.rank__barra i {
+    display: block;
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    animation: encher .7s ease-out backwards;
+}
+
+@keyframes encher {
+    from { width: 0 !important; }
+}
+
+.rank__pontos {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    color: #fff;
+    text-align: right;
+}
+
+.rank__linha--ouro   .rank__pos { color: #f9c74f; }
+.rank__linha--prata  .rank__pos { color: #cbd5e1; }
+.rank__linha--bronze .rank__pos { color: #d99a6c; }
+
+.rank__linha--ouro .rank__avatar {
+    background: rgba(249, 199, 79, 0.16);
+    border-color: rgba(249, 199, 79, 0.4);
+    color: #f9c74f;
+}
+
+@media (max-width: 620px) {
+    .rank__cabecalho,
+    .rank__linha {
+        grid-template-columns: 28px 1fr 56px;
+    }
+
+    .rank__barra { display: none; }
+}

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Turma - Heróis da Saúde</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <script src="/vendor/supabase.js"></script>
+  <script src="../js/supabase.js" defer></script>
+  <script src="../js/api.js" defer></script>
+  <!-- O script desta página ainda não existe. Quando existir, ele entra
+       AQUI, depois dos dois de cima — a ordem é contrato.
+  <script src="../js/turma.js" defer></script>
+  -->
+</head>
+
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="fundo-vivo" aria-hidden="true">
+    <span style="--x:12%; --tam:12px; --dur:22s; --atraso:0s"></span>
+    <span style="--x:33%; --tam:8px;  --dur:26s; --atraso:5s"></span>
+    <span style="--x:59%; --tam:16px; --dur:18s; --atraso:2s"></span>
+    <span style="--x:78%; --tam:10px; --dur:24s; --atraso:9s"></span>
+  </div>
+
+  <div class="page-wrap">
+
+    <nav class="nav_bar">
+      <div class="topLine">
+        <div class="navbar__inner">
+          <div class="navbar__logo">
+            <div class="navbar__logo-dot">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+                <path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </div>
+            HERÓIS DA SAÚDE
+          </div>
+
+          <div style="display:flex;align-items:center;gap:20px;">
+            <ul class="navbar__links">
+              <li><a href="dashboard.html">Voltar ao painel</a></li>
+            </ul>
+            <button id="logout-btn" class="btn-logout">Sair</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main-content">
+
+      <div class="turma-topo" style="--cor:#14b8a6">
+        <a class="turma-topo__voltar" href="dashboard.html">&#8592; Minhas turmas</a>
+
+        <div class="turma-topo__linha">
+          <div>
+            <h2 class="turma-topo__nome" id="turma-nome">Turminha 7 ano</h2>
+            <p class="turma-topo__ano" id="turma-ano">7º ano · Escola Municipal Exemplo</p>
+          </div>
+
+          <div class="turma-topo__dados">
+            <div class="dado">
+              <span class="dado__num" id="turma-alunos">0/10</span>
+              <span class="dado__rot">alunos</span>
+            </div>
+            <div class="dado">
+              <span class="dado__num" id="turma-codigo">7B-K3M9</span>
+              <span class="dado__rot">código</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="col-full">
+
+          <section class="dashboard-section">
+            <h3>Ranking da turma</h3>
+          </section>
+
+          <section class="painel">
+
+            <div class="rank__cabecalho">
+              <span>#</span>
+              <span>Aluno</span>
+              <span>Progresso</span>
+              <span class="rank__pontos-rotulo">Pontos</span>
+            </div>
+
+            <ol class="rank" id="lista-rank">
+
+              <li class="rank__linha rank__linha--ouro">
+                <span class="rank__pos">1</span>
+                <span class="rank__aluno">
+                  <span class="rank__avatar">T</span>
+                  <span class="rank__nome">Thiago</span>
+                </span>
+                <span class="rank__barra"><i style="width:92%"></i></span>
+                <span class="rank__pontos">ERROR</span>
+              </li>
+
+              <li class="rank__linha rank__linha--prata">
+                <span class="rank__pos">2</span>
+                <span class="rank__aluno">
+                  <span class="rank__avatar">J</span>
+                  <span class="rank__nome">Jennifer</span>
+                </span>
+                <span class="rank__barra"><i style="width:78%"></i></span>
+                <span class="rank__pontos">9999+</span>
+              </li>
+
+              <li class="rank__linha rank__linha--bronze">
+                <span class="rank__pos">3</span>
+                <span class="rank__aluno">
+                  <span class="rank__avatar">A</span>
+                  <span class="rank__nome">Pedro</span>
+                </span>
+                <span class="rank__barra"><i style="width:61%"></i></span>
+                <span class="rank__pontos">8000</span>
+              </li>
+
+              <li class="rank__linha">
+                <span class="rank__pos">4</span>
+                <span class="rank__aluno">
+                  <span class="rank__avatar">L</span>
+                  <span class="rank__nome">Lucas Silva</span>
+                </span>
+                <span class="rank__barra"><i style="width:44%"></i></span>
+                <span class="rank__pontos">5000</span>
+              </li>
+
+              <li class="rank__linha">
+                <span class="rank__pos">5</span>
+                <span class="rank__aluno">
+                  <span class="rank__avatar">R</span>
+                  <span class="rank__nome">Rafael Souza</span>
+                </span>
+                <span class="rank__barra"><i style="width:12%"></i></span>
+                <span class="rank__pontos">1000</span>
+              </li>
+
+            </ol>
+
+            <!-- Aparece quando a turma ainda não tem aluno nenhum. -->
+            <div class="empty-state" id="empty-rank" hidden>
+              <div class="empty-state__icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                  stroke-linecap="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
+              </div>
+              <p class="empty-state__title">Nenhum aluno entrou ainda</p>
+              <p class="empty-state__hint">Entregue o código da turma para a sala.</p>
+            </div>
+
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>
