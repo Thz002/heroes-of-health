@@ -423,13 +423,18 @@ document.addEventListener("DOMContentLoaded", () => {
           if (typeof AUTH !== 'undefined' && typeof AUTH.login === 'function') {
             const r = await AUTH.login(email, senha);
             if (r.ok) {
-              showAlert('Bem-vindo, Herói! 🎉', 'success');
-              setTimeout(() => { window.location.href = 'dashboard.html'; }, 1100);
+              const perfil = await AUTH.perfilAtual();
+              const destino = (perfil?.tipo === 'PROFESSOR' || perfil?.tipo === 'ADMIN')
+                ? 'dashboard.html'
+                : 'loading.html';
+                 if(destino == 'PROFESSOR' || destino == 'ADMIN')
+                  {showAlert('Bem-vindo, Mestre da Saúde! ', 'success');}
+                 else {showAlert('Bem-vindo, Herói!', 'success');}
+              setTimeout(() => { window.location.href = destino; }, 1100);
             } else {
               showAlert(r.message || 'E-mail ou senha incorretos.', 'error');
             }
           } else {
-            // Ainda não existe ninguém para autenticar de verdade.
             showAlert('O login ainda não está ligado ao Supabase.', 'error');
           }
         } else {
@@ -442,7 +447,7 @@ document.addEventListener("DOMContentLoaded", () => {
               showAlert(r.message || 'Erro ao realizar cadastro.', 'error');
             }
           } else {
-            showAlert('O cadastro ainda não está ligado ao Supabase.', 'error');
+            showAlert('Você ainda não possui cadastro!', 'error');
           }
         }
       } catch (_) {
