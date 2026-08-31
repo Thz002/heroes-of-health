@@ -96,47 +96,47 @@
 
   // Retângulos (x, y, largura, altura) em pixels sobre a imagem original 1408x768.
   const HOTSPOTS = [
-    { tipo: "parque", x: 495, y: 0, w: 410, h: 120 },
-    { tipo: "escola", x: 783, y: 110, w: 182, h: 150 },
-    { tipo: "farmacia", x: 438, y: 153, w: 112, h: 92 },
-    { tipo: "upa", x: 562, y: 150, w: 92, h: 95 },
-    { tipo: "ubs", x: 438, y: 250, w: 122, h: 102 },
-    { tipo: "banca", x: 857, y: 277, w: 113, h: 84 },
+    { tipo: "parque", x: 495, y: 0, w: 418, h: 120 },
+    { tipo: "escola", x: 778, y: 103, w: 200, h: 150 },
+    { tipo: "farmacia", x: 438, y: 153, w: 119, h: 92 },
+    { tipo: "upa", x: 558, y: 140, w: 121, h: 115 },
+    { tipo: "ubs", x: 432, y: 250, w: 122, h: 102 },
+    { tipo: "banca", x: 865, y: 274, w: 100, h: 90 },
     { tipo: "praca", x: 597, y: 282, w: 206, h: 210 },
-    { tipo: "mercado", x: 857, y: 387, w: 129, h: 97 },
-    { tipo: "creche", x: 733, y: 512, w: 173, h: 99 },
-    { tipo: "igreja", x: 1112, y: 458, w: 140, h: 157 },
-    { tipo: "quadra", x: 1034, y: 332, w: 212, h: 127 },
-    { tipo: "baldio", x: 1034, y: 162, w: 212, h: 170 },
+    { tipo: "mercado", x: 860, y: 387, w: 129, h: 120 },
+    { tipo: "creche", x: 750, y: 512, w: 130, h: 99 },
+    { tipo: "igreja", x: 1144, y: 458, w: 110, h: 157 },
+    { tipo: "quadra", x: 1034, y: 300, w: 230, h: 230 },
+    { tipo: "baldio", x: 1038, y: 162, w: 218, h: 180 },
     { tipo: "corrego", x: 166, y: 0, w: 114, h: 680 },
     { tipo: "rio", x: 205, y: 697, w: 1200, h: 80 },
-    { tipo: "ruas", x: 278, y: 628, w: 1037, h: 50 },
+    { tipo: "ruas", x: 278, y: 628, w: 1036, h: 50 },
 
     // Casas — 16 casas padrão, cada uma com sua própria imagem (Casa.png,
     // Casa02.png .. Casa016.png), espalhadas pelo bairro.
-    { tipo: "casa", imagem: "Casa.png", x: 58, y: 8, w: 100, h: 98 },
-    { tipo: "casa", imagem: "Casa03.png", x: 268, y: 25, w: 104, h: 100 },
-    { tipo: "casa", imagem: "Casa013.png", x: 390, y: 25, w: 90, h: 97 },
-    { tipo: "casa", imagem: "Casa06.png", x: 933, y: 10, w: 82, h: 103 },
-    { tipo: "casa", imagem: "Casa07.png", x: 1038, y: 25, w: 82, h: 95 },
-    { tipo: "casa", imagem: "Casa014.png", x: 1193, y: 12, w: 97, h: 96 },
-    { tipo: "casa", imagem: "Casa09.png", x: 270, y: 163, w: 102, h: 92 },
-    { tipo: "casa", imagem: "Casa010.png", x: 270, y: 253, w: 102, h: 97 },
-    { tipo: "casa", imagem: "Casa011.png", x: 268, y: 398, w: 82, h: 102 },
-    { tipo: "casa", imagem: "Casa08.png", x: 390, y: 405, w: 100, h: 90 },
-    { tipo: "casa", imagem: "Casa012.png", x: 488, y: 392, w: 100, h: 90 },
-    { tipo: "casa", imagem: "Casa02.png", x: 1043, y: 498, w: 68, h: 112 },
-    { tipo: "casa", imagem: "Casa015.png", x: 905, y: 510, w: 82, h: 100 },
-    { tipo: "casa", imagem: "Casa05.png", x: 268, y: 512, w: 104, h: 100 },
-    { tipo: "casa", imagem: "Casa04.png", x: 388, y: 512, w: 94, h: 100 },
-    { tipo: "casa", imagem: "Casa016.png", x: 602, y: 512, w: 66, h: 100 },
+    { tipo: "casa", imagem: "Casa.png", x: 253, y: 235, w: 125, h: 126},
+    { tipo: "casa", imagem: "Casa03.png", x:465, y: 387, w: 85, h: 110 },
+    { tipo: "casa", imagem: "Casa013.png", x: 372, y: 390, w: 85, h: 105 },
+    { tipo: "casa", imagem: "Casa06.png", x: 927, y: 19, w: 105, h: 100 },
+    { tipo: "casa", imagem: "Casa07.png", x: 1045, y: 20, w: 125, h: 95 },
+    { tipo: "casa", imagem: "Casa014.png", x: 450, y: 512, w: 90, h: 100 },
+    { tipo: "casa", imagem: "Casa09.png", x: 372, y: 17, w: 125, h: 105 },
+    { tipo: "casa", imagem: "Casa010.png", x: 300, y: 513, w: 125, h: 100 },
+    { tipo: "casa", imagem: "Casa011.png", x: 253, y: 387, w: 110, h: 115 },
+    { tipo: "casa", imagem: "Casa08.png", x: 560, y: 500, w: 110, h: 115 },
+    { tipo: "casa", imagem: "Casa012.png", x: 875, y: 502, w: 110, h: 110 },
+    { tipo: "casa", imagem: "Casa02.png", x: 253, y: 139, w: 127, h: 107 },
+    { tipo: "casa", imagem: "Casa015.png", x: 238, y: 25, w: 145, h: 100 },
+    { tipo: "casa", imagem: "Casa05.png", x: 1040, y: 512, w: 104, h: 100 },
+    { tipo: "casa", imagem: "Casa04.png", x: 95, y: 25, w: 80, h: 100},
+    { tipo: "casa", imagem: "Casa016.png", x: 1180, y: 15, w: 150, h: 100 },
 
     // Casas laterais — 4 casas parcialmente cortadas nas bordas esquerda e
     // direita do mapa (2 de cada lado).
-    { tipo: "casa", imagem: "CasaLateral03.png", x: 0, y: 210, w: 68, h: 112 },
+    { tipo: "casa", imagem: "CasaLateral03.png", x: 15, y: 200, w: 68, h: 112 },
     { tipo: "casa", imagem: "CasaLateral01.png", x: 0, y: 442, w: 98, h: 105 },
-    { tipo: "casa", imagem: "CasaLateral02.png", x: 1338, y: 210, w: 70, h: 112 },
-    { tipo: "casa", imagem: "CasaLateral04.png", x: 1335, y: 447, w: 73, h: 113 },
+    { tipo: "casa", imagem: "CasaLateral02.png", x: 1335, y: 200, w: 70, h: 112 },
+    { tipo: "casa", imagem: "CasaLateral04.png", x: 1335, y: 427, w: 73, h: 113 },
   ];
 
   const hotspotsLayer = document.getElementById("mapa-hotspots");
@@ -249,7 +249,9 @@
   function aplicarTransform() {
     if (!canvas) return;
     clampPan();
-    canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    // Arredonda o deslocamento: translate em pixel fracionado faz o navegador
+    // reamostrar o mapa inteiro em subpixel e o desenho sai borrado.
+    canvas.style.transform = `translate(${Math.round(panX)}px, ${Math.round(panY)}px) scale(${zoom})`;
     if (zoomResetBtn) zoomResetBtn.textContent = Math.round(zoom * 100) + "%";
     if (viewport) viewport.style.cursor = zoom > 1 ? "grab" : "default";
   }
@@ -276,8 +278,16 @@
     { passive: false }
   );
 
+  // O navegador tenta arrastar/selecionar a imagem sob o cursor; isso pinta o
+  // recorte de azul e cancela o pan no meio do movimento.
+  viewport?.addEventListener("dragstart", (e) => e.preventDefault());
+  viewport?.addEventListener("selectstart", (e) => {
+    if (dragging) e.preventDefault();
+  });
+
   viewport?.addEventListener("pointerdown", (e) => {
     if (zoom <= ZOOM_MIN) return;
+    e.preventDefault();
     dragging = true;
     dragStartX = e.clientX;
     dragStartY = e.clientY;

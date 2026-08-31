@@ -76,10 +76,20 @@
   background: #04292e;
   cursor: grab;
   touch-action: none;
+  /* Arrastar o mapa não pode selecionar imagem/texto por baixo do cursor —
+     a seleção azul interrompe o pan no meio do movimento. */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .mapa-viewport.is-panning {
   cursor: grabbing;
+}
+
+/* Durante o pan os hotspots não capturam o ponteiro: evita o hover piscando
+   e o mouseenter trocando a sidebar enquanto o usuário só arrasta o mapa. */
+.mapa-viewport.is-panning .mapa-hotspot {
+  pointer-events: none;
 }
 
 .mapa-canvas {
@@ -87,6 +97,13 @@
   width: 100%;
   aspect-ratio: 1408 / 768;
   transform-origin: center center;
+}
+
+/* `will-change` só durante o arrasto. Se ficasse fixo, o navegador
+   rasterizaria o mapa uma única vez em 100% e apenas esticaria essa textura
+   ao dar zoom — era daí que vinha o embaçado (e a nitidez temporária no
+   hover, que forçava uma nova rasterização da imagem). */
+.mapa-viewport.is-panning .mapa-canvas {
   will-change: transform;
 }
 
@@ -97,6 +114,8 @@
   object-fit: cover;
   pointer-events: none;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 
 .mapa-hotspots {
@@ -109,15 +128,40 @@
   position: absolute;
   cursor: pointer;
   z-index: 3;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Ordem de camadas pedida para essas três construções, que se sobrepõem:
+   Terreno baldio embaixo, Quadra por cima dele, Igreja por cima da Quadra.
+   Sem isto, todo hotspot empata em z-index:3 e desempata pela ordem no
+   array HOTSPOTS — o que colocava o baldio (último no array) acima dos
+   outros dois, ao contrário do pedido. */
+.mapa-hotspot[data-tipo="baldio"] {
+  z-index: 1;
+}
+
+.mapa-hotspot[data-tipo="quadra"] {
+  z-index: 2;
+}
+
+.mapa-hotspot[data-tipo="igreja"] {
+  z-index: 3;
 }
 
 .mapa-hotspot img {
   width: 100%;
   height: 100%;
   display: block;
-  filter: drop-shadow(0 0 0 rgba(249, 199, 79, 0));
+  /* Sem filtro em repouso: um drop-shadow permanente (mesmo com raio 0)
+     obriga o navegador a renderizar cada imagem numa superfície separada e
+     reamostrada — era o que deixava as construções embaçadas. */
+  filter: none;
   transition: filter 0.18s ease, transform 0.18s ease;
   pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 
 .mapa-hotspot__label {
@@ -145,6 +189,16 @@
 .mapa-hotspot.is-active img {
   filter: drop-shadow(0 0 10px rgba(249, 199, 79, 0.95)) brightness(1.12);
   transform: scale(1.05);
+}
+
+/* Sobe o hotspot inteiro (não só o rótulo) acima de todos os vizinhos ao
+   passar o mouse — o z-index do rótulo sozinho não bastava, pois só conta
+   dentro do stacking context do próprio .mapa-hotspot, nunca contra outro
+   hotspot vizinho que fique na frente dele. Sem isso o tooltip ficava
+   parcial ou totalmente escondido atrás da construção ao lado. */
+.mapa-hotspot:hover,
+.mapa-hotspot.is-active {
+  z-index: 20;
 }
 
 .mapa-hotspot:hover .mapa-hotspot__label,
