@@ -1,7 +1,10 @@
 // mapa.js — mapa interativo do bairro (src/pages/mapa.html)
-// Coordenadas dos elementos foram medidas manualmente sobre Mapa03.jpg
-// (1408x768px) e são uma primeira aproximação — ajuste x/y/w/h abaixo
-// conforme necessário para refinar o alinhamento visual.
+// A base do mapa (Mapa01.png) só tem ruas, córrego e rio — nenhuma
+// construção. Todo prédio/casa é uma imagem recortada, posicionada por
+// cima com coordenadas medidas manualmente sobre Mapa02.jpg (o mapa
+// original, com as construções desenhadas, usado só como referência de
+// posicionamento), 1408x768px. Ajuste x/y/w/h abaixo conforme necessário
+// para refinar o alinhamento visual.
 
 (function () {
   const MAPA_W = 1408;
@@ -88,7 +91,6 @@
       nome: "Casa",
       imagem: "Casa.png",
       descricao: "Visitas do ACS a moradores diferentes, cada um com uma história e um problema de saúde distinto a ser identificado e resolvido.",
-      semOverlay: true,
     },
   };
 
@@ -106,29 +108,35 @@
     { tipo: "igreja", x: 1112, y: 458, w: 140, h: 157 },
     { tipo: "quadra", x: 1034, y: 332, w: 212, h: 127 },
     { tipo: "baldio", x: 1034, y: 162, w: 212, h: 170 },
-    { tipo: "corrego", x: 176, y: 0, w: 88, h: 725 },
-    { tipo: "rio", x: 0, y: 684, w: 1408, h: 84 },
-    { tipo: "ruas", x: 272, y: 628, w: 1042, h: 50 },
+    { tipo: "corrego", x: 166, y: 0, w: 114, h: 680 },
+    { tipo: "rio", x: 205, y: 697, w: 1200, h: 80 },
+    { tipo: "ruas", x: 278, y: 628, w: 1037, h: 50 },
 
-    // Casas (múltiplas instâncias do mesmo cenário espalhadas pelo bairro)
-    { tipo: "casa", x: 53, y: 8, w: 100, h: 110 },
-    { tipo: "casa", x: 268, y: 22, w: 107, h: 106 },
-    { tipo: "casa", x: 388, y: 22, w: 94, h: 106 },
-    { tipo: "casa", x: 933, y: 12, w: 84, h: 106 },
-    { tipo: "casa", x: 1038, y: 22, w: 84, h: 106 },
-    { tipo: "casa", x: 1193, y: 12, w: 100, h: 100 },
-    { tipo: "casa", x: 0, y: 210, w: 68, h: 112 },
-    { tipo: "casa", x: 1338, y: 210, w: 70, h: 112 },
-    { tipo: "casa", x: 1338, y: 445, w: 70, h: 112 },
-    { tipo: "casa", x: 268, y: 172, w: 107, h: 92 },
-    { tipo: "casa", x: 268, y: 260, w: 107, h: 92 },
-    { tipo: "casa", x: 268, y: 392, w: 104, h: 90 },
-    { tipo: "casa", x: 388, y: 392, w: 94, h: 90 },
-    { tipo: "casa", x: 488, y: 392, w: 100, h: 90 },
-    { tipo: "casa", x: 905, y: 510, w: 82, h: 100 },
-    { tipo: "casa", x: 268, y: 512, w: 104, h: 100 },
-    { tipo: "casa", x: 388, y: 512, w: 94, h: 100 },
-    { tipo: "casa", x: 602, y: 512, w: 66, h: 100 },
+    // Casas — 16 casas padrão, cada uma com sua própria imagem (Casa.png,
+    // Casa02.png .. Casa016.png), espalhadas pelo bairro.
+    { tipo: "casa", imagem: "Casa.png", x: 58, y: 8, w: 100, h: 98 },
+    { tipo: "casa", imagem: "Casa03.png", x: 268, y: 25, w: 104, h: 100 },
+    { tipo: "casa", imagem: "Casa013.png", x: 390, y: 25, w: 90, h: 97 },
+    { tipo: "casa", imagem: "Casa06.png", x: 933, y: 10, w: 82, h: 103 },
+    { tipo: "casa", imagem: "Casa07.png", x: 1038, y: 25, w: 82, h: 95 },
+    { tipo: "casa", imagem: "Casa014.png", x: 1193, y: 12, w: 97, h: 96 },
+    { tipo: "casa", imagem: "Casa09.png", x: 270, y: 163, w: 102, h: 92 },
+    { tipo: "casa", imagem: "Casa010.png", x: 270, y: 253, w: 102, h: 97 },
+    { tipo: "casa", imagem: "Casa011.png", x: 268, y: 398, w: 82, h: 102 },
+    { tipo: "casa", imagem: "Casa08.png", x: 390, y: 405, w: 100, h: 90 },
+    { tipo: "casa", imagem: "Casa012.png", x: 488, y: 392, w: 100, h: 90 },
+    { tipo: "casa", imagem: "Casa02.png", x: 1043, y: 498, w: 68, h: 112 },
+    { tipo: "casa", imagem: "Casa015.png", x: 905, y: 510, w: 82, h: 100 },
+    { tipo: "casa", imagem: "Casa05.png", x: 268, y: 512, w: 104, h: 100 },
+    { tipo: "casa", imagem: "Casa04.png", x: 388, y: 512, w: 94, h: 100 },
+    { tipo: "casa", imagem: "Casa016.png", x: 602, y: 512, w: 66, h: 100 },
+
+    // Casas laterais — 4 casas parcialmente cortadas nas bordas esquerda e
+    // direita do mapa (2 de cada lado).
+    { tipo: "casa", imagem: "CasaLateral03.png", x: 0, y: 210, w: 68, h: 112 },
+    { tipo: "casa", imagem: "CasaLateral01.png", x: 0, y: 442, w: 98, h: 105 },
+    { tipo: "casa", imagem: "CasaLateral02.png", x: 1338, y: 210, w: 70, h: 112 },
+    { tipo: "casa", imagem: "CasaLateral04.png", x: 1335, y: 447, w: 73, h: 113 },
   ];
 
   const hotspotsLayer = document.getElementById("mapa-hotspots");
@@ -139,14 +147,14 @@
   const sidebarDesc = document.getElementById("mapa-sidebar-desc");
   const sidebarPlay = document.getElementById("mapa-sidebar-play");
 
-  function mostrarCenario(tipo) {
-    const cenario = CENARIOS[tipo];
+  function mostrarCenario(h) {
+    const cenario = CENARIOS[h.tipo];
     if (!cenario) return;
-    sidebarThumb.src = `../imgs/${cenario.imagem}`;
+    sidebarThumb.src = `../imgs/${h.imagem || cenario.imagem}`;
     sidebarThumb.alt = cenario.nome;
     sidebarNome.textContent = cenario.nome;
     sidebarDesc.textContent = cenario.descricao;
-    sidebarPlay.dataset.cenario = tipo;
+    sidebarPlay.dataset.cenario = h.tipo;
     sidebarEmpty.hidden = true;
     sidebarContent.hidden = false;
   }
@@ -162,20 +170,18 @@
     HOTSPOTS.forEach((h) => {
       const cenario = CENARIOS[h.tipo];
       const el = document.createElement("div");
-      el.className = "mapa-hotspot" + (cenario.semOverlay ? " mapa-hotspot--zone" : "");
+      el.className = "mapa-hotspot";
       el.style.left = (h.x / MAPA_W) * 100 + "%";
       el.style.top = (h.y / MAPA_H) * 100 + "%";
       el.style.width = (h.w / MAPA_W) * 100 + "%";
       el.style.height = (h.h / MAPA_H) * 100 + "%";
       el.dataset.tipo = h.tipo;
 
-      if (!cenario.semOverlay) {
-        const img = document.createElement("img");
-        img.src = `../imgs/${cenario.imagem}`;
-        img.alt = cenario.nome;
-        img.draggable = false;
-        el.appendChild(img);
-      }
+      const img = document.createElement("img");
+      img.src = `../imgs/${h.imagem || cenario.imagem}`;
+      img.alt = cenario.nome;
+      img.draggable = false;
+      el.appendChild(img);
 
       const label = document.createElement("span");
       label.className = "mapa-hotspot__label";
@@ -184,13 +190,13 @@
 
       el.addEventListener("mouseenter", () => {
         el.classList.add("is-active");
-        mostrarCenario(h.tipo);
+        mostrarCenario(h);
       });
       el.addEventListener("mouseleave", () => {
         el.classList.remove("is-active");
       });
       el.addEventListener("click", () => {
-        mostrarCenario(h.tipo);
+        mostrarCenario(h);
       });
 
       frag.appendChild(el);
