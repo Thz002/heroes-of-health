@@ -83,7 +83,7 @@
       descricao: "Missões de educação ambiental e mutirões de limpeza, ligando meio ambiente e saúde pública.",
     },
     ruas: {
-      nome: "Ruas",
+      nome: "Rua",
       imagem: "Ruas.png",
       descricao: "Missões de caminhada e separação de lixo por cor, reforçando hábitos sustentáveis no dia a dia.",
     },
@@ -96,30 +96,37 @@
 
   // Retângulos (x, y, largura, altura) em pixels sobre a imagem original 1408x768.
   const HOTSPOTS = [
-    { tipo: "parque", x: 495, y: 0, w: 418, h: 120, tooltipPos: "bottom" },
+    { tipo: "parque", x: 490, y: 0, w: 429, h: 128, tooltipPos: "bottom" },
     { tipo: "escola", x: 778, y: 103, w: 200, h: 150 },
     { tipo: "farmacia", x: 438, y: 153, w: 119, h: 92 },
     { tipo: "upa", x: 558, y: 140, w: 121, h: 115 },
     { tipo: "ubs", x: 432, y: 250, w: 122, h: 102 },
     { tipo: "banca", x: 865, y: 274, w: 100, h: 90 },
-    { tipo: "praca", x: 622, y: 312, w: 164, h: 159 },
+    { tipo: "praca", x: 605, y: 303, w: 200, h: 187 },
     { tipo: "mercado", x: 860, y: 387, w: 129, h: 120 },
     { tipo: "creche", x: 750, y: 512, w: 130, h: 99 },
-    { tipo: "igreja", x: 1144, y: 458, w: 110, h: 157 },
-    { tipo: "quadra", x: 1034, y: 300, w: 230, h: 230 },
+    { tipo: "igreja", x: 1138, y: 458, w: 90, h: 157 },
+    { tipo: "quadra", x: 1034, y: 300, w: 230, h: 210 },
     { tipo: "baldio", x: 1038, y: 162, w: 218, h: 180 },
     { tipo: "corrego", x: 166, y: 0, w: 114, h: 680, tooltipPos: "right" },
     { tipo: "rio", x: 205, y: 697, w: 1200, h: 80 },
 
-    // Ruas.png contém a malha viária inteira já destacada, com fundo
-    // transparente — em vez de um recorte único, a imagem é sobreposta ao
-    // mapa base em escala 1:1 (mesma resolução, sem redimensionar), na
-    // posição exata medida sobre Mapa01.png. Fica oculta (opacity 0, ver
-    // mapa.css) e só aparece — todas as ruas ao mesmo tempo — no hover.
-    { tipo: "ruas", x: 95, y: 122, w: 1331, h: 540 },
+    { tipo: "ruas", imagemHotspot: "Ruas01.jpg", x: 278, y: 122, w: 1036, h: 41 },
+    { tipo: "ruas", imagemHotspot: "Ruas02.jpg", x: 93, y: 126, w: 58, h: 555, tooltipPos: "right" },
+    { tipo: "ruas", imagemHotspot: "Ruas03.png", x: 470, y: 623, w: 272, h: 61 },
+    { tipo: "ruas", imagemHotspot: "Ruas04.png", x: 988, y: 575, w: 50, h: 156 },
+    { tipo: "ruas", imagemHotspot: "Ruas05.png", x: 395, y: 126, w: 920, h: 50 },
+    { tipo: "ruas", imagemHotspot: "Ruas06.png", x: 980, y: 622, w: 64, h: 63 },
+    { tipo: "ruas", imagemHotspot: "Ruas08.png", x: 376, y: 125, w: 63, h: 259 },
+    { tipo: "ruas", imagemHotspot: "Ruas09.png", x: 786, y: 253, w: 63, h: 260 },
+    { tipo: "ruas", imagemHotspot: "Ruas10.png", x: 982, y: 617, w: 59, h: 73 },
+    { tipo: "ruas", imagemHotspot: "Ruas11.png", x: 986, y: 202, w: 52, h: 392 },
+    { tipo: "ruas", imagemHotspot: "Ruas12.png", x: 1256, y: 128, w: 52, h: 400 },
+    { tipo: "ruas", imagemHotspot: "Ruas13.png", x: 1256, y: 650, w: 80, h: 51 },
+    { tipo: "ruas", imagemHotspot: "Ruas14.png", x: 552, y: 256, w: 66, h: 63 },
+    { tipo: "ruas", imagemHotspot: "Ruas15.png", x: 1256, y: 592, w: 123, h: 96 },
 
-    // Casas — 16 casas padrão, cada uma com sua própria imagem (Casa.png,
-    // Casa02.png .. Casa016.png), espalhadas pelo bairro.
+
     { tipo: "casa", imagem: "Casa.png", x: 253, y: 235, w: 125, h: 126},
     { tipo: "casa", imagem: "Casa03.png", x:465, y: 387, w: 85, h: 110 },
     { tipo: "casa", imagem: "Casa013.png", x: 372, y: 390, w: 85, h: 105 },
@@ -137,8 +144,6 @@
     { tipo: "casa", imagem: "Casa04.png", x: 95, y: 25, w: 80, h: 100, tooltipPos: "bottom" },
     { tipo: "casa", imagem: "Casa016.png", x: 1180, y: 15, w: 150, h: 100, tooltipPos: "bottom" },
 
-    // Casas laterais — 4 casas parcialmente cortadas nas bordas esquerda e
-    // direita do mapa (2 de cada lado).
     { tipo: "casa", imagem: "CasaLateral03.png", x: 15, y: 200, w: 68, h: 112 },
     { tipo: "casa", imagem: "CasaLateral01.png", x: 0, y: 442, w: 98, h: 105 },
     { tipo: "casa", imagem: "CasaLateral02.png", x: 1335, y: 200, w: 70, h: 112 },
@@ -187,7 +192,7 @@
       el.dataset.tipo = h.tipo;
 
       const img = document.createElement("img");
-      img.src = `../imgs/${h.imagem || cenario.imagem}`;
+      img.src = `../imgs/${h.imagemHotspot || h.imagem || cenario.imagem}`;
       img.alt = cenario.nome;
       img.draggable = false;
       el.appendChild(img);
