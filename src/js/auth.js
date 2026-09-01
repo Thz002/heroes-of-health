@@ -93,14 +93,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnSpin) btnSpin.style.display = ligado ? 'block' : 'none';
   }
 
-  function perfilAtual() {
+  // Nome diferente de AUTH.perfilAtual() de propósito: essa aqui só lê o
+  // rádio marcado na tela (síncrona), não consulta o banco.
+  function tipoSelecionado() {
     const marcado = document.querySelector('input[name="tipo"]:checked');
     return marcado ? marcado.value : 'ALUNO';
   }
 
   function textoDoBotao() {
     if (isLogin) return 'Entrar no Jogo';
-    return perfilAtual() === 'PROFESSOR' ? 'Cadastrar Professor' : 'Cadastrar Aluno';
+    return tipoSelecionado() === 'PROFESSOR' ? 'Cadastrar Professor' : 'Cadastrar Aluno';
   }
 
   // ── Idade ─────────────────────────────────────
@@ -315,7 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nome = nomeInput ? nomeInput.value.trim() : '';
     if (!nome) return { erro: 'Informe seu nome completo.' };
 
-    const tipo = perfilAtual();
+    const tipo = tipoSelecionado();
     const base = { nome, email: email.trim(), password: senha, tipo };
 
     if (tipo === 'PROFESSOR') {
@@ -390,7 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function alternarPerfil() {
     if (isLogin) return;
-    const ehAluno = perfilAtual() === 'ALUNO';
+    const ehAluno = tipoSelecionado() === 'ALUNO';
     if (boxAluno) boxAluno.classList.toggle('hidden', !ehAluno);
     if (boxProfessor) boxProfessor.classList.toggle('hidden', ehAluno);
     if (btnLabel) btnLabel.textContent = textoDoBotao();
@@ -415,7 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       hideAlert();
 
-      const email = emailInput ? emailInput.value : '';
+      const email = emailInput ? emailInput.value.trim() : '';
       const senha = passInput ? passInput.value : '';
 
       const erroCredenciais = validarCredenciais(email, senha);
@@ -436,20 +438,9 @@ document.addEventListener("DOMContentLoaded", () => {
           if (typeof AUTH !== 'undefined' && typeof AUTH.login === 'function') {
             const r = await AUTH.login(email, senha);
             if (r.ok) {
-<<<<<<< HEAD
-              const perfil = await AUTH.perfilAtual();
-              const destino = (perfil?.tipo === 'PROFESSOR' || perfil?.tipo === 'ADMIN')
-                ? 'dashboard.html'
-                : 'loading.html';
-                 if(destino == 'PROFESSOR' || destino == 'ADMIN')
-                  {showAlert('Bem-vindo, Mestre da Saúde! ', 'success');}
-                 else {showAlert('Bem-vindo, Herói!', 'success');}
-              setTimeout(() => { window.location.href = destino; }, 1100);
-=======
               const destino = await destinoDepoisDeEntrar();
               showAlert(destino.saudacao, 'success');
               setTimeout(() => { window.location.href = destino.pagina; }, 1100);
->>>>>>> 72c77cc6cda7cc4aa2683ccc063323f3f5d1980b
             } else {
               showAlert(r.message || 'E-mail ou senha incorretos.', 'error');
             }
