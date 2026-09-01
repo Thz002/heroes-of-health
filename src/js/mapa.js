@@ -146,6 +146,7 @@
   const sidebarNome = document.getElementById("mapa-sidebar-nome");
   const sidebarDesc = document.getElementById("mapa-sidebar-desc");
   const sidebarPlay = document.getElementById("mapa-sidebar-play");
+  const btnSair = document.getElementById("logout-btn");
 
   function mostrarCenario(h) {
     const cenario = CENARIOS[h.tipo];
@@ -216,7 +217,12 @@
   }
 
   document.getElementById("mapa-viewport")?.addEventListener("mouseleave", limparSidebar);
+  AUTH.exigirLogin();
 
+  btnSair?.addEventListener('click', async () => {
+    await AUTH.logout();
+    window.location.href = 'index.html';
+  });
   // ── Zoom e pan ──────────────────────────────────────────
   const viewport = document.getElementById("mapa-viewport");
   const canvas = document.getElementById("mapa-canvas");
