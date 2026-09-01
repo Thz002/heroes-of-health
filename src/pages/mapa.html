@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa - Hérios da Saúde</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/mapa.css">
+  <script src="../js/mapa.js" defer></script>
+  <script src="../js/api.js" defer></script>
+  <script src="../js/auth.js" defer></script>
+</head>
+
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="page-wrap">
+
+    <!-- ── Basicamente nav quer dizer navegação, então acho uma boa delimitar meu escopo
+de navegação aqui e deparar tudo entre Barra e conteudo── -->
+    <nav class="nav_bar">
+      <div class="topLine">
+        <div class="navbar__inner">
+          <div class="navbar__logo">
+            <div class="navbar__logo-dot">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+                <path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </div>
+            HERÓIS DA SAÚDE
+          </div>
+
+          <div style="display:flex;align-items:center;gap:20px;">
+            <ul class="navbar__links">
+              <li><a href="missao.html"> Turmas</a></li>
+              <li><a href="mapa.html"> Quizes</a></li>
+            </ul>
+
+            <ul class="navbar__links" style="border-left:1px solid rgba(255,255,255,0.14);padding-left:20px;">
+              <li><a href="mapa.html" class="active"> Mapa</a></li>
+              <li><a href="missao.html"> Missões</a></li>
+              <li><a href="#"> Ranking</a></li>
+            </ul>
+
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="xp-badge" id="nav-xp"> ⭐ 480 XP </div>
+              <button id="logout-btn" class="btn-logout">Sair</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main-content">
+
+      <div class="welcome-bar">
+        <div class="welcome-text">
+          <h2>Mapa do Bairro</h2>
+          <p id="welcome-message">Explore os pontos do bairro e escolha onde jogar a próxima missão.</p>
+        </div>
+      </div>
+
+      <div class="mapa-layout">
+
+        <section class="mapa-viewport-card">
+          <div class="mapa-toolbar">
+            <button type="button" id="zoom-out" class="mapa-zoom-btn" aria-label="Diminuir zoom">−</button>
+            <button type="button" id="zoom-reset" class="mapa-zoom-btn mapa-zoom-btn--reset"
+              aria-label="Redefinir zoom">100%</button>
+            <button type="button" id="zoom-in" class="mapa-zoom-btn" aria-label="Aumentar zoom">+</button>
+          </div>
+
+          <div class="mapa-viewport" id="mapa-viewport">
+            <div class="mapa-canvas" id="mapa-canvas">
+              <img src="../imgs/Mapa01.png" alt="Mapa do bairro" class="mapa-base" id="mapa-base" draggable="false">
+              <div class="mapa-hotspots" id="mapa-hotspots"></div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="mapa-sidebar" id="mapa-sidebar">
+          <div class="mapa-sidebar__empty" id="mapa-sidebar-empty">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            <p class="mapa-sidebar__title">Passe o mouse sobre o mapa</p>
+            <p class="mapa-sidebar__hint">Aponte para um dos locais do bairro para ver os detalhes da região aqui.
+            </p>
+          </div>
+
+          <div class="mapa-sidebar__content" id="mapa-sidebar-content" hidden>
+            <div class="mapa-sidebar__thumb-wrap">
+              <img id="mapa-sidebar-thumb" class="mapa-sidebar__thumb" alt="">
+            </div>
+            <h3 id="mapa-sidebar-nome"></h3>
+            <p id="mapa-sidebar-desc"></p>
+            <button type="button" id="mapa-sidebar-play" class="btn-primary mapa-sidebar__play">Jogar</button>
+          </div>
+        </aside>
+
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>

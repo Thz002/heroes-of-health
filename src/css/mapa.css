@@ -1,0 +1,310 @@
+/* =============================================
+   HERÓIS DA SAÚDE — mapa.css
+   Mapa interativo do bairro
+   ============================================= */
+
+.mapa-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 22px;
+  align-items: start;
+}
+
+/* ── Container do mapa ───────────────────────── */
+.mapa-viewport-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-xl);
+  padding: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.mapa-toolbar {
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(7, 55, 62, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  padding: 4px;
+}
+
+.mapa-zoom-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.18s, transform 0.15s;
+}
+
+.mapa-zoom-btn:hover {
+  background: var(--primary);
+}
+
+.mapa-zoom-btn:active {
+  transform: scale(0.92);
+}
+
+.mapa-zoom-btn--reset {
+  width: auto;
+  padding: 0 10px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.mapa-viewport {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: calc(var(--radius-xl) - 8px);
+  background: #04292e;
+  cursor: grab;
+  touch-action: none;
+  /* Arrastar o mapa não pode selecionar imagem/texto por baixo do cursor —
+     a seleção azul interrompe o pan no meio do movimento. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mapa-viewport.is-panning {
+  cursor: grabbing;
+}
+
+/* Durante o pan os hotspots não capturam o ponteiro: evita o hover piscando
+   e o mouseenter trocando a sidebar enquanto o usuário só arrasta o mapa. */
+.mapa-viewport.is-panning .mapa-hotspot {
+  pointer-events: none;
+}
+
+.mapa-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1408 / 768;
+  transform-origin: center center;
+}
+
+/* `will-change` só durante o arrasto. Se ficasse fixo, o navegador
+   rasterizaria o mapa uma única vez em 100% e apenas esticaria essa textura
+   ao dar zoom — era daí que vinha o embaçado (e a nitidez temporária no
+   hover, que forçava uma nova rasterização da imagem). */
+.mapa-viewport.is-panning .mapa-canvas {
+  will-change: transform;
+}
+
+.mapa-base {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+.mapa-hotspots {
+  position: absolute;
+  inset: 0;
+}
+
+/* ── Cada elemento clicável do mapa ──────────── */
+.mapa-hotspot {
+  position: absolute;
+  cursor: pointer;
+  z-index: 3;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Ordem de camadas pedida para essas três construções, que se sobrepõem:
+   Terreno baldio embaixo, Quadra por cima dele, Igreja por cima da Quadra.
+   Sem isto, todo hotspot empata em z-index:3 e desempata pela ordem no
+   array HOTSPOTS — o que colocava o baldio (último no array) acima dos
+   outros dois, ao contrário do pedido. */
+.mapa-hotspot[data-tipo="baldio"] {
+  z-index: 1;
+}
+
+.mapa-hotspot[data-tipo="quadra"] {
+  z-index: 2;
+}
+
+.mapa-hotspot[data-tipo="igreja"] {
+  z-index: 3;
+}
+
+.mapa-hotspot img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* Sem filtro em repouso: um drop-shadow permanente (mesmo com raio 0)
+     obriga o navegador a renderizar cada imagem numa superfície separada e
+     reamostrada — era o que deixava as construções embaçadas. */
+  filter: none;
+  transition: filter 0.18s ease, transform 0.18s ease;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+.mapa-hotspot__label {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translate(-50%, 6px);
+  margin-bottom: 6px;
+  padding: 4px 10px;
+  background: rgba(7, 55, 62, 0.95);
+  border: 1px solid rgba(107, 223, 184, 0.4);
+  border-radius: 8px;
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 6;
+}
+
+.mapa-hotspot:hover img,
+.mapa-hotspot.is-active img {
+  filter: drop-shadow(0 0 10px rgba(249, 199, 79, 0.95)) brightness(1.12);
+  transform: scale(1.05);
+}
+
+/* Sobe o hotspot inteiro (não só o rótulo) acima de todos os vizinhos ao
+   passar o mouse — o z-index do rótulo sozinho não bastava, pois só conta
+   dentro do stacking context do próprio .mapa-hotspot, nunca contra outro
+   hotspot vizinho que fique na frente dele. Sem isso o tooltip ficava
+   parcial ou totalmente escondido atrás da construção ao lado. */
+.mapa-hotspot:hover,
+.mapa-hotspot.is-active {
+  z-index: 20;
+}
+
+.mapa-hotspot:hover .mapa-hotspot__label,
+.mapa-hotspot.is-active .mapa-hotspot__label {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ── Painel lateral de descrição ─────────────── */
+.mapa-sidebar {
+  position: sticky;
+  top: 84px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-xl);
+  padding: 26px 22px;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mapa-sidebar__empty {
+  margin: auto 0;
+  text-align: center;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.mapa-sidebar__empty svg {
+  color: rgba(107, 223, 184, 0.4);
+}
+
+.mapa-sidebar__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.mapa-sidebar__hint {
+  font-size: 12.5px;
+  color: var(--text-faint);
+  max-width: 220px;
+  line-height: 1.5;
+}
+
+.mapa-sidebar__content:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  animation: fade-in 0.25s ease-out;
+}
+
+.mapa-sidebar__thumb-wrap {
+  width: 100%;
+  height: 140px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.2);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mapa-sidebar__thumb {
+  max-width: 78%;
+  max-height: 78%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+}
+
+.mapa-sidebar__content h3 {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.mapa-sidebar__content p {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.55;
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+.mapa-sidebar__play {
+  width: 100%;
+  padding: 12px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14.5px;
+}
+
+/* ── Responsivo ───────────────────────────────── */
+@media (max-width: 900px) {
+  .mapa-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .mapa-sidebar {
+    position: static;
+    min-height: unset;
+  }
+}

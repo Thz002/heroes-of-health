@@ -203,6 +203,12 @@ const API = (() => {
     post('/professor/turmas', { nome, cor, ano_escolar });
   const getAlunosDaTurma = (turmaId) => get(`/professor/turmas/${turmaId}/alunos`);
 
+  /**
+   * Desfaz uma turma. Os alunos que estavam nela não são apagados — só
+   * ficam sem turma, e podem entrar em outra com um código novo.
+   */
+  const excluirTurma = (turmaId) => del(`/professor/turmas/${turmaId}`);
+
   // ── API pública ─────────────────────────────
   return {
     get, post, patch, delete: del,
@@ -223,5 +229,6 @@ const API = (() => {
     getMinhasTurmas,
     criarTurma,
     getAlunosDaTurma,
+    excluirTurma,
   };
 })();

@@ -7,14 +7,28 @@
   <title>Dashboard - Hérios da Saúde</title>
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/dashboard.css">
-  <script src="../js/dashboard.js" defer></script>
+  <script src="/vendor/supabase.js"></script>
+  <script src="../js/supabase.js" defer></script>
   <script src="../js/api.js" defer></script>
-  <script src="../js/auth.js" defer></script>
+  <script src="../js/dashboard.js" defer></script>
 </head>
 
 <body>
   <div class="blob blob-1"></div>
   <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <!-- Fundo vivo: bolhas que sobem devagar. É só CSS — nenhum laço de
+       JavaScript rodando o tempo todo, então não pesa na máquina. -->
+  <div class="fundo-vivo" aria-hidden="true">
+    <span style="--x:8%;  --tam:14px; --dur:19s; --atraso:0s"></span>
+    <span style="--x:22%; --tam:8px;  --dur:24s; --atraso:3s"></span>
+    <span style="--x:37%; --tam:18px; --dur:16s; --atraso:6s"></span>
+    <span style="--x:54%; --tam:10px; --dur:27s; --atraso:1s"></span>
+    <span style="--x:68%; --tam:15px; --dur:21s; --atraso:8s"></span>
+    <span style="--x:81%; --tam:7px;  --dur:18s; --atraso:4s"></span>
+    <span style="--x:93%; --tam:12px; --dur:25s; --atraso:11s"></span>
+  </div>
 
   <div
     style="position:fixed;top:8%;left:4%;pointer-events:none;z-index:0;color:rgba(107,223,184,0.12);animation:float 7s ease-in-out infinite;">
@@ -145,9 +159,142 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
           <button type="button" class="cor" data-cor="#fb923c" style="--c:#fb923c" aria-label="Laranja"></button>
         </div>
       </div>
+      <p class="modal__erro" id="modal-erro" hidden></p>
+
       <div class="modal__acoes">
         <button class="btn-ghost" id="btn-cancelar">Cancelar</button>
         <button class="btn-primary" id="btn-salvar">Criar turma</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="menu-turma" id="menu-turma" role="menu" hidden>
+    <p class="menu-turma__titulo" id="menu-turma-nome">Turma</p>
+
+    <button type="button" class="menu-turma__item" data-acao="info" role="menuitem">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round">
+        <path d="M3 3v18h18" />
+        <path d="M7 15l4-5 3 3 5-7" />
+      </svg>
+      Informações da turma
+    </button>
+
+    <button type="button" class="menu-turma__item" data-acao="quiz" role="menuitem">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.2 9a2.9 2.9 0 0 1 5.6 1c0 2-2.8 2.4-2.8 4" />
+        <path d="M12 17.5h.01" />
+      </svg>
+      Criar quiz
+    </button>
+
+    <span class="menu-turma__risco"></span>
+
+    <button type="button" class="menu-turma__item menu-turma__item--perigo" data-acao="excluir" role="menuitem">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round">
+        <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+      </svg>
+      Desfazer turma
+    </button>
+  </div>
+
+
+  <div class="modal" id="modal-quiz" hidden>
+    <div class="modal__caixa" role="dialog" aria-labelledby="quiz-titulo">
+      <div class="modal-header">
+        <h3 id="quiz-titulo">Criar quiz</h3>
+        <button class="modal__fechar" id="quiz-fechar" aria-label="Fechar">&times;</button>
+      </div>
+
+      <p class="modal__sub" id="quiz-turma">para a turma —</p>
+
+      <label class="campo">
+        <span class="campo__label">Título do quiz</span>
+        <input type="text" id="quiz-nome" placeholder="Revisão de Dengue" maxlength="60" autocomplete="off">
+      </label>
+
+      <div class="campo">
+        <span class="campo__label">Nível <span class="campo__dica">(a faixa etária das perguntas)</span></span>
+        <div class="opcoes" id="quiz-nivel" data-escolha="uma">
+          <button type="button" class="chip chip--ativo" data-valor="1">Nível 1 · 7 a 10</button>
+          <button type="button" class="chip" data-valor="2">Nível 2 · 11 a 14</button>
+          <button type="button" class="chip" data-valor="3">Nível 3 · 15 a 18</button>
+        </div>
+      </div>
+
+      <div class="campo">
+        <span class="campo__label">Cenários <span class="campo__dica">(de onde vêm as perguntas)</span></span>
+        <div class="opcoes" id="quiz-cenarios" data-escolha="varias">
+          <button type="button" class="chip" data-valor="ubs">UBS</button>
+          <button type="button" class="chip" data-valor="escola">Escola</button>
+          <button type="button" class="chip" data-valor="mercado">Mercado</button>
+          <button type="button" class="chip" data-valor="farmacia">Farmácia</button>
+          <button type="button" class="chip" data-valor="praca">Praça</button>
+          <button type="button" class="chip" data-valor="corrego">Córrego</button>
+          <button type="button" class="chip" data-valor="terreno-baldio">Terreno baldio</button>
+        </div>
+      </div>
+
+      <div class="campo">
+        <span class="campo__label">Áreas <span class="campo__dica">(quais barras o acerto faz crescer)</span></span>
+        <div class="opcoes" id="quiz-areas" data-escolha="varias">
+          <button type="button" class="chip" data-valor="Saúde">Saúde</button>
+          <button type="button" class="chip" data-valor="Educação">Educação</button>
+          <button type="button" class="chip" data-valor="Vacinação">Vacinação</button>
+          <button type="button" class="chip" data-valor="Vetores">Vetores</button>
+          <button type="button" class="chip" data-valor="Limpeza">Limpeza</button>
+          <button type="button" class="chip" data-valor="Alimentação">Alimentação</button>
+          <button type="button" class="chip" data-valor="Exercícios">Exercícios</button>
+          <button type="button" class="chip" data-valor="Felicidade">Felicidade</button>
+        </div>
+      </div>
+
+      <div class="campo-duplo">
+        <label class="campo">
+          <span class="campo__label">Nº de perguntas</span>
+          <input type="number" id="quiz-qtd" value="10" min="3" max="30">
+        </label>
+        <label class="campo">
+          <span class="campo__label">Tempo por pergunta</span>
+          <select id="quiz-tempo">
+            <option value="15">15 segundos</option>
+            <option value="20" selected>20 segundos</option>
+            <option value="30">30 segundos</option>
+            <option value="45">45 segundos</option>
+            <option value="60">1 minuto</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="modal__erro" id="quiz-erro" hidden></p>
+      <p class="modal__resumo" id="quiz-resumo" hidden></p>
+
+      <div class="modal__acoes">
+        <button class="btn-ghost" id="quiz-cancelar">Cancelar</button>
+        <button class="btn-primary" id="quiz-salvar">Criar quiz</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Confirmar antes de desfazer ═════════════════════════════════
+       Apagar turma é o único botão desta tela que não tem volta. -->
+  <div class="modal" id="modal-confirma" hidden>
+    <div class="modal__caixa modal__caixa--estreita" role="dialog" aria-labelledby="confirma-titulo">
+      <div class="modal-header">
+        <h3 id="confirma-titulo">Desfazer turma</h3>
+        <button class="modal__fechar" id="confirma-fechar" aria-label="Fechar">&times;</button>
+      </div>
+
+      <p class="modal__texto" id="confirma-texto"></p>
+      <p class="modal__erro" id="confirma-erro" hidden></p>
+
+      <div class="modal__acoes">
+        <button class="btn-ghost" id="confirma-nao">Manter turma</button>
+        <button class="btn-perigo" id="confirma-sim">Desfazer</button>
       </div>
     </div>
   </div>

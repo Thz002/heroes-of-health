@@ -132,6 +132,26 @@ function gerarCodigo(nomeTurma) {
   return `${prefixo}-${sufixo}`;
 }
 
+rotas.delete('/turmas/:id', async (req, res) => {
+  const turmaId = Number(req.params.id);
+
+  if (!Number.isInteger(turmaId)) {
+    return res.status(400).json({ message: 'Turma inválida.' });
+  }
+
+  if (!await turmaEhMinha(req.usuario, turmaId)) {
+    return res.status(403).json({ message: 'Essa turma não é sua.' });
+  }
+
+  const { error } = await admin.from('turmas').delete().eq('id', turmaId);
+
+  if (error) {
+    return res.status(500).json({ message: 'Não foi possível desfazer a turma.' });
+  }
+
+  res.status(204).end();
+});
+
 // ── Os alunos de uma turma, com o desempenho de cada um ──────────────
 rotas.get('/turmas/:id/alunos', async (req, res) => {
   const turmaId = Number(req.params.id);
