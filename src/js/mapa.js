@@ -96,7 +96,7 @@
 
   // Retângulos (x, y, largura, altura) em pixels sobre a imagem original 1408x768.
   const HOTSPOTS = [
-    { tipo: "parque", x: 495, y: 0, w: 418, h: 120 },
+    { tipo: "parque", x: 495, y: 0, w: 418, h: 120, tooltipPos: "bottom" },
     { tipo: "escola", x: 778, y: 103, w: 200, h: 150 },
     { tipo: "farmacia", x: 438, y: 153, w: 119, h: 92 },
     { tipo: "upa", x: 558, y: 140, w: 121, h: 115 },
@@ -108,7 +108,7 @@
     { tipo: "igreja", x: 1144, y: 458, w: 110, h: 157 },
     { tipo: "quadra", x: 1034, y: 300, w: 230, h: 230 },
     { tipo: "baldio", x: 1038, y: 162, w: 218, h: 180 },
-    { tipo: "corrego", x: 166, y: 0, w: 114, h: 680 },
+    { tipo: "corrego", x: 166, y: 0, w: 114, h: 680, tooltipPos: "right" },
     { tipo: "rio", x: 205, y: 697, w: 1200, h: 80 },
     { tipo: "ruas", x: 278, y: 628, w: 1036, h: 50 },
 
@@ -117,19 +117,19 @@
     { tipo: "casa", imagem: "Casa.png", x: 253, y: 235, w: 125, h: 126},
     { tipo: "casa", imagem: "Casa03.png", x:465, y: 387, w: 85, h: 110 },
     { tipo: "casa", imagem: "Casa013.png", x: 372, y: 390, w: 85, h: 105 },
-    { tipo: "casa", imagem: "Casa06.png", x: 927, y: 19, w: 105, h: 100 },
-    { tipo: "casa", imagem: "Casa07.png", x: 1045, y: 20, w: 125, h: 95 },
+    { tipo: "casa", imagem: "Casa06.png", x: 927, y: 19, w: 105, h: 100, tooltipPos: "bottom" },
+    { tipo: "casa", imagem: "Casa07.png", x: 1045, y: 20, w: 125, h: 95, tooltipPos: "bottom" },
     { tipo: "casa", imagem: "Casa014.png", x: 450, y: 512, w: 90, h: 100 },
-    { tipo: "casa", imagem: "Casa09.png", x: 372, y: 17, w: 125, h: 105 },
+    { tipo: "casa", imagem: "Casa09.png", x: 372, y: 17, w: 125, h: 105, tooltipPos: "bottom" },
     { tipo: "casa", imagem: "Casa010.png", x: 300, y: 513, w: 125, h: 100 },
     { tipo: "casa", imagem: "Casa011.png", x: 253, y: 387, w: 110, h: 115 },
     { tipo: "casa", imagem: "Casa08.png", x: 560, y: 500, w: 110, h: 115 },
     { tipo: "casa", imagem: "Casa012.png", x: 875, y: 502, w: 110, h: 110 },
     { tipo: "casa", imagem: "Casa02.png", x: 253, y: 139, w: 127, h: 107 },
-    { tipo: "casa", imagem: "Casa015.png", x: 238, y: 25, w: 145, h: 100 },
+    { tipo: "casa", imagem: "Casa015.png", x: 238, y: 25, w: 145, h: 100, tooltipPos: "bottom" },
     { tipo: "casa", imagem: "Casa05.png", x: 1040, y: 512, w: 104, h: 100 },
-    { tipo: "casa", imagem: "Casa04.png", x: 95, y: 25, w: 80, h: 100},
-    { tipo: "casa", imagem: "Casa016.png", x: 1180, y: 15, w: 150, h: 100 },
+    { tipo: "casa", imagem: "Casa04.png", x: 95, y: 25, w: 80, h: 100, tooltipPos: "bottom" },
+    { tipo: "casa", imagem: "Casa016.png", x: 1180, y: 15, w: 150, h: 100, tooltipPos: "bottom" },
 
     // Casas laterais — 4 casas parcialmente cortadas nas bordas esquerda e
     // direita do mapa (2 de cada lado).
@@ -171,6 +171,8 @@
       const cenario = CENARIOS[h.tipo];
       const el = document.createElement("div");
       el.className = "mapa-hotspot";
+      if (h.tooltipPos === "bottom") el.classList.add("mapa-hotspot--label-bottom");
+      if (h.tooltipPos === "right") el.classList.add("mapa-hotspot--label-right");
       el.style.left = (h.x / MAPA_W) * 100 + "%";
       el.style.top = (h.y / MAPA_H) * 100 + "%";
       el.style.width = (h.w / MAPA_W) * 100 + "%";

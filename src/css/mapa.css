@@ -22,7 +22,7 @@
 
 .mapa-toolbar {
   position: absolute;
-  top: 26px;
+  bottom: 26px;
   right: 26px;
   z-index: 5;
   display: flex;
@@ -205,6 +205,38 @@
 .mapa-hotspot.is-active .mapa-hotspot__label {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+/* Elementos colados no topo do mapa (as casas da fileira de cima e o
+   Parque) — o tooltip por cima vazaria para fora do card, então abre
+   para baixo da imagem. */
+.mapa-hotspot--label-bottom .mapa-hotspot__label {
+  bottom: auto;
+  top: 100%;
+  margin-bottom: 0;
+  margin-top: 6px;
+  transform: translate(-50%, -6px);
+}
+
+.mapa-hotspot--label-bottom:hover .mapa-hotspot__label,
+.mapa-hotspot--label-bottom.is-active .mapa-hotspot__label {
+  transform: translate(-50%, 0);
+}
+
+/* O córrego é uma faixa vertical rente à borda esquerda — o tooltip abre
+   para a direita, ao lado da imagem, em vez de por cima. */
+.mapa-hotspot--label-right .mapa-hotspot__label {
+  left: 100%;
+  bottom: auto;
+  top: 50%;
+  margin-bottom: 0;
+  margin-left: 6px;
+  transform: translate(-6px, -50%);
+}
+
+.mapa-hotspot--label-right:hover .mapa-hotspot__label,
+.mapa-hotspot--label-right.is-active .mapa-hotspot__label {
+  transform: translate(0, -50%);
 }
 
 /* ── Painel lateral de descrição ─────────────── */
