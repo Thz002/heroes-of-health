@@ -18,52 +18,66 @@ document.addEventListener("DOMContentLoaded", () => {
   let turmaPorCodigo = null;   // a turma que o código digitado resolveu
 
   // ── Elementos da tela ─────────────────────────
-  const form           = document.getElementById('login-form');
-  const alertEl        = document.getElementById('form-alert');
-  const emailInput     = document.getElementById('email');
-  const passInput      = document.getElementById('password');
-  const submitBtn      = document.getElementById('submit-btn');
-  const btnLabel       = document.getElementById('btn-label');
-  const btnSpin        = document.getElementById('btn-spin');
+  const form = document.getElementById('login-form');
+  const alertEl = document.getElementById('form-alert');
+  const emailInput = document.getElementById('email');
+  const passInput = document.getElementById('password');
+  const submitBtn = document.getElementById('submit-btn');
+  const btnLabel = document.getElementById('btn-label');
+  const btnSpin = document.getElementById('btn-spin');
 
-  const toggleBtn      = document.getElementById('toggle-pass');
-  const eyeOpen        = document.getElementById('eye-open');
-  const eyeClosed      = document.getElementById('eye-closed');
+  const toggleBtn = document.getElementById('toggle-pass');
+  const eyeOpen = document.getElementById('eye-open');
+  const eyeClosed = document.getElementById('eye-closed');
 
-  const boxRole        = document.getElementById('box-role');
-  const boxNome        = document.getElementById('box-nome');
-  const boxAluno       = document.getElementById('box-aluno');
-  const boxProfessor   = document.getElementById('box-professor');
-  const nomeInput      = document.getElementById('nome');
-  const radioPerfis    = document.querySelectorAll('input[name="tipo"]');
+  const boxRole = document.getElementById('box-role');
+  const boxNome = document.getElementById('box-nome');
+  const boxAluno = document.getElementById('box-aluno');
+  const boxProfessor = document.getElementById('box-professor');
+  const nomeInput = document.getElementById('nome');
+  const radioPerfis = document.querySelectorAll('input[name="tipo"]');
 
-  const idadeInput     = document.getElementById('idade');
-  const idadeHint      = document.getElementById('idade-hint');
+  const idadeInput = document.getElementById('idade');
+  const idadeHint = document.getElementById('idade-hint');
   const selectEscolaAluno = document.getElementById('escola-aluno');
-  const selectTurma    = document.getElementById('turma');
-  const modoSelecao    = document.getElementById('modo-selecao');
-  const modoCodigo     = document.getElementById('modo-codigo');
-  const codigoInput    = document.getElementById('codigo-turma');
-  const codigoHint     = document.getElementById('codigo-hint');
-  const btnModoTurma   = document.getElementById('btn-modo-turma');
+  const selectTurma = document.getElementById('turma');
+  const modoSelecao = document.getElementById('modo-selecao');
+  const modoCodigo = document.getElementById('modo-codigo');
+  const codigoInput = document.getElementById('codigo-turma');
+  const codigoHint = document.getElementById('codigo-hint');
+  const btnModoTurma = document.getElementById('btn-modo-turma');
 
   const selectEscolaProf = document.getElementById('escola');
-  const boxNovaEscola  = document.getElementById('box-nova-escola');
+  const boxNovaEscola = document.getElementById('box-nova-escola');
   const novaEscolaInput = document.getElementById('nova-escola');
 
-  const forgotRow      = document.getElementById('forgot-row');
-  const forgotBtn      = document.getElementById('forgot-btn');
-  const registerBtn    = document.getElementById('register-btn');
-  const toggleText     = document.getElementById('toggle-text');
-  const logoSub        = document.getElementById('logo-sub');
-  const xpRow          = document.getElementById('xp-row');
+  const forgotRow = document.getElementById('forgot-row');
+  const forgotBtn = document.getElementById('forgot-btn');
+  const registerBtn = document.getElementById('register-btn');
+  const toggleText = document.getElementById('toggle-text');
+  const logoSub = document.getElementById('logo-sub');
+  const xpRow = document.getElementById('xp-row');
+
+  (async () => {
+    const conta = await AUTH.contaAtual();
+    if (!conta) return;
+
+    const tipoSalvo = AUTH.tipoLembrado();
+    if (tipoSalvo) {
+      window.location.href = destinoDoTipo(tipoSalvo).pagina;
+      return;
+    }
+
+    const destino = await destinoDepoisDeEntrar();
+    window.location.href = destino.pagina;
+  })();
 
   // ── Mostrar / esconder a senha ────────────────
   if (toggleBtn && passInput) {
     toggleBtn.addEventListener('click', () => {
       const visivel = passInput.type === 'text';
       passInput.type = visivel ? 'password' : 'text';
-      if (eyeOpen)   eyeOpen.style.display   = visivel ? ''     : 'none';
+      if (eyeOpen) eyeOpen.style.display = visivel ? '' : 'none';
       if (eyeClosed) eyeClosed.style.display = visivel ? 'none' : '';
       toggleBtn.setAttribute('aria-label', visivel ? 'Mostrar senha' : 'Ocultar senha');
     });
@@ -176,7 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const escolas = await API.getEscolas();
 
       preencherSelect(selectEscolaAluno, escolas, 'Selecione a escola');
-      preencherSelect(selectEscolaProf,  escolas, 'Selecione a escola');
+      preencherSelect(selectEscolaProf, escolas, 'Selecione a escola');
 
       // Só o professor pode criar escola nova.
       if (selectEscolaProf) {
@@ -189,7 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
       escolasCarregadas = true;
     } catch (_) {
       preencherSelect(selectEscolaAluno, [], 'Não foi possível carregar as escolas');
-      preencherSelect(selectEscolaProf,  [], 'Não foi possível carregar as escolas');
+      preencherSelect(selectEscolaProf, [], 'Não foi possível carregar as escolas');
     }
   }
 
@@ -242,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
     turmaPorCodigo = null;
 
     if (modoSelecao) modoSelecao.classList.toggle('hidden', usandoCodigo);
-    if (modoCodigo)  modoCodigo.classList.toggle('hidden', !usandoCodigo);
+    if (modoCodigo) modoCodigo.classList.toggle('hidden', !usandoCodigo);
     if (btnModoTurma) {
       btnModoTurma.textContent = usandoCodigo
         ? 'Escolher escola e turma na lista'
@@ -398,6 +412,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnLabel) btnLabel.textContent = textoDoBotao();
   }
 
+
+  function destinoDoTipo(tipo) {
+    return (tipo === 'PROFESSOR' || tipo === 'ADMIN')
+      ? { pagina: 'dashboard.html', saudacao: 'Bem-vindo, Mestre! ' }
+      : { pagina: 'mapa.html', saudacao: 'Bem-vindo, Herói! ' };
+  }
+
   async function destinoDepoisDeEntrar(tipoDeclarado = null) {
     let tipo = tipoDeclarado;
 
@@ -406,9 +427,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (perfil && perfil.tipo) tipo = perfil.tipo;
     } catch (_) { /* fica com o tipo declarado */ }
 
-    return (tipo === 'PROFESSOR' || tipo === 'ADMIN')
-      ? { pagina: 'dashboard.html', saudacao: 'Bem-vindo, Mestre! ' }
-      : { pagina: 'mapa.html',      saudacao: 'Bem-vindo, Herói! ' };
+    AUTH.lembrarTipo(tipo);
+    return destinoDoTipo(tipo);
   }
 
   // ── Envio do formulário ───────────────────────

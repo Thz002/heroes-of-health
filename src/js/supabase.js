@@ -37,15 +37,15 @@ const AUTH = (() => {
   function traduzir(mensagem) {
     const m = (mensagem || '').toLowerCase();
 
-    if (m.includes('invalid login credentials'))  return 'E-mail ou senha incorretos.';
-    if (m.includes('email not confirmed'))        return 'Esta conta ainda não foi confirmada por e-mail.';
-    if (m.includes('user already registered'))    return 'Já existe uma conta com este e-mail.';
-    if (m.includes('password should be at least'))return 'A senha é curta demais.';
+    if (m.includes('invalid login credentials')) return 'E-mail ou senha incorretos.';
+    if (m.includes('email not confirmed')) return 'Esta conta ainda não foi confirmada por e-mail.';
+    if (m.includes('user already registered')) return 'Já existe uma conta com este e-mail.';
+    if (m.includes('password should be at least')) return 'A senha é curta demais.';
     if (m.includes('duplicate key') && m.includes('escolas')) return 'Já existe uma escola com esse nome.';
-    if (m.includes('violates check constraint'))  return 'Algum dado está fora do permitido. Confira a idade.';
-    if (m.includes('violates foreign key'))       return 'A turma ou escola escolhida não existe mais.';
-    if (m.includes('row-level security'))         return 'O banco recusou a operação por segurança.';
-    if (m.includes('failed to fetch'))            return 'Sem conexão com o servidor. Verifique sua internet.';
+    if (m.includes('violates check constraint')) return 'Algum dado está fora do permitido. Confira a idade.';
+    if (m.includes('violates foreign key')) return 'A turma ou escola escolhida não existe mais.';
+    if (m.includes('row-level security')) return 'O banco recusou a operação por segurança.';
+    if (m.includes('failed to fetch')) return 'Sem conexão com o servidor. Verifique sua internet.';
 
     return mensagem || 'Não foi possível completar a operação.';
   }
@@ -77,10 +77,10 @@ const AUTH = (() => {
     };
 
     if (dados.tipo === 'ALUNO') {
-      perfil.idade    = String(dados.idade ?? '');
+      perfil.idade = String(dados.idade ?? '');
       perfil.turma_id = String(dados.turma_id ?? '');
     } else {
-      if (dados.escola_id)   perfil.escola_id   = String(dados.escola_id);
+      if (dados.escola_id) perfil.escola_id = String(dados.escola_id);
       if (dados.escola_nome) perfil.escola_nome = dados.escola_nome;
     }
 
@@ -102,8 +102,8 @@ const AUTH = (() => {
       return {
         ok: false,
         message: 'Conta criada! Falta confirmar o e-mail para entrar. ' +
-                 'Se o e-mail não chegar, peça ao professor para desligar ' +
-                 '"Confirm email" no painel do Supabase.'
+          'Se o e-mail não chegar, peça ao professor para desligar ' +
+          '"Confirm email" no painel do Supabase.'
       };
     }
 
@@ -120,8 +120,22 @@ const AUTH = (() => {
     return { ok: true };
   }
 
+  // ── Tipo lembrado (atalho de velocidade) ───────
+  // Guardar ALUNO/PROFESSOR junto da sessão evita uma consulta ao banco
+  // só para decidir para qual página mandar quem já estava logado.
+  const CHAVE_TIPO = 'herois_tipo';
+
+  function lembrarTipo(tipo) {
+    if (tipo) localStorage.setItem(CHAVE_TIPO, tipo);
+  }
+
+  function tipoLembrado() {
+    return localStorage.getItem(CHAVE_TIPO);
+  }
+
   // ── Sair ───────────────────────────────────────
   async function logout() {
+    localStorage.removeItem(CHAVE_TIPO);
     await SUPA.auth.signOut();
   }
 
@@ -168,6 +182,7 @@ const AUTH = (() => {
 
   return {
     register, login, logout,
-    contaAtual, perfilAtual, exigirLogin, tokenAtual, traduzir
+    contaAtual, perfilAtual, exigirLogin, tokenAtual, traduzir,
+    lembrarTipo, tipoLembrado
   };
 })();
