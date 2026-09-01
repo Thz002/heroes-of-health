@@ -149,6 +149,14 @@
   z-index: 3;
 }
 
+/* Ruas: cobre a malha viária inteira do bairro (praticamente o mapa
+   todo), então fica sempre atrás de qualquer construção/casa que se
+   sobreponha a ela — senão a caixa retangular do hotspot roubaria o
+   hover das construções por cima. */
+.mapa-hotspot[data-tipo="ruas"] {
+  z-index: 0;
+}
+
 .mapa-hotspot img {
   width: 100%;
   height: 100%;
@@ -157,11 +165,27 @@
      obriga o navegador a renderizar cada imagem numa superfície separada e
      reamostrada — era o que deixava as construções embaçadas. */
   filter: none;
-  transition: filter 0.18s ease, transform 0.18s ease;
+  transition: filter 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
   -webkit-user-drag: none;
+}
+
+/* Ruas.png só traz o desenho das ruas (fundo transparente): fica invisível
+   em repouso e só some a ocultação — revelando o formato exato das ruas —
+   quando o hover ativa o brilho junto com as demais construções. Sem
+   scale aqui: a imagem cobre quase o mapa inteiro, então ampliar 5% (como
+   as outras construções) deslocaria visivelmente as bordas da malha viária
+   em vez de manter o alinhamento exato com o mapa base. */
+.mapa-hotspot[data-tipo="ruas"] img {
+  opacity: 0;
+}
+
+.mapa-hotspot[data-tipo="ruas"]:hover img,
+.mapa-hotspot[data-tipo="ruas"].is-active img {
+  opacity: 1;
+  transform: none;
 }
 
 .mapa-hotspot__label {
@@ -291,8 +315,16 @@
   height: 140px;
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.2);
-  display: grid;
-  place-items: center;
+  /* Era display:grid + place-items:center. Numa linha implícita (sem
+     grid-template-rows), a altura da track é "auto" durante o cálculo do
+     próprio item — o item nunca enxerga uma altura definida pra resolver
+     max-height em %, então só o max-width entrava em vigor. Imagens mais
+     altas (Igreja, Córrego, Casa011...) esticavam livremente e estouravam
+     os 140px, sendo cortadas por baixo pelo overflow:hidden. Flex resolve
+     o eixo cruzado (altura) contra o tamanho definido do próprio container. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   margin-bottom: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -301,6 +333,8 @@
 .mapa-sidebar__thumb {
   max-width: 78%;
   max-height: 78%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
 }

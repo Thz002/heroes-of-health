@@ -84,7 +84,7 @@
     },
     ruas: {
       nome: "Ruas",
-      imagem: "Ruas.png.jpg",
+      imagem: "Ruas.png",
       descricao: "Missões de caminhada e separação de lixo por cor, reforçando hábitos sustentáveis no dia a dia.",
     },
     casa: {
@@ -102,7 +102,7 @@
     { tipo: "upa", x: 558, y: 140, w: 121, h: 115 },
     { tipo: "ubs", x: 432, y: 250, w: 122, h: 102 },
     { tipo: "banca", x: 865, y: 274, w: 100, h: 90 },
-    { tipo: "praca", x: 597, y: 282, w: 206, h: 210 },
+    { tipo: "praca", x: 622, y: 312, w: 164, h: 159 },
     { tipo: "mercado", x: 860, y: 387, w: 129, h: 120 },
     { tipo: "creche", x: 750, y: 512, w: 130, h: 99 },
     { tipo: "igreja", x: 1144, y: 458, w: 110, h: 157 },
@@ -110,7 +110,13 @@
     { tipo: "baldio", x: 1038, y: 162, w: 218, h: 180 },
     { tipo: "corrego", x: 166, y: 0, w: 114, h: 680, tooltipPos: "right" },
     { tipo: "rio", x: 205, y: 697, w: 1200, h: 80 },
-    { tipo: "ruas", x: 278, y: 628, w: 1036, h: 50 },
+
+    // Ruas.png contém a malha viária inteira já destacada, com fundo
+    // transparente — em vez de um recorte único, a imagem é sobreposta ao
+    // mapa base em escala 1:1 (mesma resolução, sem redimensionar), na
+    // posição exata medida sobre Mapa01.png. Fica oculta (opacity 0, ver
+    // mapa.css) e só aparece — todas as ruas ao mesmo tempo — no hover.
+    { tipo: "ruas", x: 95, y: 122, w: 1331, h: 540 },
 
     // Casas — 16 casas padrão, cada uma com sua própria imagem (Casa.png,
     // Casa02.png .. Casa016.png), espalhadas pelo bairro.
