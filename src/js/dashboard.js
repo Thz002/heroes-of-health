@@ -4,6 +4,7 @@
 
   const btnNova = document.getElementById('btn-nova-turma');
   const modal = document.getElementById('modal-turma');
+  const modalTitulo = document.getElementById('modal-titulo');
   const btnFechar = document.getElementById('btn-fechar');
   const btnCancelar = document.getElementById('btn-cancelar');
   const btnSalvar = document.getElementById('btn-salvar');
@@ -86,24 +87,62 @@
     if (e.key === 'Escape' && !modal.hidden) fecharModal();
   });
 
+  // O mesmo modal serve para criar e para editar. null = está criando;
+  // com uma turma dentro = está editando aquela turma.
+  let turmaEmEdicao = null;
+
   function abrirModal() {
+    turmaEmEdicao = null;
     limparFormulario();
+
+    if (modalTitulo) modalTitulo.textContent = 'Nova turma';
+    btnSalvar.textContent = 'Criar turma';
+
     modal.hidden = false;
     inNome.focus();
   }
 
+  function abrirEdicao(turma) {
+    turmaEmEdicao = turma;
+    limparFormulario();
+
+    inNome.value = turma.nome;
+    inAno.value = turma.ano_escolar || '';
+    marcarCor(turma.cor || COR_PADRAO);
+
+    if (modalTitulo) modalTitulo.textContent = 'Editar turma';
+    btnSalvar.textContent = 'Salvar mudanças';
+
+    modal.hidden = false;
+    inNome.focus();
+    inNome.select();
+  }
+
   function fecharModal() {
     modal.hidden = true;
+    turmaEmEdicao = null;
   }
 
   function limparFormulario() {
     inNome.value = '';
     inAno.selectedIndex = 0;
     esconderErro();
+    marcarCor(COR_PADRAO);
+  }
 
-    seletorCores.querySelectorAll('.cor').forEach((b, i) => {
-      b.classList.toggle('cor--ativa', i === 0);
+  function marcarCor(cor) {
+    const bolinhas = seletorCores.querySelectorAll('.cor');
+    let achou = false;
+
+    bolinhas.forEach(b => {
+      const igual = b.dataset.cor === cor;
+      b.classList.toggle('cor--ativa', igual);
+      if (igual) achou = true;
     });
+
+    // Turma gravada com uma cor que saiu da lista: acende a primeira,
+    // para o seletor nunca ficar sem nenhuma opção marcada.
+    if (!achou && bolinhas[0]) bolinhas[0].classList.add('cor--ativa');
   }
 
   seletorCores.addEventListener('click', (e) => {
@@ -134,18 +173,22 @@
 
     esconderErro();
 
+    const editando = turmaEmEdicao !== null;
+    const rotulo = btnSalvar.textContent;
+
     btnSalvar.disabled = true;
-    btnSalvar.textContent = 'Criando...';
+    btnSalvar.textContent = editando ? 'Salvando...' : 'Criando...';
 
     try {
-      const turma = await API.criarTurma({
-        nome,
-        cor: corEscolhida(),
-        ano_escolar: inAno.value
-      });
+      const dados = { nome, cor: corEscolhida(), ano_escolar: inAno.value };
 
-      lista.appendChild(montarCard(turma, lista.children.length));
-      atualizarVazio();
+      if (editando) {
+        atualizarCard(await API.editarTurma(turmaEmEdicao.id, dados));
+      } else {
+        lista.appendChild(montarCard(await API.criarTurma(dados), lista.children.length));
+        atualizarVazio();
+      }
+
       fecharModal();
 
     } catch (err) {
@@ -153,8 +196,19 @@
 
     } finally {
       btnSalvar.disabled = false;
-      btnSalvar.textContent = 'Criar turma';
+      btnSalvar.textContent = rotulo;
     }
+  }
+
+  // Troca o card pelo mesmo card remontado com os dados novos, no lugar
+  // onde ele já estava — assim a ordem da lista não muda debaixo do
+  // professor que acabou de editar.
+  function atualizarCard(turma) {
+    const antigo = lista.querySelector(`.turma-card[data-id="${turma.id}"]`);
+    if (!antigo) return;
+
+    const ordem = [...lista.children].indexOf(antigo);
+    lista.replaceChild(montarCard(turma, ordem), antigo);
   }
 
   function mostrarErro(msg) {
@@ -356,7 +410,7 @@
   window.addEventListener('resize', fecharMenu);
   window.addEventListener('scroll', fecharMenu, { passive: true });
 
-  // Um escutador só para os três itens: qual foi clicado está no data-acao.
+  // Um escutador só para todos os itens: qual foi clicado está no data-acao.
   menu.addEventListener('click', (e) => {
     const item = e.target.closest('.menu-turma__item');
     if (!item || !turmaDoMenu) return;
@@ -365,6 +419,7 @@
     fecharMenu();
 
     if (item.dataset.acao === 'info') return irParaInformacoes(turma);
+    if (item.dataset.acao === 'editar') return abrirEdicao(turma);
     if (item.dataset.acao === 'quiz') return abrirQuiz(turma);
     if (item.dataset.acao === 'excluir') return pedirConfirmacao(turma);
   });

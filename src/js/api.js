@@ -204,6 +204,14 @@ const API = (() => {
   const getAlunosDaTurma = (turmaId) => get(`/professor/turmas/${turmaId}/alunos`);
 
   /**
+   * Muda nome, cor e/ou ano de uma turma. Só o que vier no objeto é
+   * alterado — o código da turma nunca muda, senão a sala inteira
+   * perderia o acesso.
+   */
+  const editarTurma = (turmaId, mudancas) =>
+    patch(`/professor/turmas/${turmaId}`, mudancas);
+
+  /**
    * Desfaz uma turma. Os alunos que estavam nela não são apagados — só
    * ficam sem turma, e podem entrar em outra com um código novo.
    */
@@ -228,6 +236,7 @@ const API = (() => {
     // Professor (pelo servidor)
     getMinhasTurmas,
     criarTurma,
+    editarTurma,
     getAlunosDaTurma,
     excluirTurma,
   };

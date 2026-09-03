@@ -18,8 +18,7 @@
   <div class="blob blob-2"></div>
   <div class="blob blob-3"></div>
 
-  <!-- Fundo vivo: bolhas que sobem devagar. É só CSS — nenhum laço de
-       JavaScript rodando o tempo todo, então não pesa na máquina. -->
+
   <div class="fundo-vivo" aria-hidden="true">
     <span style="--x:8%;  --tam:14px; --dur:19s; --atraso:0s"></span>
     <span style="--x:22%; --tam:8px;  --dur:24s; --atraso:3s"></span>
@@ -75,7 +74,6 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
             </ul>
 
             <div style="display:flex;align-items:center;gap:12px;">
-              <div class="xp-badge" id="nav-xp"> ⭐ 480 XP </div>
               <button id="logout-btn" class="btn-logout">Sair</button>
             </div>
           </div>
@@ -88,14 +86,14 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
       <div class="welcome-bar">
         <div class="welcome-text">
           <h2>Bem-vindo(a) ao Dashboard! <span id="user-name">—</span></h2>
-          <p style id="welcome-message">Segunda-feira, 18 de agosto de 2026</p>
+          <p id="welcome-message">Segunda-feira, 18 de agosto de 2026</p>
           <button id="btn-nova-turma">+ Criar nova turma</button>
         </div>
         <div class="welcome-badge">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="#f9c74f">
             <path d="M12 2L3 7v5c0 5.25 3.75 10.17 9 11.33C17.25 22.17 21 17.25 21 12V7l-9-5z" />
           </svg>
-          <span>Nível <span id="user-level">5</span> · Mestre da Saúde</span>
+          <span>Nível <span id="user-level"></span>Mestre da Saúde</span>
         </div>
       </div>
 
@@ -139,11 +137,27 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
 
       <label class="campo">
         <span class="campo__label">Ano escolar</span>
+        <!-- O jogo atende dos 7 aos 18 anos, então a lista vai do
+             Fundamental ao 3º do Médio. Os valores são os mesmos de
+             ANOS_VALIDOS em server/rotas/professor.js — se mudar aqui,
+             mude lá também. -->
         <select id="in-ano">
-          <option value="6º ano">6º ano</option>
-          <option value="7º ano">7º ano</option>
-          <option value="8º ano">8º ano</option>
-          <option value="9º ano">9º ano</option>
+          <optgroup label="Ensino Fundamental">
+            <option value="1º ano">1º ano</option>
+            <option value="2º ano">2º ano</option>
+            <option value="3º ano">3º ano</option>
+            <option value="4º ano">4º ano</option>
+            <option value="5º ano">5º ano</option>
+            <option value="6º ano">6º ano</option>
+            <option value="7º ano">7º ano</option>
+            <option value="8º ano">8º ano</option>
+            <option value="9º ano">9º ano</option>
+          </optgroup>
+          <optgroup label="Ensino Médio">
+            <option value="1º ano EM">1º ano</option>
+            <option value="2º ano EM">2º ano</option>
+            <option value="3º ano EM">3º ano</option>
+          </optgroup>
         </select>
       </label>
 
@@ -179,6 +193,15 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
         <path d="M7 15l4-5 3 3 5-7" />
       </svg>
       Informações da turma
+    </button>
+
+    <button type="button" class="menu-turma__item" data-acao="editar" role="menuitem">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+      </svg>
+      Editar turma
     </button>
 
     <button type="button" class="menu-turma__item" data-acao="quiz" role="menuitem">

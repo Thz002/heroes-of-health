@@ -10,8 +10,6 @@
   <script src="/vendor/supabase.js"></script>
   <script src="../js/supabase.js" defer></script>
   <script src="../js/api.js" defer></script>
-  <!-- O script desta página ainda não existe. Quando existir, ele entra
-       AQUI, depois dos dois de cima — a ordem é contrato.
   <script src="../js/turma.js" defer></script>
   -->
 </head>
@@ -55,13 +53,13 @@
 
     <main class="main-content">
 
-      <div class="turma-topo" style="--cor:#14b8a6">
+      <div class="turma-topo">
         <a class="turma-topo__voltar" href="dashboard.html">&#8592; Minhas turmas</a>
 
         <div class="turma-topo__linha">
           <div>
-            <h2 class="turma-topo__nome" id="turma-nome">Turminha 7 ano</h2>
-            <p class="turma-topo__ano" id="turma-ano">7º ano · Escola Municipal Exemplo</p>
+            <h2 class="turma-topo__nome" id="turma-nome">—</h2>
+            <p class="turma-topo__ano" id="turma-ano">—</p>
           </div>
 
           <div class="turma-topo__dados">
@@ -70,7 +68,7 @@
               <span class="dado__rot">alunos</span>
             </div>
             <div class="dado">
-              <span class="dado__num" id="turma-codigo">7B-K3M9</span>
+              <span class="dado__num" id="turma-codigo">-</span></span>
               <span class="dado__rot">código</span>
             </div>
           </div>
@@ -90,60 +88,10 @@
               <span>#</span>
               <span>Aluno</span>
               <span>Progresso</span>
-              <span class="rank__pontos-rotulo">Pontos</span>
+              <span class="rank__pontos-rotulo">Acertos</span>
             </div>
 
             <ol class="rank" id="lista-rank">
-
-              <li class="rank__linha rank__linha--ouro">
-                <span class="rank__pos">1</span>
-                <span class="rank__aluno">
-                  <span class="rank__avatar">T</span>
-                  <span class="rank__nome">Thiago</span>
-                </span>
-                <span class="rank__barra"><i style="width:92%"></i></span>
-                <span class="rank__pontos">ERROR</span>
-              </li>
-
-              <li class="rank__linha rank__linha--prata">
-                <span class="rank__pos">2</span>
-                <span class="rank__aluno">
-                  <span class="rank__avatar">J</span>
-                  <span class="rank__nome">Jennifer</span>
-                </span>
-                <span class="rank__barra"><i style="width:78%"></i></span>
-                <span class="rank__pontos">9999+</span>
-              </li>
-
-              <li class="rank__linha rank__linha--bronze">
-                <span class="rank__pos">3</span>
-                <span class="rank__aluno">
-                  <span class="rank__avatar">A</span>
-                  <span class="rank__nome">Pedro</span>
-                </span>
-                <span class="rank__barra"><i style="width:61%"></i></span>
-                <span class="rank__pontos">8000</span>
-              </li>
-
-              <li class="rank__linha">
-                <span class="rank__pos">4</span>
-                <span class="rank__aluno">
-                  <span class="rank__avatar">L</span>
-                  <span class="rank__nome">Lucas Silva</span>
-                </span>
-                <span class="rank__barra"><i style="width:44%"></i></span>
-                <span class="rank__pontos">5000</span>
-              </li>
-
-              <li class="rank__linha">
-                <span class="rank__pos">5</span>
-                <span class="rank__aluno">
-                  <span class="rank__avatar">R</span>
-                  <span class="rank__nome">Rafael Souza</span>
-                </span>
-                <span class="rank__barra"><i style="width:12%"></i></span>
-                <span class="rank__pontos">1000</span>
-              </li>
 
             </ol>
 
