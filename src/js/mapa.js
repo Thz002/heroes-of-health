@@ -67,7 +67,7 @@
       imagem: "Quadra.png",
       descricao: "Atividades físicas coletivas em quadras, incentivando exercício e convivência comunitária.",
     },
-    baldio: {
+    "terreno-baldio": {
       nome: "Terreno baldio",
       imagem: "Baldio.png",
       descricao: "Representa o lixão do bairro; missões de conscientização sobre descarte irregular de lixo e seus riscos à saúde.",
@@ -107,7 +107,7 @@
     { tipo: "creche", x: 760, y: 520, w: 122, h: 90 },
     { tipo: "igreja", x: 1138, y: 458, w: 90, h: 157 },
     { tipo: "quadra", x: 1034, y: 300, w: 230, h: 210 },
-    { tipo: "baldio", x: 1038, y: 162, w: 218, h: 180 },
+    { tipo: "terreno-baldio", x: 1038, y: 162, w: 218, h: 180 },
     { tipo: "corrego", x: 166, y: 0, w: 114, h: 680, tooltipPos: "right" },
     { tipo: "rio", x: 205, y: 697, w: 1200, h: 80 },
 

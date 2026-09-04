@@ -449,8 +449,8 @@
     quizErro.hidden = true;
     quizResumo.hidden = true;
 
-    // Nível volta para o 1; cenários e áreas voltam todos desmarcados.
-    marcarSomenteOPrimeiro('quiz-nivel');
+
+    mostrarNivelDaTurma(turma);
     desmarcarTudo('quiz-cenarios');
     desmarcarTudo('quiz-areas');
 
@@ -485,7 +485,7 @@
     }
   });
 
-  quizSalvar.addEventListener('click', () => {
+  quizSalvar.addEventListener('click', async () => {
     const titulo = quizNome.value.trim();
 
     if (titulo.length < 2) {
@@ -496,25 +496,65 @@
     if (cenarios.length === 0) {
       return avisar(quizErro, 'Escolha pelo menos um cenário de onde tirar as perguntas.');
     }
+    if (!turmaDoQuiz) {
+      return avisar(quizErro, 'Abra o quiz a partir de uma turma.');
+    }
 
     quizErro.hidden = true;
+    quizSalvar.disabled = true;
+    quizSalvar.textContent = 'Sorteando...';
 
-    const config = {
-      turma_id: turmaDoQuiz ? turmaDoQuiz.id : null,
-      titulo,
-      nivel_etario: Number(valoresMarcados('quiz-nivel')[0] || 1),
-      cenarios,
-      areas: valoresMarcados('quiz-areas'),
-      qtd_questoes: Number(quizQtd.value),
-      tempo_limite_segundos: Number(quizTempo.value)
-    };
+    try {
+      const quiz = await API.criarQuiz({
+        turma_id: turmaDoQuiz.id,
+        titulo,
+        cenarios,
+        areas: valoresMarcados('quiz-areas'),
+        qtd_questoes: Number(quizQtd.value),
+        tempo_limite_segundos: Number(quizTempo.value)
+      });
+      const pedidas = Number(quizQtd.value);
+      const veio = quiz.total_questoes;
 
-    quizResumo.hidden = false;
-    quizResumo.textContent =
-      'Ainda não existe rota no servidor para salvar quiz.\n' +
-      'Quando existir, será enviado exatamente isto:\n\n' +
-      JSON.stringify(config, null, 2);
+      quizResumo.hidden = false;
+      quizResumo.textContent = veio < pedidas
+        ? `Quiz "${quiz.titulo}" criado com ${veio} das ${pedidas} questões pedidas — `
+          + 'o banco ainda não tem mais perguntas para esse filtro.'
+        : `Quiz "${quiz.titulo}" criado com ${veio} questões. A turma já pode responder.`;
+
+      quizNome.value = '';
+
+    } catch (err) {
+      avisar(quizErro, err.message);
+
+    } finally {
+      quizSalvar.disabled = false;
+      quizSalvar.textContent = 'Criar quiz';
+    }
   });
+
+  const FAIXAS = { 1: 'perguntas de 7 a 10 anos', 2: 'perguntas de 11 a 14 anos', 3: 'perguntas de 15 a 18 anos' };
+
+  function nivelDoAnoEscolar(ano) {
+    if (!ano) return null;
+    if (ano.includes('EM')) return 3;
+    const n = parseInt(ano, 10);
+    if (!Number.isInteger(n)) return null;
+    if (n >= 6 && n <= 9) return 2;
+    if (n >= 1 && n <= 5) return 1;
+    return null;
+  }
+
+  function mostrarNivelDaTurma(turma) {
+    const info = document.getElementById('quiz-nivel-info');
+    if (!info) return;
+
+    const nivel = nivelDoAnoEscolar(turma.ano_escolar);
+
+    info.textContent = nivel
+      ? `Turma ${turma.ano_escolar} · ${FAIXAS[nivel]}`
+      : 'Esta turma não tem ano escolar definido — edite a turma antes de criar o quiz.';
+  }
 
   function valoresMarcados(idGrupo) {
     const grupo = document.getElementById(idGrupo);
@@ -524,14 +564,6 @@
       .map(c => c.dataset.valor);
   }
 
-  function marcarSomenteOPrimeiro(idGrupo) {
-    const grupo = document.getElementById(idGrupo);
-    if (!grupo) return;
-
-    grupo.querySelectorAll('.chip').forEach((c, i) => {
-      c.classList.toggle('chip--ativo', i === 0);
-    });
-  }
 
   function desmarcarTudo(idGrupo) {
     const grupo = document.getElementById(idGrupo);

@@ -1,11 +1,112 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Missão - Heróis da Saúde</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <script src="/vendor/supabase.js"></script>
+  <script src="../js/supabase.js" defer></script>
+  <script src="../js/api.js" defer></script>
+  <script src="../js/quiz.js" defer></script>
 </head>
+
 <body>
-    
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="page-wrap">
+
+    <nav class="nav_bar">
+      <div class="topLine">
+        <div class="navbar__inner">
+          <div class="navbar__logo">
+            <div class="navbar__logo-dot">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+                <path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </div>
+            HERÓIS DA SAÚDE
+          </div>
+
+          <div style="display:flex;align-items:center;gap:20px;">
+            <ul class="navbar__links">
+              <li><a href="mapa.html">&#8592; Voltar ao mapa</a></li>
+            </ul>
+            <button id="logout-btn" class="btn-logout">Sair</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main-content">
+
+      <!-- Cabeçalho da missão: nome do lugar, título e o quanto falta -->
+      <div class="turma-topo" id="missao-topo" hidden>
+        <a class="turma-topo__voltar" href="mapa.html">&#8592; Mapa do bairro</a>
+
+        <div class="turma-topo__linha">
+          <div>
+            <h2 class="turma-topo__nome" id="missao-titulo">—</h2>
+            <p class="turma-topo__ano" id="missao-descricao">—</p>
+          </div>
+
+          <div class="turma-topo__dados">
+            <div class="dado">
+              <span class="dado__num" id="missao-passo">—</span>
+              <span class="dado__rot">desta rodada</span>
+            </div>
+            <div class="dado">
+              <span class="dado__num" id="missao-restantes">—</span>
+              <span class="dado__rot">a responder</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enquanto carrega / quando dá erro / quando não há mais nada -->
+      <section class="painel" id="missao-aviso">
+        <div class="empty-state">
+          <p class="empty-state__title" id="aviso-titulo">Carregando…</p>
+          <p class="empty-state__hint" id="aviso-texto"></p>
+          <p id="aviso-acoes" style="margin-top:18px;" hidden>
+            <a class="btn-primary" href="mapa.html">Voltar ao mapa</a>
+          </p>
+        </div>
+      </section>
+
+      <!-- A questão da vez -->
+      <section class="quiz-card" id="quiz" hidden>
+        <p class="quiz-question" id="quiz-enunciado"></p>
+
+        <div class="quiz-options" id="quiz-opcoes"></div>
+
+        <!-- Fica visível depois de responder -->
+        <div id="quiz-retorno" hidden style="margin-top:20px;">
+          <p id="quiz-explicacao" style="font-size:14.5px;line-height:1.6;"></p>
+          <p id="quiz-pontos" style="margin-top:10px;font-size:14px;"></p>
+          <button class="btn-primary" id="quiz-continuar" style="margin-top:16px;">Continuar</button>
+        </div>
+      </section>
+
+      <!-- Fim da rodada -->
+      <section class="painel" id="fim" hidden>
+        <div class="empty-state">
+          <p class="empty-state__title">Rodada concluída!</p>
+          <p class="empty-state__hint" id="fim-placar"></p>
+          <div id="fim-barras" style="margin-top:18px;"></div>
+          <p style="margin-top:20px;display:flex;gap:10px;justify-content:center;">
+            <a class="btn-primary" href="mapa.html">Voltar ao mapa</a>
+            <button class="btn-ghost" id="fim-continuar" hidden>Fazer mais uma rodada</button>
+          </p>
+        </div>
+      </section>
+
+    </main>
+  </div>
 </body>
+
 </html>

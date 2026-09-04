@@ -240,13 +240,12 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
         <input type="text" id="quiz-nome" placeholder="Revisão de Dengue" maxlength="60" autocomplete="off">
       </label>
 
+      <!-- O nível não se escolhe: sai do ano escolar da turma, do lado do
+           servidor. Aqui só se mostra qual foi, para o professor saber de
+           onde as perguntas vão sair. Preenchido por dashboard.js. -->
       <div class="campo">
-        <span class="campo__label">Nível <span class="campo__dica">(a faixa etária das perguntas)</span></span>
-        <div class="opcoes" id="quiz-nivel" data-escolha="uma">
-          <button type="button" class="chip chip--ativo" data-valor="1">Nível 1 · 7 a 10</button>
-          <button type="button" class="chip" data-valor="2">Nível 2 · 11 a 14</button>
-          <button type="button" class="chip" data-valor="3">Nível 3 · 15 a 18</button>
-        </div>
+        <span class="campo__label">Nível <span class="campo__dica">(vem do ano escolar da turma)</span></span>
+        <p id="quiz-nivel-info" class="campo__dica" style="margin-top:4px;">—</p>
       </div>
 
       <div class="campo">

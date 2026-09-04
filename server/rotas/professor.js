@@ -47,6 +47,19 @@ const ANOS_VALIDOS = [
 // enquanto — se um dia precisar variar por turma, vira coluna no banco.
 const LIMITE_ALUNOS_POR_TURMA = 10;
 
+const QTD_MIN = 3;
+const QTD_MAX = 30;
+function nivelDoAnoEscolar(ano) {
+  if (!ano) return null;
+  if (ano.includes('EM')) return 3;             // 1º a 3º do Médio
+
+  const numero = parseInt(ano, 10);             // '6º ano' -> 6
+  if (!Number.isInteger(numero)) return null;
+  if (numero >= 6 && numero <= 9) return 2;     // Fundamental II
+  if (numero >= 1 && numero <= 5) return 1;     // Fundamental I
+  return null;
+}
+
 // ── As turmas do professor, com o código para entregar à sala ────────
 rotas.get('/turmas', async (req, res) => {
   const { data, error } = await admin
@@ -280,6 +293,175 @@ rotas.get('/turmas/:id/alunos', async (req, res) => {
       aproveitamento: total ? Math.round((acertos / total) * 100) : null
     };
   }));
+});
+
+rotas.post('/quizzes', async (req, res) => {
+  const turmaId = Number(req.body?.turma_id);
+  const titulo = String(req.body?.titulo || '').trim();
+
+  if (!Number.isInteger(turmaId)) {
+    return res.status(400).json({ message: 'Turma inválida.' });
+  }
+  if (titulo.length < 2) {
+    return res.status(400).json({ message: 'Dê um título ao quiz. Ex: Revisão de Dengue' });
+  }
+  if (!await turmaEhMinha(req.usuario, turmaId)) {
+    return res.status(403).json({ message: 'Essa turma não é sua.' });
+  }
+
+  const cenarios = Array.isArray(req.body?.cenarios) ? req.body.cenarios : [];
+  if (cenarios.length === 0) {
+    return res.status(400).json({ message: 'Escolha pelo menos um cenário de onde tirar as perguntas.' });
+  }
+
+  const areas = Array.isArray(req.body?.areas) ? req.body.areas : [];
+
+  let qtd = Number(req.body?.qtd_questoes);
+  if (!Number.isInteger(qtd)) qtd = 10;
+  qtd = Math.min(QTD_MAX, Math.max(QTD_MIN, qtd));
+
+  let tempo = Number(req.body?.tempo_limite_segundos);
+  if (!Number.isInteger(tempo) || tempo <= 0) tempo = 20;
+
+
+  const turma = await admin
+    .from('turmas').select('ano_escolar').eq('id', turmaId).maybeSingle();
+
+  const nivel = nivelDoAnoEscolar(turma.data?.ano_escolar);
+  if (!nivel) {
+    return res.status(400).json({
+      message: 'Defina o ano escolar da turma antes de criar o quiz.'
+    });
+  }
+
+  const missoes = await admin
+    .from('missoes')
+    .select('id, cenarios!inner(slug)')
+    .eq('nivel_etario', nivel)
+    .in('cenarios.slug', cenarios);
+
+  if (missoes.error) {
+    return res.status(500).json({ message: 'Não foi possível procurar as perguntas.' });
+  }
+
+  let idsMissoes = (missoes.data || []).map(m => m.id);
+
+  if (areas.length > 0 && idsMissoes.length > 0) {
+    const comArea = await admin
+      .from('missao_areas').select('missao_id')
+      .in('missao_id', idsMissoes).in('area_nome', areas);
+
+    const permitidas = new Set((comArea.data || []).map(r => r.missao_id));
+    idsMissoes = idsMissoes.filter(id => permitidas.has(id));
+  }
+
+  if (idsMissoes.length === 0) {
+    return res.status(400).json({
+      message: 'Não há perguntas para essa combinação de cenário, área e ano da turma.'
+    });
+  }
+
+  const questoes = await admin
+    .from('questoes').select('id').in('missao_id', idsMissoes);
+
+  if (questoes.error) {
+    return res.status(500).json({ message: 'Não foi possível procurar as perguntas.' });
+  }
+
+  const bolo = (questoes.data || []).map(q => q.id);
+  for (let i = bolo.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [bolo[i], bolo[j]] = [bolo[j], bolo[i]];
+  }
+  const sorteadas = bolo.slice(0, qtd);
+
+  if (sorteadas.length === 0) {
+    return res.status(400).json({ message: 'Não há perguntas para essa combinação.' });
+  }
+  const criado = await admin
+    .from('quizzes_professores')
+    .insert({
+      turma_id: turmaId,
+      professor_id: req.usuario.id,
+      titulo,
+      tempo_limite_segundos: tempo,
+      nivel_etario: nivel,
+      cenarios,
+      areas,
+      qtd_pedida: qtd
+    })
+    .select('id, turma_id, titulo, tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
+    .single();
+
+  if (criado.error) {
+    return res.status(500).json({ message: 'Não foi possível criar o quiz.' });
+  }
+  const vinculo = await admin.from('quiz_questoes').insert(
+    sorteadas.map((questaoId, i) => ({
+      quiz_id: criado.data.id, questao_id: questaoId, ordem: i + 1
+    }))
+  );
+
+  if (vinculo.error) {
+    await admin.from('quizzes_professores').delete().eq('id', criado.data.id);
+    return res.status(500).json({ message: 'Não foi possível sortear as perguntas do quiz.' });
+  }
+
+  res.status(201).json({ ...criado.data, total_questoes: sorteadas.length });
+});
+
+
+rotas.get('/quizzes', async (req, res) => {
+  const turmaId = Number(req.query.turma_id);
+
+  if (!Number.isInteger(turmaId)) {
+    return res.status(400).json({ message: 'Turma inválida.' });
+  }
+  if (!await turmaEhMinha(req.usuario, turmaId)) {
+    return res.status(403).json({ message: 'Essa turma não é sua.' });
+  }
+
+  const { data, error } = await admin
+    .from('quizzes_professores')
+    .select('id, titulo, tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
+    .eq('turma_id', turmaId)
+    .order('created_at', { ascending: false });
+
+  if (error) return res.status(500).json({ message: 'Não foi possível carregar os quizzes.' });
+
+  const ids = data.map(q => q.id);
+  const contagem = new Map(ids.map(id => [id, 0]));
+
+  if (ids.length > 0) {
+    const vinculos = await admin.from('quiz_questoes').select('quiz_id').in('quiz_id', ids);
+    for (const v of vinculos.data || []) {
+      contagem.set(v.quiz_id, (contagem.get(v.quiz_id) || 0) + 1);
+    }
+  }
+
+  res.json(data.map(q => ({ ...q, total_questoes: contagem.get(q.id) || 0 })));
+});
+
+
+rotas.delete('/quizzes/:id', async (req, res) => {
+  const quizId = Number(req.params.id);
+
+  if (!Number.isInteger(quizId)) {
+    return res.status(400).json({ message: 'Quiz inválido.' });
+  }
+
+  const dono = await admin
+    .from('quizzes_professores').select('id')
+    .eq('id', quizId).eq('professor_id', req.usuario.id).maybeSingle();
+
+  if (!dono.data && req.usuario.tipo !== 'ADMIN') {
+    return res.status(403).json({ message: 'Esse quiz não é seu.' });
+  }
+
+  const { error } = await admin.from('quizzes_professores').delete().eq('id', quizId);
+  if (error) return res.status(500).json({ message: 'Não foi possível desfazer o quiz.' });
+
+  res.status(204).end();
 });
 
 module.exports = rotas;

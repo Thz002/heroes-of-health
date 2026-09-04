@@ -137,7 +137,7 @@
    Sem isto, todo hotspot empata em z-index:3 e desempata pela ordem no
    array HOTSPOTS — o que colocava o baldio (último no array) acima dos
    outros dois, ao contrário do pedido. */
-.mapa-hotspot[data-tipo="baldio"] {
+.mapa-hotspot[data-tipo="terreno-baldio"] {
   z-index: 1;
 }
 

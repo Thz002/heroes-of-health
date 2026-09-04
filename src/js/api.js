@@ -181,7 +181,15 @@ const API = (() => {
   /** As missões de um cenário, já filtradas pela idade do aluno */
   const getMissoes = (slug) => get(`/cenarios/${encodeURIComponent(slug)}/missoes`);
 
-  /** As questões de uma missão — SEM a resposta correta, que fica no servidor */
+  /**
+   * Uma RODADA de questões da missão — não a missão inteira.
+   *
+   * Devolve { questoes, restantes, total }: até 10 questões que o aluno
+   * ainda não acertou, sorteadas, mais quantas sobram ao todo. Quando
+   * `questoes` vem vazio, ele já concluiu tudo o que havia ali.
+   *
+   * Nunca traz a resposta correta — essa fica no servidor.
+   */
   const getQuestoes = (missaoId) => get(`/missoes/${missaoId}/questoes`);
 
   /**
@@ -191,14 +199,26 @@ const API = (() => {
    * erra — mas a letra certa nunca volta: a ideia é que ela tente de novo
    * com o conteúdo em mãos, não que copie a resposta.
    */
-  const responder = (questaoId, resposta) =>
-    post('/responder', { questao_id: questaoId, resposta });
+  const responder = (questaoId, resposta, quizId = null) =>
+    post('/responder', { questao_id: questaoId, resposta, quiz_id: quizId });
+
+  /** As tarefas que o professor passou para a turma deste aluno */
+  const getMeusQuizzes = () => get('/meus-quizzes');
+
+  /** As questões congeladas de um quiz — mesma ordem para a turma toda */
+  const getQuestoesDoQuiz = (quizId) => get(`/quizzes/${quizId}/questoes`);
 
   /** As 8 barras do aluno, sempre as 8, mesmo as zeradas */
   const getMeuProgresso = () => get('/meu-progresso');
 
   // ── Professor ──────────────────────────────
   const getMinhasTurmas = () => get('/professor/turmas');
+  const criarQuiz = ({ turma_id, titulo, cenarios, areas, qtd_questoes, tempo_limite_segundos }) =>
+    post('/professor/quizzes', { turma_id, titulo, cenarios, areas, qtd_questoes, tempo_limite_segundos });
+
+  const getQuizzesDaTurma = (turmaId) => get(`/professor/quizzes?turma_id=${turmaId}`);
+
+  const excluirQuiz = (quizId) => del(`/professor/quizzes/${quizId}`);
   const criarTurma      = ({ nome, cor, ano_escolar }) =>
     post('/professor/turmas', { nome, cor, ano_escolar });
   const getAlunosDaTurma = (turmaId) => get(`/professor/turmas/${turmaId}/alunos`);
@@ -232,10 +252,15 @@ const API = (() => {
     getQuestoes,
     responder,
     getMeuProgresso,
+    getMeusQuizzes,
+    getQuestoesDoQuiz,
 
     // Professor (pelo servidor)
     getMinhasTurmas,
     criarTurma,
+    criarQuiz,
+    getQuizzesDaTurma,
+    excluirQuiz,
     editarTurma,
     getAlunosDaTurma,
     excluirTurma,

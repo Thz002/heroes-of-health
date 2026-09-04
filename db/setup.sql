@@ -262,6 +262,7 @@ create table if not exists respostas_alunos (
 create index if not exists respostas_por_aluno_e_questao
   on respostas_alunos (usuario_id, questao_id);
 
+
 create table if not exists pacientes_virtuais (
   id bigint primary key generated always as identity,
   usuario_id uuid unique not null references usuarios(id) on delete cascade,
@@ -278,6 +279,47 @@ create table if not exists quizzes_professores (
   tempo_limite_segundos int default 15,
   created_at timestamptz not null default now()
 );
+
+-- Como o quiz foi montado. Isto é REGISTRO, não regra: as questões já
+-- foram sorteadas e congeladas em quiz_questoes na hora da criação. Ficam
+-- aqui para o professor lembrar o que pediu e conseguir repetir depois.
+--
+-- nivel_etario NÃO é escolhido pelo professor: sai do ano escolar da
+-- turma (uma turma de 9º ano puxa questões de 11 a 14). Fica gravado
+-- porque o ano da turma pode mudar depois, e aí o quiz antigo mentiria
+-- sobre o próprio conteúdo.
+alter table quizzes_professores add column if not exists nivel_etario int
+  check (nivel_etario between 1 and 3);
+alter table quizzes_professores add column if not exists cenarios text[];
+alter table quizzes_professores add column if not exists areas text[];
+alter table quizzes_professores add column if not exists qtd_pedida int;
+
+
+-- As questões que caíram naquele quiz, congeladas na criação.
+--
+-- É esta tabela que faz a turma inteira responder as MESMAS perguntas —
+-- sem ela, cada aluno sortearia as suas e o ranking não compararia nada.
+-- A chave primária composta é também o que garante "não repete dentro do
+-- mesmo quiz": o banco recusaria a segunda linha igual.
+create table if not exists quiz_questoes (
+  quiz_id bigint not null references quizzes_professores(id) on delete cascade,
+  questao_id bigint not null references questoes(id) on delete cascade,
+  ordem int not null,
+  primary key (quiz_id, questao_id)
+);
+
+create index if not exists quiz_questoes_por_quiz on quiz_questoes (quiz_id, ordem);
+
+-- De qual quiz veio esta resposta. Nulo = exploração livre pelo mapa.
+--
+-- Sem esta coluna é impossível saber se um aluno terminou um quiz, dar
+-- nota, ou separar no relatório o que foi tarefa do que foi brincadeira
+-- — a tabela é plana e não sabe dizer a que contexto cada acerto pertence.
+alter table respostas_alunos add column if not exists quiz_id bigint
+  references quizzes_professores(id) on delete set null;
+
+create index if not exists respostas_por_quiz on respostas_alunos (quiz_id);
+
 
 
 -- #####################################################################
@@ -725,6 +767,41 @@ create policy "professor altera os proprios quizzes"
   on quizzes_professores for update to authenticated using (auth.uid() = professor_id);
 create policy "professor apaga os proprios quizzes"
   on quizzes_professores for delete to authenticated using (auth.uid() = professor_id);
+
+-- Faltava o outro lado: o aluno precisa VER o quiz que lhe foi passado.
+-- Sem esta política, o professor criava a tarefa e a turma não enxergava
+-- nada — só o servidor Express conseguia ler, com a chave secreta.
+drop policy if exists "aluno le os quizzes da turma dele" on quizzes_professores;
+
+create policy "aluno le os quizzes da turma dele"
+  on quizzes_professores for select to authenticated using (
+    turma_id in (select u.turma_id from usuarios u where u.id = auth.uid())
+  );
+
+
+-- ── As questões congeladas de cada quiz ──────────────────────────────
+--
+-- Só leitura, para os dois lados. Quem ESCREVE aqui é o servidor, no
+-- momento do sorteio — se o aluno pudesse inserir, escolheria as próprias
+-- perguntas; se pudesse apagar, sumiria com as que não soubesse.
+alter table quiz_questoes enable row level security;
+
+drop policy if exists "professor le as questoes dos proprios quizzes" on quiz_questoes;
+drop policy if exists "aluno le as questoes do quiz da turma dele"    on quiz_questoes;
+
+create policy "professor le as questoes dos proprios quizzes"
+  on quiz_questoes for select to authenticated using (
+    quiz_id in (select q.id from quizzes_professores q where q.professor_id = auth.uid())
+  );
+
+create policy "aluno le as questoes do quiz da turma dele"
+  on quiz_questoes for select to authenticated using (
+    quiz_id in (
+      select q.id from quizzes_professores q
+      join usuarios u on u.turma_id = q.turma_id
+      where u.id = auth.uid()
+    )
+  );
 
 
 -- #####################################################################
