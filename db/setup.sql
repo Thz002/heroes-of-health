@@ -167,6 +167,30 @@ create table if not exists questoes (
   explicacao text not null
 );
 
+-- Os dois filtros mais quentes do jogo, um por tela:
+--   abrir um ponto do mapa  -> missoes por cenario + nivel etario
+--   abrir uma missão        -> questoes daquela missão
+-- Com o banco vazio ninguém sente falta; com o lote de questões
+-- importado, sem isto cada abertura vira varredura da tabela inteira.
+create index if not exists missoes_por_cenario_e_nivel on missoes (cenario_id, nivel_etario);
+create index if not exists questoes_por_missao         on questoes (missao_id);
+
+-- Identidade estavel do conteudo importado (db/importar-questoes.sql).
+--
+-- Sem isto o import nao tem como saber se uma linha ja existe: rodar o
+-- arquivo duas vezes duplicaria o banco inteiro em silencio. E a saida
+-- obvia -- apagar tudo e recriar -- e pior, porque respostas_alunos
+-- referencia questoes com "on delete cascade": apagar a questao levaria
+-- junto o historico de respostas dos alunos.
+--
+-- Com o codigo_externo, o import vira "on conflict do update": corrige o
+-- texto de uma pergunta sem perder nenhuma resposta ja dada.
+alter table missoes  add column if not exists codigo_externo varchar(60);
+alter table questoes add column if not exists codigo_externo varchar(60);
+
+create unique index if not exists missoes_codigo_externo  on missoes  (codigo_externo);
+create unique index if not exists questoes_codigo_externo on questoes (codigo_externo);
+
 
 -- ── As 8 barras e o que as alimenta ──────────────────────────────────
 
@@ -231,6 +255,12 @@ create table if not exists respostas_alunos (
   acertou boolean not null,
   data_resposta timestamptz not null default now()
 );
+
+-- Esta é a tabela que mais cresce: uma linha por tentativa, de cada
+-- aluno, para sempre. O par (usuario, questao) é consultado a cada
+-- resposta enviada, para decidir se é o primeiro acerto e vale ponto.
+create index if not exists respostas_por_aluno_e_questao
+  on respostas_alunos (usuario_id, questao_id);
 
 create table if not exists pacientes_virtuais (
   id bigint primary key generated always as identity,
@@ -631,13 +661,14 @@ begin
   end loop;
 end $$;
 
--- ⚠️ ATENÇÃO à tabela questoes: a policy acima libera a LINHA INTEIRA,
--- e a linha tem resposta_correta. Um aluno logado consegue ler o
--- gabarito pelo console do navegador.
+-- ⚠️ A policy acima libera a LINHA INTEIRA de questoes, e a linha tem
+-- resposta_correta. O RLS é por linha e não sabe esconder coluna, então
+-- sozinho ele entregaria o gabarito a qualquer aluno logado.
 --
--- Por isso o quiz NÃO pode consultar questoes direto: ele passa pelo
--- servidor Express (server/rotas/jogo.js), que é o único que enxerga
--- essa coluna e devolve só "acertou" mais a explicação.
+-- Quem fecha isso é a permissão por COLUNA, na seção 5 deste arquivo.
+-- O quiz continua passando pelo servidor Express (server/rotas/jogo.js),
+-- que enxerga tudo com a chave secreta e devolve só "acertou" mais a
+-- explicação — agora as duas trancas se somam, em vez de só a convenção.
 
 
 -- ── Progresso do aluno ───────────────────────────────────────────────
@@ -715,10 +746,36 @@ create policy "professor apaga os proprios quizzes"
 revoke select on turmas from anon, authenticated;
 grant  select (id, nome, escola_id, created_at) on turmas to anon, authenticated;
 
+-- O mesmo problema, e a mesma solução, para o gabarito: a policy de
+-- conteúdo libera a linha de questoes, e a linha tem resposta_correta e
+-- explicacao. Sem isto, "select * from questoes" no console do navegador
+-- devolvia o gabarito inteiro do jogo — e piora a cada questão importada.
+--
+-- A explicacao também fica de fora porque ela costuma dizer QUAL é a
+-- resposta ("a alternativa correta é a B porque..."). Quem precisa das
+-- duas legitimamente é o servidor Express, que usa a chave secreta e não
+-- passa por aqui; ele entrega a explicação em /api/responder, depois que
+-- o aluno já gastou a tentativa.
+--
+-- Efeito colateral aceito: o ADMIN também deixa de ler essas duas colunas
+-- pelo navegador. Para corrigir conteúdo ele usa o SQL Editor do painel,
+-- que roda como postgres e ignora estas permissões — é o mesmo caminho
+-- que o projeto já usa para importar questão.
+revoke select on questoes from anon, authenticated;
+grant  select (id, missao_id, enunciado, opcao_a, opcao_b, opcao_c, opcao_d)
+  on questoes to anon, authenticated;
+
 grant execute on function public.buscar_turma_por_codigo(text) to anon, authenticated;
 grant execute on function public.minhas_turmas() to authenticated;
 
 -- Pontuar é assunto do servidor. O aluno não executa isto.
+--
+-- O "from public" é o que importa: no PostgreSQL, create function já
+-- concede execute a PUBLIC, e todo perfil (anon, authenticated) herda
+-- dali. Revogar só dos perfis tirava um grant direto que nunca existiu,
+-- e deixava o herdado intacto — na prática, o aluno conseguia chamar
+-- somar_pontos com 999999 pontos e encher as próprias barras.
+revoke execute on function public.somar_pontos(uuid, varchar, int) from public;
 revoke execute on function public.somar_pontos(uuid, varchar, int) from anon, authenticated;
 
 
@@ -747,3 +804,18 @@ revoke execute on function public.somar_pontos(uuid, varchar, int) from anon, au
 -- (d) O gatilho está ligado? Uma linha, tgenabled = 'O'.
 -- select tgname, tgenabled from pg_trigger
 -- where tgrelid = 'auth.users'::regclass and not tgisinternal;
+
+-- (e) O aluno não enxerga o gabarito.
+--     Devem vir 7 colunas por grantee: enunciado, id, missao_id e
+--     opcao_a..opcao_d. Se aparecer resposta_correta ou explicacao, o
+--     revoke da seção 5 não pegou.
+-- select grantee, column_name from information_schema.column_privileges
+-- where table_name = 'questoes' and privilege_type = 'SELECT'
+--   and grantee in ('anon','authenticated') order by grantee, column_name;
+
+-- (f) Ninguém além do servidor executa somar_pontos.
+--     Atenção à leitura: proacl NULO é o problema, não a solução — nulo
+--     quer dizer "padrão do PostgreSQL", e o padrão é PUBLIC podendo
+--     executar. O que se espera aqui é um proacl preenchido e SEM a
+--     entrada "=X/" (grantee vazio antes do "=" é justamente o PUBLIC).
+-- select proname, proacl from pg_proc where proname = 'somar_pontos';

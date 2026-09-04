@@ -70,3 +70,40 @@ from auth.users u
 left join public.usuarios p on p.id = u.id
 where p.id is null
 order by u.created_at desc;
+
+
+-- ── 6. O gabarito está escondido? ───────────────────────────────────
+--
+-- O RLS é por LINHA e não sabe esconder coluna: a policy de conteúdo
+-- libera a linha de questoes, e a linha tem resposta_correta. Quem
+-- fecha isso é a permissão por coluna (seção 5 do setup.sql).
+--
+-- Esperado: 7 colunas por grantee — enunciado, id, missao_id e
+-- opcao_a..opcao_d. Se resposta_correta ou explicacao aparecerem aqui,
+-- qualquer aluno logado lê o gabarito pelo console do navegador.
+--
+-- O filtro por privilege_type é obrigatório: sem ele a consulta traz
+-- INSERT/UPDATE/REFERENCES junto e parece que o revoke falhou.
+
+select grantee, column_name
+from information_schema.column_privileges
+where table_name = 'questoes'
+  and privilege_type = 'SELECT'
+  and grantee in ('anon', 'authenticated')
+order by grantee, column_name;
+
+
+-- ── 7. Só o servidor consegue pontuar? ──────────────────────────────
+--
+-- somar_pontos é security definer: quem consegue executá-la escreve em
+-- progresso_areas sem passar por RLS nenhum.
+--
+-- Cuidado ao ler o resultado: proacl NULO é o problema, não a solução.
+-- Nulo significa "padrão do PostgreSQL", e o padrão é PUBLIC podendo
+-- executar — foi exatamente essa a brecha. O esperado é um proacl
+-- preenchido e SEM nenhuma entrada "=X/" (grantee vazio antes do "="
+-- é como o PUBLIC aparece nessa lista).
+
+select proname, proacl
+from pg_proc
+where proname = 'somar_pontos';

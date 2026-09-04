@@ -45,6 +45,25 @@ insert into cenarios (slug, nome, descricao) values
 on conflict (slug) do nothing;
 
 
+-- ── Os 5 pontos que o conteudo pediu ─────────────────────────────────
+--
+-- Estes ja existiam no mapa (src/js/mapa.js) como cenario decorativo,
+-- sem par no banco. O lote de perguntas da equipe de Medicina veio com
+-- perguntas marcadas para eles -- casa e parque estao entre os mais
+-- usados -- entao viraram cenario de verdade.
+--
+-- Nome e descricao sao os mesmos que o mapa ja mostra, de proposito:
+-- se divergirem, o aluno le uma coisa no mapa e outra na missao.
+
+insert into cenarios (slug, nome, descricao) values
+  ('casa',   'Casa',           'Visitas do ACS a moradores diferentes, cada um com uma história e um problema de saúde distinto a ser identificado e resolvido.'),
+  ('upa',    'UPA',            'Casos urgentes que exigem atendimento rápido, ensinando o jogador a identificar prioridades em situações de emergência.'),
+  ('creche', 'Creche',         'Missões voltadas ao cuidado infantil, desenvolvimento na primeira infância e prevenção de doenças comuns nessa fase.'),
+  ('quadra', 'Campo de lazer', 'Atividades físicas coletivas em quadras, incentivando exercício e convivência comunitária.'),
+  ('parque', 'Parque',         'Áreas arborizadas para caminhadas, com missões de limpeza e reforço da separação correta do lixo.')
+on conflict (slug) do nothing;
+
+
 -- ── Conferir ─────────────────────────────────────────────────────────
 -- Deve devolver 7 linhas.
 
