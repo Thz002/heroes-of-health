@@ -111,20 +111,20 @@
     { tipo: "corrego", x: 166, y: 0, w: 114, h: 680, tooltipPos: "right" },
     { tipo: "rio", x: 205, y: 697, w: 1200, h: 80 },
 
-    { tipo: "ruas", imagemHotspot: "Ruas01.jpg", x: 278, y: 122, w: 1036, h: 41 },
+    { tipo: "ruas", imagemHotspot: "Ruas01.jpg", x: 279, y: 624, w: 1036, h: 67 },
     { tipo: "ruas", imagemHotspot: "Ruas02.jpg", x: 93, y: 126, w: 58, h: 555, tooltipPos: "right" },
-    { tipo: "ruas", imagemHotspot: "Ruas03.png", x: 470, y: 623, w: 272, h: 61 },
-    { tipo: "ruas", imagemHotspot: "Ruas04.png", x: 988, y: 575, w: 50, h: 156 },
-    { tipo: "ruas", imagemHotspot: "Ruas05.png", x: 395, y: 126, w: 920, h: 50 },
-    { tipo: "ruas", imagemHotspot: "Ruas06.png", x: 980, y: 622, w: 64, h: 63 },
-    { tipo: "ruas", imagemHotspot: "Ruas08.png", x: 376, y: 125, w: 63, h: 259 },
-    { tipo: "ruas", imagemHotspot: "Ruas09.png", x: 786, y: 253, w: 63, h: 260 },
-    { tipo: "ruas", imagemHotspot: "Ruas10.png", x: 982, y: 617, w: 59, h: 73 },
-    { tipo: "ruas", imagemHotspot: "Ruas11.png", x: 986, y: 202, w: 52, h: 392 },
-    { tipo: "ruas", imagemHotspot: "Ruas12.png", x: 1256, y: 128, w: 52, h: 400 },
-    { tipo: "ruas", imagemHotspot: "Ruas13.png", x: 1256, y: 650, w: 80, h: 51 },
-    { tipo: "ruas", imagemHotspot: "Ruas14.png", x: 552, y: 256, w: 66, h: 63 },
-    { tipo: "ruas", imagemHotspot: "Ruas15.png", x: 1256, y: 592, w: 123, h: 96 },
+    { tipo: "ruas", imagemHotspot: "Ruas03.png", x: 237, y: 353, w: 317, h: 68 },
+    { tipo: "ruas", imagemHotspot: "Ruas04.png", x: 376, y: 181, w: 59, h: 175 },
+    { tipo: "ruas", imagemHotspot: "Ruas05.png", x: 240, y: 126, w: 1080, h: 50 },
+    { tipo: "ruas", imagemHotspot: "Ruas06.png", x: 855, y: 362, w: 135, h: 60 },
+    { tipo: "ruas", imagemHotspot: "Ruas08.png", x: 550, y: 253, w: 55, h: 285 },
+    { tipo: "ruas", imagemHotspot: "Ruas09.png", x: 802, y: 253, w: 53, h: 285 },
+    { tipo: "ruas", imagemHotspot: "Ruas10.png", x: 855, y: 254, w: 135, h: 60 },
+    { tipo: "ruas", imagemHotspot: "Ruas11.png", x: 986, y: 183, w: 55, h: 441   },
+    { tipo: "ruas", imagemHotspot: "Ruas12.png", x: 1256, y: 180, w: 60, h: 450 },
+    { tipo: "ruas", imagemHotspot: "Ruas13.png", x: 1310, y: 362, w: 100, h: 61 },
+    { tipo: "ruas", imagemHotspot: "Ruas14.png", x: 626, y: 490, w: 158, h: 125 },
+    { tipo: "ruas", imagemHotspot: "Ruas15.png", x: 610, y: 175, w: 190, h: 128 },
 
 
     { tipo: "casa", imagem: "Casa.png", x: 253, y: 230, w: 125, h: 126},
@@ -150,31 +150,219 @@
     { tipo: "casa", imagem: "CasaLateral04.png", x: 1335, y: 430, w: 73, h: 113 },
   ];
 
+
+  // ── As 8 barras da saúde ──────────────────────────────────────────
+  //
+  // Cor e ícone de cada área. As CHAVES são exatamente os nomes da
+  // tabela `areas` do banco — é por elas que o progresso do aluno é
+  // casado com a área que o cenário alimenta. Mudar um nome aqui sem
+  // mudar lá quebra o casamento em silêncio (a barra some da lista).
+  const AREAS_VISUAL = {
+    "Saúde":       { icone: "❤️", cor: "#f87171" },
+    "Educação":    { icone: "📚", cor: "#6b8eff" },
+    "Vacinação":   { icone: "💉", cor: "#a78bfa" },
+    "Vetores":     { icone: "🦟", cor: "#f9c74f" },
+    "Limpeza":     { icone: "🧹", cor: "#38bdf8" },
+    "Alimentação": { icone: "🥗", cor: "#4ade80" },
+    "Exercícios":  { icone: "🏃", cor: "#fb923c" },
+    "Felicidade":  { icone: "😊", cor: "#f472b6" },
+  };
+
   const hotspotsLayer = document.getElementById("mapa-hotspots");
   const sidebarEmpty = document.getElementById("mapa-sidebar-empty");
   const sidebarContent = document.getElementById("mapa-sidebar-content");
   const sidebarThumb = document.getElementById("mapa-sidebar-thumb");
   const sidebarNome = document.getElementById("mapa-sidebar-nome");
-  const sidebarDesc = document.getElementById("mapa-sidebar-desc");
-  const sidebarPlay = document.getElementById("mapa-sidebar-play");
+  const sidebarSub = document.getElementById("mapa-sidebar-sub");
+  const sidebarAreas = document.getElementById("mapa-sidebar-areas");
   const btnSair = document.getElementById("logout-btn");
 
+  const modal = document.getElementById("cenario-modal");
+  const modalThumb = document.getElementById("cenario-modal-thumb");
+  const modalNome = document.getElementById("cenario-modal-nome");
+  const modalDesc = document.getElementById("cenario-modal-desc");
+  const modalAreas = document.getElementById("cenario-modal-areas");
+  const modalPlay = document.getElementById("cenario-modal-play");
+  const modalClose = document.getElementById("cenario-modal-close");
+
+  /* ═══════════════════════════════════════════════════════════════════
+     PROGRESSO POR ÁREA
+
+     Duas chamadas, uma vez só, no carregamento da página:
+
+       API.getCenarios()     -> quais áreas cada lugar do bairro alimenta
+       API.getMeuProgresso() -> quanto este aluno já tem em cada área
+
+     O hover não busca nada: ele só cruza os dois mapas já em memória.
+     Fosse uma chamada por passada de mouse, atravessar o bairro
+     dispararia dezenas de requisições e a barra piscaria a cada
+     movimento do cursor.
+
+     Enquanto a resposta não chega, `areasPorSlug` fica null — e é isso
+     que distingue "ainda carregando" de "este lugar não pontua nada".
+     ═══════════════════════════════════════════════════════════════════ */
+
+  let areasPorSlug = null;      // slug do cenário -> ["Saúde", "Limpeza", ...]
+  let progressoPorArea = null;  // nome da área    -> { pontos, porcentagem }
+  let erroAreas = "";
+  let hotspotAtual = null;      // o ponto que a lateral está mostrando agora
+
+  async function carregarAreas() {
+    try {
+      const [cenarios, progresso] = await Promise.all([
+        API.getCenarios(),
+        API.getMeuProgresso(),
+      ]);
+
+      areasPorSlug = new Map((cenarios || []).map(c => [c.slug, c.areas || []]));
+      progressoPorArea = new Map((progresso || []).map(p => [p.area, p]));
+    } catch (err) {
+      erroAreas = err.message;
+    }
+
+    // O mouse pode já estar parado sobre um ponto quando a resposta
+    // chega — sem isto a lateral ficaria presa no "carregando".
+    if (hotspotAtual) mostrarCenario(hotspotAtual);
+  }
+
+  /**
+   * As áreas de um lugar. Devolve null enquanto o servidor não respondeu
+   * (ou quando a busca falhou), e [] para um ponto do mapa que ainda não
+   * virou cenário no banco — banca, igreja, rio e ruas são cenário só
+   * visual por enquanto.
+   */
+  function areasDoCenario(tipo) {
+    if (!areasPorSlug) return null;
+    return areasPorSlug.get(tipo) || [];
+  }
+
+  /** Um lugar só é jogável se existir como cenário no banco. */
+  function ehJogavel(tipo) {
+    return Boolean(areasPorSlug && areasPorSlug.has(tipo));
+  }
+
+  function avisoDeArea(texto) {
+    const p = document.createElement("p");
+    p.className = "mapa-areas__aviso";
+    p.textContent = texto;
+    return p;
+  }
+
+  /** Desenha as barras de progresso dentro de um container. */
+  function desenharAreas(container, areas) {
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (areas === null) {
+      container.appendChild(avisoDeArea(erroAreas || "Carregando seu progresso…"));
+      return;
+    }
+
+    if (!areas.length) {
+      container.appendChild(avisoDeArea(
+        "Este lugar ainda não distribui pontos — o conteúdo dele está a caminho."
+      ));
+      return;
+    }
+
+    for (const nome of areas) {
+      const visual = AREAS_VISUAL[nome] || { icone: "•", cor: "#6bdfb8" };
+      const registro = progressoPorArea ? progressoPorArea.get(nome) : null;
+      const pct = Math.round(registro ? registro.porcentagem || 0 : 0);
+
+      const el = document.createElement("div");
+      el.className = "mapa-area";
+      el.style.setProperty("--cor-area", visual.cor);
+      el.innerHTML = `
+        <div class="mapa-area__topo">
+          <span class="mapa-area__nome">
+            <span class="mapa-area__icone"></span><span class="mapa-area__label"></span>
+          </span>
+          <span class="mapa-area__pct"></span>
+        </div>
+        <div class="progress-track mapa-area__track">
+          <div class="progress-bar mapa-area__bar"></div>
+        </div>
+      `;
+
+      el.querySelector(".mapa-area__icone").textContent = visual.icone;
+      el.querySelector(".mapa-area__label").textContent = nome;
+      el.querySelector(".mapa-area__pct").textContent = `${pct}%`;
+      el.querySelector(".mapa-area__bar").style.width = `${pct}%`;
+
+      container.appendChild(el);
+    }
+  }
+
+  // ── Painel lateral: o que o hover mostra ──────────────────────────
   function mostrarCenario(h) {
     const cenario = CENARIOS[h.tipo];
     if (!cenario) return;
+
+    hotspotAtual = h;
     sidebarThumb.src = `../imgs/${h.imagem || cenario.imagem}`;
     sidebarThumb.alt = cenario.nome;
     sidebarNome.textContent = cenario.nome;
-    sidebarDesc.textContent = cenario.descricao;
-    sidebarPlay.dataset.cenario = h.tipo;
+    sidebarSub.textContent = "Seu progresso nas áreas deste lugar";
+
+    desenharAreas(sidebarAreas, areasDoCenario(h.tipo));
+
     sidebarEmpty.hidden = true;
     sidebarContent.hidden = false;
   }
 
   function limparSidebar() {
+    hotspotAtual = null;
     sidebarEmpty.hidden = false;
     sidebarContent.hidden = true;
   }
+
+  // ── Modal: o que o clique abre ────────────────────────────────────
+  function abrirModal(h) {
+    const cenario = CENARIOS[h.tipo];
+    if (!cenario || !modal) return;
+
+    modalThumb.src = `../imgs/${h.imagem || cenario.imagem}`;
+    modalThumb.alt = cenario.nome;
+    modalNome.textContent = cenario.nome;
+    modalDesc.textContent = cenario.descricao;
+
+    desenharAreas(modalAreas, areasDoCenario(h.tipo));
+
+    // Lugar que ainda não é cenário no banco não tem missão para abrir:
+    // mostrar o botão e cair num "esse lugar não existe no mapa" é pior
+    // do que não oferecer o caminho.
+    modalPlay.hidden = !ehJogavel(h.tipo);
+    modalPlay.dataset.cenario = h.tipo;
+
+    modal.classList.add("open");
+    document.body.classList.add("modal-aberto");
+    if (modalClose) modalClose.focus();
+  }
+
+  function fecharModal() {
+    if (!modal) return;
+    modal.classList.remove("open");
+    document.body.classList.remove("modal-aberto");
+  }
+
+  modalClose?.addEventListener("click", fecharModal);
+
+  // Só o clique no fundo fecha. Comparar o alvo com o próprio overlay é o
+  // que impede um clique dentro do card de fechar o modal por borbulhamento.
+  modal?.addEventListener("click", (e) => {
+    if (e.target === modal) fecharModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") fecharModal();
+  });
+
+  modalPlay?.addEventListener("click", () => {
+    const tipo = modalPlay.dataset.cenario;
+    if (!tipo) return;
+    window.location.href = `missao.html?cenario=${encodeURIComponent(tipo)}`;
+  });
 
   function montarHotspots() {
     const frag = document.createDocumentFragment();
@@ -211,6 +399,7 @@
       });
       el.addEventListener("click", () => {
         mostrarCenario(h);
+        abrirModal(h);
       });
 
       frag.appendChild(el);
@@ -221,16 +410,9 @@
 
   if (hotspotsLayer) montarHotspots();
 
-  if (sidebarPlay) {
-    sidebarPlay.addEventListener("click", () => {
-      const tipo = sidebarPlay.dataset.cenario;
-      if (!tipo) return;
-      window.location.href = `missao.html?cenario=${encodeURIComponent(tipo)}`;
-    });
-  }
-
   document.getElementById("mapa-viewport")?.addEventListener("mouseleave", limparSidebar);
   AUTH.exigirLogin();
+  carregarAreas();
 
 
   /* ═══════════════════════════════════════════════════════════════════
