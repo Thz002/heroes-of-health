@@ -158,8 +158,11 @@ create table if not exists questoes (
   enunciado text not null,
   opcao_a varchar(255) not null,
   opcao_b varchar(255) not null,
-  opcao_c varchar(255) not null,
-  opcao_d varchar(255) not null,
+  -- C e D aceitam nulo: a equipe de Medicina também escreve questões de
+  -- Verdadeiro/Falso, que têm só duas alternativas. A tela já pula opção
+  -- vazia, então isso não exigiu nada do lado de lá.
+  opcao_c varchar(255),
+  opcao_d varchar(255),
   resposta_correta char(1) not null check (resposta_correta in ('A','B','C','D')),
 
   -- Texto educativo mostrado depois da resposta, escrito pela equipe de
@@ -188,6 +191,12 @@ create index if not exists questoes_por_missao         on questoes (missao_id);
 alter table missoes  add column if not exists codigo_externo varchar(60);
 alter table questoes add column if not exists codigo_externo varchar(60);
 
+-- O "create table" acima só vale para banco novo; num que já existe ele
+-- não muda nada. Estas duas linhas é que soltam a trava nos bancos que
+-- já foram criados antes das questões de Verdadeiro/Falso existirem.
+alter table questoes alter column opcao_c drop not null;
+alter table questoes alter column opcao_d drop not null;
+
 create unique index if not exists missoes_codigo_externo  on missoes  (codigo_externo);
 create unique index if not exists questoes_codigo_externo on questoes (codigo_externo);
 
@@ -198,6 +207,17 @@ create table if not exists areas (
   nome varchar(50) primary key,
   ordem int not null
 );
+
+-- Quantos pontos enchem ESTA barra. Não é a mesma para as oito, e é aí
+-- que está a diferença: o conteúdo é muito desigual (Saúde tem 140
+-- questões, Vetores tem 5). Com uma meta única, ou as barras ricas
+-- enchiam com um terço do material, ou as pobres nunca saíam do lugar —
+-- nenhum número resolvia as duas coisas ao mesmo tempo.
+--
+-- Aqui a meta É o conteúdo que existe: encher a barra passa a significar
+-- "você cuidou de tudo o que há sobre isso". Quem preenche é a função
+-- recalcular_metas(), chamada no fim de cada import.
+alter table areas add column if not exists meta int not null default 0;
 
 insert into areas (nome, ordem) values
   ('Saúde', 1), ('Educação', 2), ('Vacinação', 3), ('Vetores', 4),
@@ -426,15 +446,58 @@ create or replace function public.somar_pontos(
 )
 returns void language plpgsql security definer set search_path = public as $$
 declare
-  -- Quantos pontos enchem uma barra. Provisório: quem define a curva de
-  -- progressão é a equipe de Medicina junto com a de Computação.
-  meta constant int := 500;
+  -- A meta vem da tabela areas, e é diferente para cada barra: ela vale
+  -- todos os pontos que o conteúdo daquela área pode render hoje.
+  v_meta int;
 begin
+  select meta into v_meta from areas where nome = p_area;
+
+  -- Área ainda sem conteúdo (Alimentação e Exercícios hoje). Guarda o
+  -- ponto, mas não calcula porcentagem — dividir por zero derrubaria a
+  -- resposta inteira do aluno por causa de uma barra vazia.
+  if v_meta is null or v_meta <= 0 then
+    insert into progresso_areas (usuario_id, area_nome, pontos, porcentagem)
+    values (p_usuario, p_area, p_pontos, 0)
+    on conflict (usuario_id, area_nome) do update
+      set pontos = progresso_areas.pontos + p_pontos;
+    return;
+  end if;
+
   insert into progresso_areas (usuario_id, area_nome, pontos, porcentagem)
-  values (p_usuario, p_area, p_pontos, least(100, p_pontos::real / meta * 100))
+  values (p_usuario, p_area, p_pontos, least(100, p_pontos::real / v_meta * 100))
   on conflict (usuario_id, area_nome) do update
     set pontos      = progresso_areas.pontos + p_pontos,
-        porcentagem = least(100, (progresso_areas.pontos + p_pontos)::real / meta * 100);
+        porcentagem = least(100, (progresso_areas.pontos + p_pontos)::real / v_meta * 100);
+end;
+$$;
+
+
+-- ── Recalcular as metas a partir do conteúdo ─────────────────────────
+--
+-- A meta de uma área é a soma de tudo o que ela pode render: para cada
+-- missão que a alimenta, os pontos dela vezes o número de questões.
+--
+-- Chame depois de importar conteúdo. As porcentagens de quem já jogou
+-- são refeitas junto — sem isso um aluno ficaria com 100% numa barra
+-- cuja régua acabou de crescer.
+create or replace function public.recalcular_metas()
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  update areas a
+     set meta = coalesce((
+       select sum(ma.pontos)
+         from missao_areas ma
+         join questoes q on q.missao_id = ma.missao_id
+        where ma.area_nome = a.nome
+     ), 0);
+
+  update progresso_areas p
+     set porcentagem = case
+       when a.meta > 0 then least(100, p.pontos::real / a.meta * 100)
+       else 0
+     end
+    from areas a
+   where a.nome = p.area_nome;
 end;
 $$;
 
@@ -859,6 +922,11 @@ grant execute on function public.minhas_turmas() to authenticated;
 -- somar_pontos com 999999 pontos e encher as próprias barras.
 revoke execute on function public.somar_pontos(uuid, varchar, int) from public;
 revoke execute on function public.somar_pontos(uuid, varchar, int) from anon, authenticated;
+
+-- Mesma trava para a recalculadora de metas: ela reescreve a porcentagem
+-- de TODO mundo. Roda no SQL Editor (como postgres) ou pelo servidor.
+revoke execute on function public.recalcular_metas() from public;
+revoke execute on function public.recalcular_metas() from anon, authenticated;
 
 
 -- #####################################################################

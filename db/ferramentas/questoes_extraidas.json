@@ -17,7 +17,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-001"
  },
  {
   "num": 2,
@@ -37,7 +38,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-002"
  },
  {
   "num": 3,
@@ -57,7 +59,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-003"
  },
  {
   "num": 4,
@@ -77,7 +80,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-004"
  },
  {
   "num": 5,
@@ -97,7 +101,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-005"
  },
  {
   "num": 6,
@@ -117,7 +122,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PRACA-N2-001"
  },
  {
   "num": 7,
@@ -137,7 +143,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-006"
  },
  {
   "num": 8,
@@ -157,7 +164,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-001"
  },
  {
   "num": 9,
@@ -177,7 +185,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-007"
  },
  {
   "num": 10,
@@ -197,7 +206,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-008"
  },
  {
   "num": 11,
@@ -217,7 +227,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-002"
  },
  {
   "num": 12,
@@ -237,7 +248,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-009"
  },
  {
   "num": 13,
@@ -257,7 +269,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-010"
  },
  {
   "num": 14,
@@ -277,7 +290,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-011"
  },
  {
   "num": 15,
@@ -297,7 +311,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-012"
  },
  {
   "num": 16,
@@ -317,7 +332,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-001"
  },
  {
   "num": 17,
@@ -337,7 +353,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-002"
  },
  {
   "num": 18,
@@ -357,7 +374,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-003"
  },
  {
   "num": 19,
@@ -377,7 +395,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-004"
  },
  {
   "num": 20,
@@ -397,7 +416,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-005"
  },
  {
   "num": 21,
@@ -417,7 +437,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-006"
  },
  {
   "num": 22,
@@ -437,7 +458,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-007"
  },
  {
   "num": 23,
@@ -457,7 +479,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-008"
  },
  {
   "num": 24,
@@ -477,7 +500,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-009"
  },
  {
   "num": 25,
@@ -498,7 +522,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-010"
  },
  {
   "num": 26,
@@ -519,7 +544,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-001"
  },
  {
   "num": 27,
@@ -540,7 +566,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-002"
  },
  {
   "num": 28,
@@ -561,7 +588,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-003"
  },
  {
   "num": 29,
@@ -582,7 +610,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-004"
  },
  {
   "num": 30,
@@ -604,7 +633,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-005"
  },
  {
   "num": 31,
@@ -625,7 +655,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-011"
  },
  {
   "num": 32,
@@ -646,7 +677,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-012"
  },
  {
   "num": 33,
@@ -667,7 +699,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-013"
  },
  {
   "num": 34,
@@ -688,7 +721,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-014"
  },
  {
   "num": 35,
@@ -709,7 +743,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-015"
  },
  {
   "num": 36,
@@ -730,7 +765,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-016"
  },
  {
   "num": 37,
@@ -751,7 +787,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-017"
  },
  {
   "num": 38,
@@ -772,7 +809,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-018"
  },
  {
   "num": 39,
@@ -793,7 +831,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-019"
  },
  {
   "num": 40,
@@ -814,7 +853,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-020"
  },
  {
   "num": 1,
@@ -835,7 +875,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-006"
  },
  {
   "num": 2,
@@ -856,7 +897,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-007"
  },
  {
   "num": 3,
@@ -877,7 +919,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-008"
  },
  {
   "num": 4,
@@ -899,7 +942,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-013"
  },
  {
   "num": 5,
@@ -918,7 +962,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-009"
  },
  {
   "num": 6,
@@ -937,7 +982,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-010"
  },
  {
   "num": 7,
@@ -956,7 +1002,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-011"
  },
  {
   "num": 8,
@@ -975,7 +1022,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-012"
  },
  {
   "num": 9,
@@ -994,7 +1042,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-013"
  },
  {
   "num": 10,
@@ -1013,7 +1062,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-014"
  },
  {
   "num": 11,
@@ -1032,7 +1082,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-014"
  },
  {
   "num": 12,
@@ -1051,7 +1102,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-015"
  },
  {
   "num": 13,
@@ -1070,7 +1122,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UPA-N2-001"
  },
  {
   "num": 14,
@@ -1089,7 +1142,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UPA-N2-002"
  },
  {
   "num": 15,
@@ -1108,7 +1162,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UPA-N2-003"
  },
  {
   "num": 16,
@@ -1128,7 +1183,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PRACA-N2-002"
  },
  {
   "num": 17,
@@ -1147,7 +1203,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-003"
  },
  {
   "num": 18,
@@ -1166,7 +1223,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-004"
  },
  {
   "num": 19,
@@ -1185,7 +1243,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-021"
  },
  {
   "num": 20,
@@ -1207,7 +1266,8 @@
    "Vacinação"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N2-016"
  },
  {
   "num": 1,
@@ -1228,7 +1288,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-005"
  },
  {
   "num": 2,
@@ -1249,7 +1310,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-006"
  },
  {
   "num": 3,
@@ -1270,7 +1332,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-007"
  },
  {
   "num": 4,
@@ -1291,7 +1354,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "MERCADO-N2-001"
  },
  {
   "num": 5,
@@ -1312,7 +1376,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-015"
  },
  {
   "num": 6,
@@ -1333,7 +1398,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-008"
  },
  {
   "num": 7,
@@ -1355,7 +1421,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-022"
  },
  {
   "num": 8,
@@ -1377,7 +1444,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PRACA-N2-003"
  },
  {
   "num": 9,
@@ -1398,7 +1466,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-016"
  },
  {
   "num": 10,
@@ -1421,7 +1490,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "PARQUE-N2-023"
  },
  {
   "num": 11,
@@ -1442,7 +1512,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UPA-N2-004"
  },
  {
   "num": 12,
@@ -1463,7 +1534,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-017"
  },
  {
   "num": 13,
@@ -1484,7 +1556,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "UPA-N2-005"
  },
  {
   "num": 14,
@@ -1507,7 +1580,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-009"
  },
  {
   "num": 15,
@@ -1530,7 +1604,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-010"
  },
  {
   "num": 16,
@@ -1553,7 +1628,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N2-011"
  },
  {
   "num": 17,
@@ -1574,7 +1650,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-018"
  },
  {
   "num": 18,
@@ -1596,7 +1673,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-019"
  },
  {
   "num": 19,
@@ -1617,7 +1695,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-020"
  },
  {
   "num": 20,
@@ -1638,7 +1717,8 @@
    "Saúde"
   ],
   "nivel": 2,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N2-021"
  },
  {
   "num": 1,
@@ -1661,7 +1741,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-001"
  },
  {
   "num": 2,
@@ -1683,7 +1764,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-001"
  },
  {
   "num": 3,
@@ -1705,7 +1787,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-002"
  },
  {
   "num": 4,
@@ -1728,7 +1811,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "PRACA-N1-001"
  },
  {
   "num": 5,
@@ -1752,7 +1836,8 @@
    "Vetores"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "FARMACIA-N1-001"
  },
  {
   "num": 6,
@@ -1771,7 +1856,8 @@
    "Vacinação"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-003"
  },
  {
   "num": 9,
@@ -1794,7 +1880,8 @@
    "Vacinação"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N1-001"
  },
  {
   "num": 1,
@@ -1817,7 +1904,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CRECHE-N1-001"
  },
  {
   "num": 2,
@@ -1838,7 +1926,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-002"
  },
  {
   "num": 3,
@@ -1859,7 +1948,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "PRACA-N1-002"
  },
  {
   "num": 4,
@@ -1880,7 +1970,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-004"
  },
  {
   "num": 5,
@@ -1901,7 +1992,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-003"
  },
  {
   "num": 6,
@@ -1924,7 +2016,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CRECHE-N1-002"
  },
  {
   "num": 7,
@@ -1947,7 +2040,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CRECHE-N1-003"
  },
  {
   "num": 8,
@@ -1970,7 +2064,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-005"
  },
  {
   "num": 9,
@@ -1991,7 +2086,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-006"
  },
  {
   "num": 12,
@@ -2016,7 +2112,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-004"
  },
  {
   "num": 1,
@@ -2038,7 +2135,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "UPA-N1-001"
  },
  {
   "num": 2,
@@ -2060,7 +2158,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "UPA-N1-002"
  },
  {
   "num": 3,
@@ -2082,7 +2181,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "UPA-N1-003"
  },
  {
   "num": 4,
@@ -2104,7 +2204,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "UPA-N1-004"
  },
  {
   "num": 5,
@@ -2126,7 +2227,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-005"
  },
  {
   "num": 6,
@@ -2148,7 +2250,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-006"
  },
  {
   "num": 7,
@@ -2170,7 +2273,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-007"
  },
  {
   "num": 10,
@@ -2192,7 +2296,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-008"
  },
  {
   "num": 11,
@@ -2213,7 +2318,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "PRACA-N1-003"
  },
  {
   "num": 1,
@@ -2237,7 +2343,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "PRACA-N1-004"
  },
  {
   "num": 2,
@@ -2259,7 +2366,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-007"
  },
  {
   "num": 3,
@@ -2280,7 +2388,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-009"
  },
  {
   "num": 4,
@@ -2302,7 +2411,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-008"
  },
  {
   "num": 5,
@@ -2323,7 +2433,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "PRACA-N1-005"
  },
  {
   "num": 6,
@@ -2344,7 +2455,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-010"
  },
  {
   "num": 7,
@@ -2365,7 +2477,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-011"
  },
  {
   "num": 8,
@@ -2387,7 +2500,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-012"
  },
  {
   "num": 9,
@@ -2408,7 +2522,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-009"
  },
  {
   "num": 10,
@@ -2430,7 +2545,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-013"
  },
  {
   "num": 11,
@@ -2451,7 +2567,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-010"
  },
  {
   "num": 1,
@@ -2473,7 +2590,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "UBS-N1-002"
  },
  {
   "num": 2,
@@ -2494,7 +2612,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-014"
  },
  {
   "num": 3,
@@ -2516,7 +2635,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-015"
  },
  {
   "num": 4,
@@ -2538,7 +2658,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-016"
  },
  {
   "num": 5,
@@ -2560,7 +2681,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-017"
  },
  {
   "num": 6,
@@ -2581,7 +2703,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-018"
  },
  {
   "num": 7,
@@ -2603,7 +2726,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "QUADRA-N1-001"
  },
  {
   "num": 8,
@@ -2645,7 +2769,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "PRACA-N1-006"
  },
  {
   "num": 10,
@@ -2666,7 +2791,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-011"
  },
  {
   "num": 11,
@@ -2688,7 +2814,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-019"
  },
  {
   "num": 12,
@@ -2709,7 +2836,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-020"
  },
  {
   "num": 13,
@@ -2730,7 +2858,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-021"
  },
  {
   "num": 14,
@@ -2751,7 +2880,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "PRACA-N1-007"
  },
  {
   "num": 15,
@@ -2773,7 +2903,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": true
+  "vf": true,
+  "codigo": "MERCADO-N1-001"
  },
  {
   "num": 18,
@@ -2794,7 +2925,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-022"
  },
  {
   "num": 1,
@@ -2815,7 +2947,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-023"
  },
  {
   "num": 2,
@@ -2838,7 +2971,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-024"
  },
  {
   "num": 3,
@@ -2859,7 +2993,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-025"
  },
  {
   "num": 4,
@@ -2881,7 +3016,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-026"
  },
  {
   "num": 5,
@@ -2902,7 +3038,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-012"
  },
  {
   "num": 6,
@@ -2924,7 +3061,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-027"
  },
  {
   "num": 7,
@@ -2945,7 +3083,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-013"
  },
  {
   "num": 8,
@@ -2967,7 +3106,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-014"
  },
  {
   "num": 9,
@@ -2988,7 +3128,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-028"
  },
  {
   "num": 10,
@@ -3009,7 +3150,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-029"
  },
  {
   "num": 11,
@@ -3028,7 +3170,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": true
+  "vf": true,
+  "codigo": "PRACA-N1-008"
  },
  {
   "num": 12,
@@ -3049,7 +3192,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-030"
  },
  {
   "num": 15,
@@ -3072,7 +3216,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-015"
  },
  {
   "num": 1,
@@ -3093,7 +3238,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-031"
  },
  {
   "num": 2,
@@ -3115,7 +3261,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-032"
  },
  {
   "num": 3,
@@ -3136,7 +3283,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-016"
  },
  {
   "num": 4,
@@ -3157,7 +3305,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-017"
  },
  {
   "num": 5,
@@ -3178,7 +3327,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-033"
  },
  {
   "num": 6,
@@ -3199,7 +3349,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-034"
  },
  {
   "num": 7,
@@ -3220,7 +3371,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-035"
  },
  {
   "num": 8,
@@ -3241,7 +3393,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-036"
  },
  {
   "num": 9,
@@ -3262,7 +3415,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-037"
  },
  {
   "num": 10,
@@ -3283,7 +3437,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "ESCOLA-N1-038"
  },
  {
   "num": 11,
@@ -3304,7 +3459,8 @@
    "Saúde"
   ],
   "nivel": 1,
-  "vf": false
+  "vf": false,
+  "codigo": "CASA-N1-018"
  },
  {
   "num": 12,
@@ -3344,6 +3500,1379 @@
    "Saúde"
   ],
   "nivel": 1,
+  "vf": false,
+  "codigo": "ESCOLA-N1-039"
+ },
+ {
+  "num": 1,
+  "enunciado": "Um estudante percebe que está há várias semanas desanimado, perdeu o interesse por atividades que gostava e apresenta dificuldade para realizar tarefas cotidianas. Qual atitude é mais adequada?",
+  "alts": [
+   "Esperar que o problema desapareça sem comentar com ninguém.",
+   "Tentar esconder os sentimentos para evitar preocupação.",
+   "Conversar com alguém de confiança e buscar orientação profissional.",
+   "Procurar na internet um medicamento para controlar os sintomas."
+  ],
+  "certa": 2,
+  "lugares": [
+   "escola"
+  ],
+  "areas": [
+   "Felicidade",
+   "Educação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "ESCOLA-N2-022"
+ },
+ {
+  "num": 2,
+  "enunciado": "Qual situação representa uma estratégia saudável para lidar com o estresse?",
+  "alts": [
+   "Organizar a rotina, manter atividades prazerosas e buscar apoio.",
+   "Evitar qualquer conversa sobre aquilo que está causando preocupação.",
+   "Aumentar o consumo de estimulantes para manter a produtividade.",
+   "Abandonar atividades sociais até que todos os problemas desapareçam."
+  ],
+  "certa": 0,
+  "lugares": [
+   "casa"
+  ],
+  "areas": [
+   "Felicidade",
+   "Educação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "CASA-N2-012"
+ },
+ {
+  "num": 3,
+  "enunciado": "Um amigo procura você e diz que não está conseguindo lidar com seus problemas. Qual resposta demonstra maior cuidado?",
+  "alts": [
+   "“Todo mundo passa por isso; tente esquecer.”",
+   "“Estou aqui para ouvir você e podemos procurar ajuda juntos.”",
+   "“Você deveria resolver isso sozinho para ficar mais forte.”",
+   "“Não conte para ninguém, porque isso precisa ficar entre nós.”"
+  ],
+  "certa": 1,
+  "lugares": [
+   "casa"
+  ],
+  "areas": [
+   "Felicidade",
+   "Educação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "CASA-N2-013"
+ },
+ {
+  "num": 4,
+  "enunciado": "Qual hábito pode contribuir para a manutenção da saúde mental?",
+  "alts": [
+   "Manter rotina de sono, alimentação adequada, atividade física e vínculos sociais.",
+   "Permanecer conectado às redes sociais durante grande parte do dia.",
+   "Utilizar bebidas estimulantes sempre que estiver cansado.",
+   "Evitar atividades de lazer para aumentar o tempo dedicado aos estudos."
+  ],
+  "certa": 0,
+  "lugares": [
+   "casa"
+  ],
+  "areas": [
+   "Felicidade",
+   "Educação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "CASA-N2-014"
+ },
+ {
+  "num": 5,
+  "enunciado": "Um adolescente percebe que as redes sociais estão afetando sua autoestima. Qual atitude pode ser mais adequada?",
+  "alts": [
+   "Aumentar o tempo de exposição para tentar se adaptar aos padrões.",
+   "Comparar seu cotidiano somente com pessoas consideradas bem-sucedidas.",
+   "Rever o conteúdo consumido e estabelecer limites para o uso das redes.",
+   "Abandonar todas as relações presenciais para evitar comparações."
+  ],
+  "certa": 2,
+  "lugares": [
+   "casa"
+  ],
+  "areas": [
+   "Felicidade",
+   "Educação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "CASA-N2-015"
+ },
+ {
+  "num": 6,
+  "enunciado": "Por que o sono é importante para adolescentes?",
+  "alts": [
+   "Porque elimina completamente o estresse acumulado durante o dia.",
+   "Porque participa de processos relacionados à memória, atenção e regulação emocional.",
+   "Porque substitui os benefícios proporcionados pela alimentação equilibrada.",
+   "Porque impede que alterações emocionais aconteçam durante a adolescência."
+  ],
+  "certa": 1,
+  "lugares": [
+   "casa"
+  ],
+  "areas": [
+   "Felicidade",
+   "Educação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "CASA-N2-016"
+ },
+ {
+  "num": 7,
+  "enunciado": "Em relação à busca por ajuda psicológica ou médica, qual afirmação é mais adequada?",
+  "alts": [
+   "Deve acontecer somente quando o problema impedir completamente a rotina.",
+   "É necessária apenas quando houver sintomas físicos associados.",
+   "Pode substituir todas as relações de amizade e familiares.",
+   "Pode ser importante quando o sofrimento persiste ou interfere na vida cotidiana."
+  ],
+  "certa": 3,
+  "lugares": [
+   "casa"
+  ],
+  "areas": [
+   "Felicidade",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "CASA-N2-017"
+ },
+ {
+  "num": 8,
+  "enunciado": "Qual comportamento favorece a construção de uma rede de apoio?",
+  "alts": [
+   "Evitar conversar sobre problemas pessoais com qualquer pessoa.",
+   "Manter contato apenas com pessoas que concordam com todas as suas opiniões.",
+   "Construir relações baseadas em respeito, confiança e escuta.",
+   "Resolver conflitos exclusivamente por meio de mensagens nas redes sociais."
+  ],
+  "certa": 2,
+  "lugares": [
+   "casa"
+  ],
+  "areas": [
+   "Felicidade"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "CASA-N2-018"
+ },
+ {
+  "num": 9,
+  "enunciado": "Um estudante está enfrentando dificuldades emocionais e acadêmicas simultaneamente. Qual abordagem é mais adequada?",
+  "alts": [
+   "Considerar os diferentes aspectos da situação e buscar apoio quando necessário.",
+   "Concentrar-se exclusivamente nas notas para resolver os demais problemas.",
+   "Abandonar atividades sociais até recuperar completamente o rendimento.",
+   "Utilizar medicamentos por conta própria para aumentar a concentração."
+  ],
+  "certa": 0,
+  "lugares": [
+   "escola"
+  ],
+  "areas": [
+   "Educação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "ESCOLA-N2-023"
+ },
+ {
+  "num": 10,
+  "enunciado": "Sobre as infecções sexualmente transmissíveis (ISTs), é correto afirmar que:",
+  "alts": [
+   "Todas provocam sintomas logo após a transmissão.",
+   "Algumas podem permanecer sem sintomas durante determinado período.",
+   "A presença de sintomas é suficiente para confirmar qualquer IST.",
+   "Pessoas que apresentam aparência saudável não podem transmitir ISTs."
+  ],
+  "certa": 1,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-017"
+ },
+ {
+  "num": 12,
+  "enunciado": "Um adolescente deseja reduzir o risco de adquirir uma IST durante uma relação sexual. Qual estratégia apresenta maior relevância?",
+  "alts": [
+   "Utilizar antibiótico antes da relação.",
+   "Realizar higiene corporal imediatamente após a relação.",
+   "Evitar qualquer conversa sobre saúde sexual.",
+   "Utilizar preservativo corretamente e manter acompanhamento de saúde."
+  ],
+  "certa": 3,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-018"
+ },
+ {
+  "num": 13,
+  "enunciado": "Qual alternativa apresenta uma estratégia relacionada à prevenção do HPV?",
+  "alts": [
+   "Uso preventivo de antibióticos.",
+   "Restrição de atividades físicas durante a adolescência.",
+   "Realização periódica de exames de sangue para todos os adolescentes.",
+   "Vacinação de acordo com as recomendações do Programa Nacional de Imunizações."
+  ],
+  "certa": 3,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Vacinação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-019"
+ },
+ {
+  "num": 14,
+  "enunciado": "Sobre métodos contraceptivos, qual afirmação é mais adequada?",
+  "alts": [
+   "Todos apresentam exatamente o mesmo mecanismo de ação.",
+   "Os métodos possuem características diferentes e devem ser escolhidos considerando cada situação.",
+   "Métodos hormonais protegem de maneira geral contra todas as ISTs.",
+   "O uso de contraceptivos elimina a necessidade de orientação em saúde sexual."
+  ],
+  "certa": 1,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Educação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-020"
+ },
+ {
+  "num": 15,
+  "enunciado": "Em uma relação, consentimento significa:",
+  "alts": [
+   "Concordar porque existe pressão do parceiro ou grupo de amigos.",
+   "Aceitar determinada situação para evitar conflitos.",
+   "Manifestar concordância de forma livre, consciente e sem coerção.",
+   "Considerar que um relacionamento anterior significa consentimento permanente."
+  ],
+  "certa": 2,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Felicidade",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-021"
+ },
+ {
+  "num": 16,
+  "enunciado": "Um adolescente suspeita que teve contato com uma IST. Qual conduta é mais adequada?",
+  "alts": [
+   "Procurar um serviço de saúde para avaliação, orientação e, quando indicado, testagem.",
+   "Utilizar medicamentos que tenham funcionado para outra pessoa.",
+   "Esperar obrigatoriamente o surgimento de sintomas antes de procurar atendimento.",
+   "Evitar comentar a situação para impedir qualquer constrangimento."
+  ],
+  "certa": 0,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-022"
+ },
+ {
+  "num": 17,
+  "enunciado": "Qual situação demonstra uma atitude responsável em relação à saúde sexual?",
+  "alts": [
+   "Evitar qualquer conversa sobre prevenção para não gerar desconforto.",
+   "Buscar informações confiáveis e conversar sobre prevenção e consentimento.",
+   "Considerar que a prevenção é responsabilidade exclusiva de uma das pessoas.",
+   "Basear decisões exclusivamente nas experiências relatadas por amigos."
+  ],
+  "certa": 1,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Felicidade",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-023"
+ },
+ {
+  "num": 18,
+  "enunciado": "Sobre o preservativo, qual alternativa é correta?",
+  "alts": [
+   "Sua função está relacionada exclusivamente à prevenção da gravidez.",
+   "Deve ser utilizado somente quando houver suspeita de IST.",
+   "Pode ser reutilizado se permanecer aparentemente íntegro.",
+   "Seu uso correto contribui para prevenir gravidez e diversas ISTs."
+  ],
+  "certa": 3,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Educação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-024"
+ },
+ {
+  "num": 19,
+  "enunciado": "Um adolescente percebe que possui vacinas atrasadas. Qual deve ser sua primeira atitude?",
+  "alts": [
+   "Procurar uma unidade de saúde para verificar e atualizar sua situação vacinal.",
+   "Reiniciar todas as vacinas desde o nascimento por conta própria.",
+   "Aguardar uma campanha nacional antes de procurar atendimento.",
+   "Considerar desnecessárias as doses que não foram tomadas na idade prevista."
+  ],
+  "certa": 0,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Vacinação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-025"
+ },
+ {
+  "num": 20,
+  "enunciado": "Qual é uma das principais funções da vacinação?",
+  "alts": [
+   "Tratar qualquer infecção depois que ela se manifesta.",
+   "Substituir medidas de higiene e prevenção ambiental.",
+   "Estimular proteção contra determinadas doenças imunopreveníveis.",
+   "Garantir que uma pessoa jamais desenvolva qualquer doença infecciosa."
+  ],
+  "certa": 2,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Vacinação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-026"
+ },
+ {
+  "num": 21,
+  "enunciado": "De acordo com o calendário de vacinação de 2026, a vacina HPV4 é indicada rotineiramente para:",
+  "alts": [
+   "Apenas pessoas com mais de 20 anos.",
+   "Apenas adolescentes que já tiveram contato com HPV.",
+   "Somente pessoas que apresentam sintomas relacionados ao HPV.",
+   "Crianças e adolescentes conforme faixa etária e histórico vacinal."
+  ],
+  "certa": 3,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Vacinação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-027"
+ },
+ {
+  "num": 22,
+  "enunciado": "Por que manter a vacinação atualizada é importante durante a adolescência?",
+  "alts": [
+   "Porque todas as vacinas da infância deixam de funcionar nessa fase.",
+   "Porque adolescentes deixam de transmitir doenças após completar 15 anos.",
+   "Porque algumas vacinas e reforços são indicados nessa etapa da vida.",
+   "Porque a vacinação nessa idade elimina a necessidade de vacinação futura."
+  ],
+  "certa": 2,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Vacinação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-028"
+ },
+ {
+  "num": 23,
+  "enunciado": "Qual conjunto apresenta doenças que podem ser prevenidas por vacinação?",
+  "alts": [
+   "Sarampo, hepatite B e tétano.",
+   "Miopia, cárie e escoliose.",
+   "Obesidade, ansiedade e hipertensão.",
+   "Diabetes, acne e alergia alimentar."
+  ],
+  "certa": 0,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Vacinação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-029"
+ },
+ {
+  "num": 24,
+  "enunciado": "Um adolescente não sabe quais vacinas já recebeu. Qual fonte deve ser priorizada para verificar essa informação?",
+  "alts": [
+   "Comentários publicados em redes sociais.",
+   "Relatos de familiares sobre as vacinas recebidas.",
+   "Vídeos produzidos por influenciadores digitais.",
+   "Cartão de vacinação e registros disponíveis nos serviços de saúde."
+  ],
+  "certa": 3,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Vacinação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-030"
+ },
+ {
+  "num": 25,
+  "enunciado": "Qual atitude contribui para a proteção coletiva por vacinação?",
+  "alts": [
+   "Manter a própria vacinação atualizada conforme as recomendações.",
+   "Vacinar-se somente quando houver casos próximos de determinada doença.",
+   "Compartilhar medicamentos com pessoas que não estejam vacinadas.",
+   "Substituir a vacinação por medidas individuais de higiene."
+  ],
+  "certa": 0,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Vacinação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-031"
+ },
+ {
+  "num": 26,
+  "enunciado": "Qual afirmação sobre vacinação é mais adequada?",
+  "alts": [
+   "Uma vacina protege obrigatoriamente contra todas as doenças infecciosas.",
+   "As vacinas eliminam a necessidade de acompanhamento de saúde.",
+   "A proteção proporcionada depende da vacina, do esquema e da situação individual.",
+   "Uma pessoa vacinada nunca precisa verificar novamente seu cartão."
+  ],
+  "certa": 2,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Vacinação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-032"
+ },
+ {
+  "num": 27,
+  "enunciado": "Qual escolha está mais próxima das orientações de alimentação saudável?",
+  "alts": [
+   "Priorizar produtos ultraprocessados pela praticidade cotidiana.",
+   "Organizar a alimentação com variedade e priorizar alimentos in natura ou minimamente processados.",
+   "Retirar completamente os carboidratos independentemente das necessidades individuais.",
+   "Substituir refeições principais por bebidas com vitaminas e minerais."
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-002"
+ },
+ {
+  "num": 28,
+  "enunciado": "Qual situação pode favorecer uma alimentação inadequada?",
+  "alts": [
+   "Variar os alimentos consumidos ao longo da semana.",
+   "Planejar refeições considerando a rotina e os alimentos disponíveis.",
+   "Consumir frutas e verduras regularmente.",
+   "Fazer grande parte das refeições com produtos ultraprocessados."
+  ],
+  "certa": 3,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-003"
+ },
+ {
+  "num": 29,
+  "enunciado": "Um adolescente deseja melhorar sua alimentação sem realizar dietas extremas. Qual estratégia é mais adequada?",
+  "alts": [
+   "Fazer mudanças graduais e buscar orientação quando houver necessidade.",
+   "Eliminar grupos alimentares inteiros sem avaliação profissional.",
+   "Substituir refeições por suplementos diariamente.",
+   "Reduzir drasticamente a quantidade de alimentos consumidos."
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-004"
+ },
+ {
+  "num": 30,
+  "enunciado": "Qual opção representa uma fonte de hidratação adequada para o cotidiano?",
+  "alts": [
+   "Refrigerantes com baixo teor calórico.",
+   "Bebidas energéticas utilizadas regularmente.",
+   "Água como principal bebida para hidratação.",
+   "Bebidas alcoólicas em pequenas quantidades."
+  ],
+  "certa": 2,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-005"
+ },
+ {
+  "num": 31,
+  "enunciado": "Qual comportamento pode aumentar a ingestão de açúcar e sódio?",
+  "alts": [
+   "Priorizar preparações feitas com alimentos básicos.",
+   "Consumir frequentemente produtos ultraprocessados.",
+   "Variar frutas e hortaliças ao longo da semana.",
+   "Preparar refeições em casa sempre que possível."
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-006"
+ },
+ {
+  "num": 32,
+  "enunciado": "Sobre obesidade na adolescência, qual afirmação é mais adequada?",
+  "alts": [
+   "É explicada exclusivamente pela quantidade de comida consumida.",
+   "Pode ser resolvida sempre com dietas muito restritivas.",
+   "Não possui relação com fatores sociais e ambientais.",
+   "Envolve fatores biológicos, comportamentais, sociais e ambientais."
+  ],
+  "certa": 3,
+  "lugares": [
+   "ubs"
+  ],
+  "areas": [
+   "Alimentação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "UBS-N2-033"
+ },
+ {
+  "num": 33,
+  "enunciado": "Qual estratégia pode contribuir para uma relação mais saudável com a alimentação?",
+  "alts": [
+   "Comparar o próprio corpo constantemente com modelos das redes sociais.",
+   "Classificar todos os alimentos como “permitidos” ou “proibidos”.",
+   "Desenvolver hábitos equilibrados e evitar práticas alimentares extremas.",
+   "Ignorar sinais de fome e saciedade para controlar o peso."
+  ],
+  "certa": 2,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-007"
+ },
+ {
+  "num": 34,
+  "enunciado": "Por que o ambiente escolar pode contribuir para a promoção da alimentação saudável?",
+  "alts": [
+   "Pode estimular escolhas alimentares adequadas e ampliar conhecimentos sobre alimentação.",
+   "Pode substituir completamente as orientações dadas pela família e pelos serviços de saúde.",
+   "Deve determinar uma dieta única para todos os estudantes.",
+   "Deve concentrar suas ações exclusivamente na prevenção do excesso de peso."
+  ],
+  "certa": 0,
+  "lugares": [
+   "escola"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "ESCOLA-N2-024"
+ },
+ {
+  "num": 35,
+  "enunciado": "Sobre alimentação saudável, qual afirmação é mais adequada?",
+  "alts": [
+   "Uma alimentação saudável exige excluir permanentemente alimentos específicos.",
+   "O equilíbrio alimentar envolve variedade, qualidade e adequação à realidade da pessoa.",
+   "O valor nutricional de uma refeição depende exclusivamente das calorias.",
+   "Todos os adolescentes precisam consumir exatamente os mesmos alimentos."
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-008"
+ },
+ {
+  "num": 36,
+  "enunciado": "Qual alternativa apresenta uma forma de incorporar atividade física à rotina?",
+  "alts": [
+   "Escolher atividades prazerosas e adequadas à idade e às condições individuais.",
+   "Realizar somente exercícios de alta intensidade.",
+   "Praticar exercícios apenas quando houver tempo livre no fim do mês.",
+   "Substituir todas as atividades de lazer por exercícios estruturados."
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-009"
+ },
+ {
+  "num": 37,
+  "enunciado": "Qual é um possível benefício da prática regular de atividade física?",
+  "alts": [
+   "Reduzir a necessidade de sono.",
+   "Substituir a necessidade de alimentação equilibrada.",
+   "Contribuir para saúde cardiovascular, física e mental.",
+   "Evitar completamente o desenvolvimento de doenças."
+  ],
+  "certa": 2,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-010"
+ },
+ {
+  "num": 38,
+  "enunciado": "Qual situação caracteriza comportamento sedentário?",
+  "alts": [
+   "Caminhar até a escola diariamente.",
+   "Permanecer longos períodos sentado utilizando dispositivos eletrônicos.",
+   "Participar de uma aula de educação física.",
+   "Praticar um esporte com amigos."
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-011"
+ },
+ {
+  "num": 39,
+  "enunciado": "Um adolescente quer começar a praticar exercícios regularmente. Qual atitude é mais adequada?",
+  "alts": [
+   "Reproduzir o treino de um atleta profissional.",
+   "Começar imediatamente com exercícios de máxima intensidade.",
+   "Utilizar suplementos antes de avaliar sua necessidade.",
+   "Escolher atividades adequadas e aumentar a prática progressivamente."
+  ],
+  "certa": 3,
+  "lugares": [
+   "quadra"
+  ],
+  "areas": [
+   "Felicidade"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "QUADRA-N2-001"
+ },
+ {
+  "num": 40,
+  "enunciado": "Como a atividade física pode contribuir para a saúde mental?",
+  "alts": [
+   "Pode favorecer bem-estar, disposição e redução do estresse em muitas pessoas.",
+   "Elimina a necessidade de acompanhamento profissional em saúde mental.",
+   "Impede que emoções negativas ocorram durante a adolescência.",
+   "Substitui completamente o sono como estratégia de recuperação."
+  ],
+  "certa": 0,
+  "lugares": [
+   "quadra"
+  ],
+  "areas": [
+   "Felicidade",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "QUADRA-N2-002"
+ },
+ {
+  "num": 41,
+  "enunciado": "Um adolescente sente dor persistente durante determinada atividade física. Qual atitude é mais adequada?",
+  "alts": [
+   "Aumentar a intensidade para tentar superar a dor.",
+   "Utilizar medicamentos sem orientação e continuar normalmente.",
+   "Interromper ou adaptar a atividade e buscar avaliação quando necessário.",
+   "Ignorar o sintoma se outras pessoas conseguirem realizar o exercício."
+  ],
+  "certa": 2,
+  "lugares": [
+   "quadra"
+  ],
+  "areas": [
+   "Felicidade",
+   "Saúde"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "QUADRA-N2-003"
+ },
+ {
+  "num": 1,
+  "enunciado": "Bruno comeu só biscoito recheado no café da manhã e ficou com fome de novo rapidinho. Qual seria uma troca melhor para ele sentir menos fome?",
+  "alts": [
+   "Comer mais biscoito recheado",
+   "Comer uma fruta com um copo de leite",
+   "Beber só refrigerante",
+   "Não comer nada"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 1,
+  "vf": false,
+  "codigo": "MERCADO-N1-002"
+ },
+ {
+  "num": 2,
+  "enunciado": "Por que é importante ter frutas, verduras, carnes e cereais no prato, e não só um tipo de alimento?",
+  "alts": [
+   "Porque fica mais bonito",
+   "Porque é mais barato",
+   "Não tem nenhum motivo",
+   "Porque cada tipo de alimento ajuda o corpo de um jeito diferente"
+  ],
+  "certa": 3,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 1,
+  "vf": false,
+  "codigo": "MERCADO-N1-003"
+ },
+ {
+  "num": 3,
+  "enunciado": "Qual desses lanches é o mais equilibrado para levar para a escola?",
+  "alts": [
+   "Uma fruta, um pão e um suco natural",
+   "Um pacote de salgadinho e um refrigerante",
+   "Só um punhado de balas",
+   "Um pote de sorvete"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 1,
+  "vf": false,
+  "codigo": "MERCADO-N1-004"
+ },
+ {
+  "num": 4,
+  "enunciado": "Ana notou que, quando come muita besteira antes do almoço, ela come menos comida saudável na hora da refeição principal. Isso acontece porque:",
+  "alts": [
+   "Besteiras dão mais fome depois",
+   "Besteiras enchem a barriga sem nutrir o corpo direito",
+   "Isso nunca acontece",
+   "Comer besteira antes do almoço é sempre bom"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 1,
+  "vf": false,
+  "codigo": "MERCADO-N1-005"
+ },
+ {
+  "num": 5,
+  "enunciado": "No mercado, dois sucos estão lado a lado: um de caixinha industrializado e outro feito na hora com fruta de verdade. Qual costuma ser a opção mais saudável?",
+  "alts": [
+   "O industrializado, porque dura mais tempo",
+   "Os dois são exatamente iguais",
+   "O feito com fruta de verdade",
+   "Nenhum dos dois é bom"
+  ],
+  "certa": 2,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 1,
+  "vf": false,
+  "codigo": "MERCADO-N1-006"
+ },
+ {
+  "num": 6,
+  "enunciado": "Comer o mesmo tipo de alimento todos os dias é melhor do que variar entre frutas, verduras, carnes e cereais.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 1,
+  "vf": true,
+  "codigo": "MERCADO-N1-007"
+ },
+ {
+  "num": 7,
+  "enunciado": "Uma criança que bebe muito refrigerante no lugar de água pode sentir mais sede ao longo do dia.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 1,
+  "vf": true,
+  "codigo": "MERCADO-N1-008"
+ },
+ {
+  "num": 8,
+  "enunciado": "Se uma criança comer biscoito recheado pouco antes do almoço, é provável que ela coma menos da comida saudável do prato principal.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 1,
+  "vf": true,
+  "codigo": "MERCADO-N1-009"
+ },
+ {
+  "num": 9,
+  "enunciado": "Lavar frutas e verduras antes de comer não faz diferença nenhuma para a saúde.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 1,
+  "vf": true,
+  "codigo": "MERCADO-N1-010"
+ },
+ {
+  "num": 10,
+  "enunciado": "Um lanche com fruta e pão alimenta melhor o corpo do que um lanche só de salgadinho. VERDADEIRO",
+  "alts": [],
+  "certa": null,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 1,
   "vf": false
+ },
+ {
+  "num": 1,
+  "enunciado": "Qual desses nutrientes é a principal fonte de energia rápida para o corpo?",
+  "alts": [
+   "Proteínas",
+   "Carboidratos",
+   "Vitaminas",
+   "Fibras"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-012"
+ },
+ {
+  "num": 2,
+  "enunciado": "O que são alimentos ultraprocessados?",
+  "alts": [
+   "Produtos industrializados com muitos aditivos, açúcar, sódio e gordura",
+   "Alimentos colhidos diretamente da natureza",
+   "Apenas frutas e verduras",
+   "Alimentos orgânicos sem conservantes"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-013"
+ },
+ {
+  "num": 3,
+  "enunciado": "Ao ler o rótulo de um alimento, qual informação ajuda a saber se ele tem muito sal?",
+  "alts": [
+   "Cor da embalagem",
+   "Data de fabricação",
+   "Quantidade de sódio",
+   "Nome da marca"
+  ],
+  "certa": 2,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-014"
+ },
+ {
+  "num": 4,
+  "enunciado": "Qual desses grupos de alimentos é rico em proteínas?",
+  "alts": [
+   "Arroz, pão e macarrão",
+   "Balas e chocolates",
+   "Refrigerantes",
+   "Ovos, feijão e carnes"
+  ],
+  "certa": 3,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": false,
+  "codigo": "MERCADO-N2-015"
+ },
+ {
+  "num": 6,
+  "enunciado": "Alimentos in natura, como frutas, legumes e verduras, geralmente têm mais nutrientes que os ultraprocessados",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": true,
+  "codigo": "MERCADO-N2-016"
+ },
+ {
+  "num": 7,
+  "enunciado": "Comer muito sódio (sal) não traz nenhum risco à saúde.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": true,
+  "codigo": "MERCADO-N2-017"
+ },
+ {
+  "num": 8,
+  "enunciado": "Fibras, encontradas em alimentos como feijão e frutas, ajudam no bom funcionamento do intestino.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": true,
+  "codigo": "MERCADO-N2-018"
+ },
+ {
+  "num": 9,
+  "enunciado": "Pular refeições regularmente é uma boa estratégia para ter mais energia no dia.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": true,
+  "codigo": "MERCADO-N2-019"
+ },
+ {
+  "num": 10,
+  "enunciado": "Ler o rótulo dos alimentos ajuda a fazer escolhas mais saudáveis no mercado.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 2,
+  "vf": true,
+  "codigo": "MERCADO-N2-020"
+ },
+ {
+  "num": 1,
+  "enunciado": "Segundo o Guia Alimentar para a População Brasileira, qual é a base recomendada da alimentação?",
+  "alts": [
+   "Alimentos ultraprocessados, por serem práticos",
+   "Alimentos in natura e minimamente processados",
+   "Suplementos alimentares industrializados",
+   "Refeições prontas congeladas"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 3,
+  "vf": false,
+  "codigo": "MERCADO-N3-001"
+ },
+ {
+  "num": 2,
+  "enunciado": "O que caracteriza um \"deserto alimentar\" nas discussões de saúde pública?",
+  "alts": [
+   "Áreas urbanas ou rurais com pouco acesso a alimentos frescos e saudáveis a preços acessíveis",
+   "Regiões com excesso de restaurantes saudáveis",
+   "Locais onde só se vende água",
+   "Regiões agrícolas com produção excessiva"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 3,
+  "vf": false,
+  "codigo": "MERCADO-N3-002"
+ },
+ {
+  "num": 3,
+  "enunciado": "Qual é uma consequência do consumo excessivo de alimentos ultraprocessados, segundo estudos de saúde pública?",
+  "alts": [
+   "Redução do risco de doenças crônicas",
+   "Melhora automática da microbiota intestinal",
+   "Aumento do risco de obesidade, diabetes tipo 2 e doenças cardiovasculares",
+   "Nenhum efeito relevante à saúde"
+  ],
+  "certa": 2,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 3,
+  "vf": false,
+  "codigo": "MERCADO-N3-003"
+ },
+ {
+  "num": 4,
+  "enunciado": "No rótulo de rotulagem nutricional frontal (selo de advertência), o que indica um alimento \"alto em açúcar adicionado\"?",
+  "alts": [
+   "Um selo verde de \"produto natural\"",
+   "Uma lupa preta com a informação \"ALTO EM AÇÚCAR ADICIONADO\"",
+   "Nenhuma indicação é exigida por lei",
+   "Apenas o preço do produto"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 3,
+  "vf": false,
+  "codigo": "MERCADO-N3-004"
+ },
+ {
+  "num": 5,
+  "enunciado": "Qual fator socioeconômico costuma influenciar diretamente o acesso a uma alimentação saudável?",
+  "alts": [
+   "Cor da embalagem dos produtos",
+   "Marca do supermercado apenas",
+   "Nenhum fator socioeconômico influencia o acesso",
+   "Renda familiar e preço dos alimentos in natura em relação aos ultraprocessados"
+  ],
+  "certa": 3,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 3,
+  "vf": false,
+  "codigo": "MERCADO-N3-005"
+ },
+ {
+  "num": 6,
+  "enunciado": "A insegurança alimentar está relacionada não apenas à quantidade, mas também à qualidade nutricional dos alimentos disponíveis para uma população.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 3,
+  "vf": true,
+  "codigo": "MERCADO-N3-006"
+ },
+ {
+  "num": 7,
+  "enunciado": "O Sistema Único de Saúde (SUS) não tem nenhuma política voltada à segurança alimentar e nutricional.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 3,
+  "vf": true,
+  "codigo": "MERCADO-N3-007"
+ },
+ {
+  "num": 8,
+  "enunciado": "A rotulagem nutricional frontal, adotada no Brasil, tem como objetivo alertar o consumidor sobre excesso de açúcar, sódio e gorduras saturadas.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 3,
+  "vf": true,
+  "codigo": "MERCADO-N3-008"
+ },
+ {
+  "num": 9,
+  "enunciado": "O consumo de alimentos ultraprocessados tem diminuído consistentemente no Brasil nas últimas décadas.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 1,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 3,
+  "vf": true,
+  "codigo": "MERCADO-N3-009"
+ },
+ {
+  "num": 10,
+  "enunciado": "Políticas públicas, como a taxação de bebidas açucaradas em alguns países, buscam reduzir o consumo excessivo de açúcar na população.",
+  "alts": [
+   "Verdadeiro",
+   "Falso"
+  ],
+  "certa": 0,
+  "lugares": [
+   "mercado"
+  ],
+  "areas": [
+   "Alimentação"
+  ],
+  "nivel": 3,
+  "vf": true,
+  "codigo": "MERCADO-N3-010"
  }
 ]

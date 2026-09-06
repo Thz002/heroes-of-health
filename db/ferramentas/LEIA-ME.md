@@ -38,3 +38,38 @@ que a resposta certa está marcada **pela cor verde do texto**, que cada
 formato. Sem ele, converter o próximo lote significa redescobrir tudo isso.
 
 Requer Python 3 — que o resto do projeto não usa.
+
+---
+
+## Atualização: o segundo lote
+
+Chegaram mais dois arquivos, em formatos diferentes dos primeiros, e por
+isso existe o `parser_lote2.py`. O `parser.py` **não** entende esses.
+
+```
+parser.py        -> os 2 .docx originais   -> questoes_extraidas.json
+parser_lote2.py  -> os lotes novos          -> novos_extraidos.json
+                                                (precisa ser MESCLADO)
+gerar_sql.py     -> questoes_extraidas.json -> db/importar-questoes.sql
+```
+
+### A regra que não pode ser esquecida
+
+Cada questão carrega um campo **`codigo`** no JSON, e ele **nunca muda
+depois de gravado no banco**. Antes o código vinha da posição na lista —
+e isso quase causou um estrago: aceitar as questões de Verdadeiro/Falso
+inseriu linhas no meio da lista, o que teria empurrado o código de todas
+as seguintes. O import então sobrescreveria uma pergunta com o texto de
+outra, em silêncio, e as respostas dos alunos passariam a apontar para
+perguntas diferentes das que eles responderam.
+
+Ao mesclar um lote novo: **acrescente no fim** e dê código apenas às que
+ainda não têm. Nunca renumere.
+
+### ⚠️ O `questoes_extraidas.json` virou insubstituível
+
+O `.docx` de 7 a 10 anos **saiu da pasta do OneDrive**. As 76 questões
+daquele lote existem hoje só dentro do JSON — não há como regerá-las.
+
+Duas consequências: **o JSON é fonte, não cache** (versione, não apague),
+e **guarde os `.docx` originais** em algum lugar estável.

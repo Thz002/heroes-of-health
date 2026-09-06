@@ -11,7 +11,7 @@ escritas a mao -- elas voltariam a ser placeholder. Para um lote novo,
 passe outro nome de arquivo.
 """
 import json, sys, io, os
-from collections import defaultdict
+from collections import defaultdict, Counter
 sys.stdout.reconfigure(encoding='utf-8')
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -33,8 +33,8 @@ def q(s):
 
 
 qs = json.load(open(os.path.join(AQUI, 'questoes_extraidas.json'), encoding='utf-8'))
-prontas = [x for x in qs if len(x['alts']) == 4 and x['certa'] is not None
-           and x['lugares'] and x['areas']]
+prontas = [x for x in qs if len(x['alts']) in (2, 4) and x['certa'] is not None
+           and x['lugares'] and x['areas'] and x.get('codigo')]
 fora = [x for x in qs if x not in prontas]
 
 grupos = defaultdict(list)
@@ -83,7 +83,7 @@ if fora:
     w('-- por não terem a resposta marcada em verde no arquivo de origem:')
     for x in fora:
         motivo = []
-        if len(x['alts']) != 4:
+        if len(x['alts']) not in (2, 4):
             motivo.append('%d alternativas' % len(x['alts']))
         if x['certa'] is None:
             motivo.append('sem resposta marcada')
@@ -128,16 +128,32 @@ w('')
 w('-- ── 2. Quais barras cada missão enche ────────────────────────────────')
 w('-- SEM ESTAS LINHAS O ALUNO ACERTA E NADA ACONTECE: o servidor lê daqui')
 w('-- para saber o que somar, e zero linhas = zero pontos, sem erro nenhum.')
-w('-- Cada acerto vale %d pontos em cada barra listada.' % PONTOS_POR_AREA)
+w('-- O peso de cada barra é proporcional a quantas questões da missão')
+w('-- realmente tratam daquele tema: numa missão de 39 questões em que só')
+w('-- 1 fala de vetores, acertar vale 10 em Saúde e 1 em Vetores. Sem isso')
+w('-- a barra de Vetores subiria com mérito que não existe.')
 w('')
 for (slug, nivel), itens in sorted(grupos.items()):
     cod = '%s-N%d' % (slug.upper().replace('-', ''), nivel)
-    areas = sorted({a for x in itens for a in x['areas']})
-    w('-- %s: %s' % (cod, ', '.join(areas)))
+
+    # Quantos pontos cada área ganha por acerto NESTA missão.
+    #
+    # Não são 10 para todas. As áreas de uma missão são a união do que as
+    # questões dela citam — e numa missão de 39 questões onde só 1 fala de
+    # vetores, dar 10 em Vetores por qualquer acerto inflaria a barra com
+    # mérito que não existe: acertar citologia subiria "controle de
+    # vetores". O peso é a proporção real, com mínimo de 1 (o banco tem
+    # check de pontos > 0).
+    quantas = Counter(a for x in itens for a in x['areas'])
+    pesos = {a: max(1, round(PONTOS_POR_AREA * n / len(itens)))
+             for a, n in quantas.items()}
+    areas = sorted(pesos)
+
+    w('-- %s: %s' % (cod, ', '.join('%s=%d' % (a, pesos[a]) for a in areas)))
     w('insert into missao_areas (missao_id, area_nome, pontos)')
     w('select m.id, v.area, v.pontos from missoes m')
     w('  cross join (values')
-    w(',\n'.join('    (%s, %d)' % (q(a), PONTOS_POR_AREA) for a in areas))
+    w(',\n'.join('    (%s, %d)' % (q(a), pesos[a]) for a in areas))
     w('  ) as v(area, pontos)')
     w('  where m.codigo_externo = %s' % q(cod))
     w('on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;')
@@ -150,14 +166,16 @@ for (slug, nivel), itens in sorted(grupos.items()):
     cod_m = '%s-N%d' % (slug.upper().replace('-', ''), nivel)
     w('-- %s — %d questões' % (cod_m, len(itens)))
     w('')
-    for i, x in enumerate(itens, 1):
-        cod_q = '%s-%03d' % (cod_m, i)
+    for x in itens:
+        cod_q = x['codigo']
         letra = 'ABCD'[x['certa']]
         w('insert into questoes (codigo_externo, missao_id, enunciado,')
         w('       opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)')
         w('select %s, m.id, %s,' % (q(cod_q), q(x['enunciado'])))
-        for a in x['alts']:
-            w('       %s,' % q(a))
+        # Verdadeiro/Falso tem duas opcoes; C e D vao nulas.
+        quatro = list(x['alts']) + [None] * (4 - len(x['alts']))
+        for a in quatro:
+            w('       %s,' % (q(a) if a is not None else 'null'))
         w('       %s, %s' % (q(letra), q(PLACEHOLDER)))
         w('  from missoes m where m.codigo_externo = %s' % q(cod_m))
         w('on conflict (codigo_externo) do update')
@@ -169,6 +187,14 @@ for (slug, nivel), itens in sorted(grupos.items()):
         w('')
     w('')
 
+w('-- ── As metas das barras ──────────────────────────────────────────────')
+w('-- A meta de cada área é tudo o que o conteúdo dela pode render. Como')
+w('-- este arquivo acabou de mudar o conteúdo, ela precisa ser refeita —')
+w('-- e as porcentagens de quem já jogou vão junto.')
+w('select public.recalcular_metas();')
+w('')
+w('-- select nome, meta from areas order by ordem;')
+w('')
 w('-- ── Conferir depois de rodar ─────────────────────────────────────────')
 w('-- select c.slug, m.nivel_etario, count(q.id) as questoes')
 w('--   from missoes m join cenarios c on c.id = m.cenario_id')

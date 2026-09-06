@@ -414,7 +414,7 @@ rotas.get('/meu-mapa', async (req, res) => {
 rotas.get('/meu-progresso', async (req, res) => {
   const { data, error } = await admin
     .from('areas')
-    .select('nome, ordem')
+    .select('nome, ordem, meta')
     .order('ordem');
 
   if (error) return res.status(500).json({ message: 'Não foi possível carregar seu progresso.' });
@@ -428,10 +428,15 @@ rotas.get('/meu-progresso', async (req, res) => {
 
   // Devolve sempre as 8, mesmo as que ainda estão zeradas, para a tela
   // poder desenhar todas as barras desde o primeiro acesso.
+  // A meta vai junto para a tela poder mostrar "620 de 1400" em vez de
+  // uma porcentagem solta. Meta 0 = área ainda sem conteúdo nenhum, e a
+  // tela deve dizer isso em vez de desenhar uma barra eternamente vazia.
   res.json(data.map(a => ({
     area:        a.nome,
     pontos:      porArea.get(a.nome)?.pontos ?? 0,
-    porcentagem: porArea.get(a.nome)?.porcentagem ?? 0
+    porcentagem: porArea.get(a.nome)?.porcentagem ?? 0,
+    meta:        a.meta ?? 0,
+    sem_conteudo: (a.meta ?? 0) <= 0
   })));
 });
 
