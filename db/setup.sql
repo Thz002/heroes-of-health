@@ -288,6 +288,11 @@ create table if not exists quizzes_professores (
 -- turma (uma turma de 9º ano puxa questões de 11 a 14). Fica gravado
 -- porque o ano da turma pode mudar depois, e aí o quiz antigo mentiria
 -- sobre o próprio conteúdo.
+-- A frase que o aluno lê no card da missão, escrita pelo professor.
+-- Sem ela o card mostraria só o título, e "Doenças" sozinho não diz o
+-- que a pessoa vai encontrar ali dentro.
+alter table quizzes_professores add column if not exists descricao varchar(200);
+
 alter table quizzes_professores add column if not exists nivel_etario int
   check (nivel_etario between 1 and 3);
 alter table quizzes_professores add column if not exists cenarios text[];

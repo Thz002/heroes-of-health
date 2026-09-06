@@ -30,6 +30,7 @@
   const LETRAS = ['A', 'B', 'C', 'D'];
 
   let missao = null;
+  let quizAtual = null;   // null = exploração livre pelo mapa
   let rodada = [];        
   let indice = 0;         
   let sobrando = 0;       
@@ -42,13 +43,24 @@
     const conta = await AUTH.exigirLogin();
     if (!conta) return;
 
-    const slug = new URLSearchParams(window.location.search).get('cenario');
-    if (!slug) {
+    // Dois modos, decididos pela URL:
+    //   ?quiz=7      -> tarefa da professora, com a lista já congelada
+    //   ?cenario=ubs -> exploração livre, sorteando uma rodada do lugar
+    const params = new URLSearchParams(window.location.search);
+    const idQuiz = Number(params.get('quiz'));
+    const slug = params.get('cenario');
+
+    if (!idQuiz && !slug) {
       window.location.href = 'mapa.html';
       return;
     }
 
     try {
+      if (idQuiz) {
+        await carregarQuiz(idQuiz);
+        return;
+      }
+
       // O servidor já devolve só as missões da faixa etária desta pessoa.
       const missoes = await API.getMissoes(slug);
 
@@ -69,6 +81,35 @@
       }
       mostrarAviso('Não foi possível carregar', err.message);
     }
+  }
+
+  // A tarefa da professora: a lista já foi sorteada e congelada quando
+  // ela criou o quiz, então aqui não há sorteio — só se pula o que esta
+  // pessoa já acertou, para quem parou no meio continuar de onde estava.
+  async function carregarQuiz(id) {
+    const r = await API.getQuestoesDoQuiz(id);
+
+    quizAtual = { id: r.id, titulo: r.titulo, descricao: r.descricao };
+    rodada = r.questoes || [];
+    sobrando = r.restantes || 0;
+    indice = 0;
+    acertos = 0;
+    ganhos = {};
+
+    if (!rodada.length) {
+      return mostrarAviso(
+        'Tarefa concluída!',
+        `Você já acertou as ${r.total} questões que a professora passou. Bom trabalho!`);
+    }
+
+    aviso.hidden = true;
+    fim.hidden = true;
+    topo.hidden = false;
+    titulo.textContent = r.titulo;
+    descricao.textContent = r.descricao || 'Tarefa da professora para a sua turma.';
+    document.title = `${r.titulo} - Heróis da Saúde`;
+
+    mostrarQuestao();
   }
 
   async function carregarRodada() {
@@ -124,7 +165,7 @@
     travarOpcoes(true);
 
     try {
-      const r = await API.responder(questao.id, letra);
+      const r = await API.responder(questao.id, letra, quizAtual ? quizAtual.id : null);
 
       if (r.acertou) {
         botao.classList.add('quiz-option--correct');

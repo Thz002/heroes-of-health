@@ -315,6 +315,7 @@ rotas.post('/quizzes', async (req, res) => {
   }
 
   const areas = Array.isArray(req.body?.areas) ? req.body.areas : [];
+  const descricao = String(req.body?.descricao || '').trim().slice(0, 200) || null;
 
   let qtd = Number(req.body?.qtd_questoes);
   if (!Number.isInteger(qtd)) qtd = 10;
@@ -384,13 +385,14 @@ rotas.post('/quizzes', async (req, res) => {
       turma_id: turmaId,
       professor_id: req.usuario.id,
       titulo,
+      descricao,
       tempo_limite_segundos: tempo,
       nivel_etario: nivel,
       cenarios,
       areas,
       qtd_pedida: qtd
     })
-    .select('id, turma_id, titulo, tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
+    .select('id, turma_id, titulo, descricao, tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
     .single();
 
   if (criado.error) {
@@ -423,7 +425,7 @@ rotas.get('/quizzes', async (req, res) => {
 
   const { data, error } = await admin
     .from('quizzes_professores')
-    .select('id, titulo, tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
+    .select('id, titulo, descricao, tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
     .eq('turma_id', turmaId)
     .order('created_at', { ascending: false });
 

@@ -104,8 +104,20 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
             <button type="button" id="mapa-sidebar-play" class="btn-primary mapa-sidebar__play">Jogar</button>
           </div>
         </aside>
-
       </div>
+      <div class="col-2 fade-up">
+          <div class="card" style="padding:24px;">
+            <h3 class="section-title">
+              ⚔️ Missões Ativas
+              <span id="missoes-contador">carregando…</span>
+            </h3>
+            <div class="missions-list" id="missions-list">
+              <!-- Vazio de proposito: os cards vem de API.getMeuMapa(),
+                   montados por mapa.js. Um card de exemplo aqui dentro
+                   apareceria para o aluno sempre que a busca falhasse. -->
+            </div>
+          </div>
+        </div>
     </main>
   </div>
 </body>

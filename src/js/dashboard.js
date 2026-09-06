@@ -26,6 +26,7 @@
   const modalQuiz = document.getElementById('modal-quiz');
   const quizTurma = document.getElementById('quiz-turma');
   const quizNome = document.getElementById('quiz-nome');
+  const quizDescricao = document.getElementById('quiz-descricao');
   const quizQtd = document.getElementById('quiz-qtd');
   const quizTempo = document.getElementById('quiz-tempo');
   const quizErro = document.getElementById('quiz-erro');
@@ -443,6 +444,7 @@
 
     quizTurma.textContent = `para a turma ${turma.nome}`;
     quizNome.value = '';
+    if (quizDescricao) quizDescricao.value = '';
     quizQtd.value = 10;
     quizTempo.value = '20';
 
@@ -508,6 +510,7 @@
       const quiz = await API.criarQuiz({
         turma_id: turmaDoQuiz.id,
         titulo,
+        descricao: quizDescricao ? quizDescricao.value.trim() : '',
         cenarios,
         areas: valoresMarcados('quiz-areas'),
         qtd_questoes: Number(quizQtd.value),

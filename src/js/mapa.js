@@ -232,6 +232,147 @@
   document.getElementById("mapa-viewport")?.addEventListener("mouseleave", limparSidebar);
   AUTH.exigirLogin();
 
+
+  /* ═══════════════════════════════════════════════════════════════════
+     MISSÕES ATIVAS — a lista embaixo do mapa
+
+     Uma chamada só (API.getMeuMapa) devolve o bairro inteiro do ponto de
+     vista deste aluno. Lugar sem nada a fazer não vem na resposta, então
+     esta lista nunca precisa filtrar: o que chega, aparece.
+
+     Cada card usa a IMAGEM do cenário, a mesma do mapa — é o que amarra
+     a lista ao lugar, em vez de virar um catálogo de temas genérico.
+     ═══════════════════════════════════════════════════════════════════ */
+
+  const listaMissoes = document.getElementById("missions-list");
+  const contadorMissoes = document.getElementById("missoes-contador");
+
+  // Cada acerto vale 10 pontos em cada barra que a missão alimenta.
+  // Fixo por enquanto; quando a curva de progressão for definida com a
+  // equipe de Medicina, este número sai daqui.
+  const PONTOS_POR_ACERTO = 10;
+
+  carregarMissoes();
+
+  async function carregarMissoes() {
+    if (!listaMissoes) return;
+
+    try {
+      const mapa = await API.getMeuMapa();
+      desenharMissoes(mapa.lugares || []);
+
+    } catch (err) {
+      listaMissoes.innerHTML = "";
+      if (contadorMissoes) contadorMissoes.textContent = "";
+
+      const aviso = document.createElement("p");
+      aviso.className = "missoes-aviso";
+      aviso.textContent = err.message;
+      listaMissoes.appendChild(aviso);
+    }
+  }
+
+  function desenharMissoes(lugares) {
+    listaMissoes.innerHTML = "";
+
+    if (!lugares.length) {
+      if (contadorMissoes) contadorMissoes.textContent = "nenhuma agora";
+
+      const vazio = document.createElement("p");
+      vazio.className = "missoes-aviso";
+      vazio.textContent =
+        "Você já cuidou de tudo o que havia no bairro. Volte quando a professora passar uma tarefa nova!";
+      listaMissoes.appendChild(vazio);
+      return;
+    }
+
+    // Um lugar pode render mais de um card: a exploração livre dele, e
+    // uma tarefa da professora para cada quiz que cobre aquele ponto.
+    const cards = [];
+    for (const lugar of lugares) {
+      for (const quiz of lugar.quizzes || []) cards.push(montarCard(lugar, quiz));
+      if (lugar.restantes > 0) cards.push(montarCard(lugar, null));
+    }
+
+    cards.forEach(c => listaMissoes.appendChild(c));
+
+    if (contadorMissoes) {
+      contadorMissoes.textContent =
+        cards.length === 1 ? "1 disponível" : `${cards.length} disponíveis`;
+    }
+  }
+
+  /** Um card. Com `quiz`, é tarefa da professora; sem, é exploração livre. */
+  function montarCard(lugar, quiz) {
+    const cenario = CENARIOS[lugar.slug] || {};
+    const ehTarefa = Boolean(quiz);
+
+    const restantes = ehTarefa ? quiz.restantes : lugar.restantes;
+    const total = ehTarefa ? quiz.total : lugar.total;
+    const feitas = Math.max(0, total - restantes);
+    const pct = total ? Math.round((feitas / total) * 100) : 0;
+
+    const el = document.createElement("div");
+    el.className = "mission-item" + (ehTarefa ? " mission-item--tarefa" : "");
+    el.dataset.slug = lugar.slug;
+    if (ehTarefa) el.dataset.quiz = quiz.id;
+
+    el.innerHTML = `
+      <div class="mission-icon">
+        <img alt="" draggable="false">
+      </div>
+      <div class="mission-info">
+        <div class="mission-name"></div>
+        <div class="mission-desc"></div>
+        <div style="margin-top:6px;">
+          <div class="progress-track" style="height:4px;">
+            <div class="progress-bar"></div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div class="mission-xp"></div>
+        <div class="mission-pct"></div>
+      </div>
+    `;
+
+    const img = el.querySelector(".mission-icon img");
+    img.src = `../imgs/${cenario.imagem || "UBS.png"}`;
+    img.alt = lugar.nome;
+
+    // O título é o nome do quiz quando há tarefa; senão, o convite ao
+    // lugar. "Missão na UBS" diz mais que "UBS · 11 a 14 anos".
+    el.querySelector(".mission-name").textContent =
+      ehTarefa ? quiz.titulo : `Missão na ${lugar.nome}`;
+
+    el.querySelector(".mission-desc").textContent = ehTarefa
+      ? (quiz.descricao || "Tarefa da professora para a sua turma.")
+      : textoDoLugar(lugar);
+
+    el.querySelector(".progress-bar").style.width = `${pct}%`;
+    el.querySelector(".mission-xp").textContent = `+${restantes * PONTOS_POR_ACERTO} XP`;
+    el.querySelector(".mission-pct").textContent =
+      feitas === 0 ? "Nova" : `${pct}%`;
+
+    el.addEventListener("click", () => {
+      window.location.href = ehTarefa
+        ? `missao.html?quiz=${encodeURIComponent(quiz.id)}`
+        : `missao.html?cenario=${encodeURIComponent(lugar.slug)}`;
+    });
+
+    return el;
+  }
+
+  /** A linha de apoio da exploração livre: o que falta e o que aquilo enche. */
+  function textoDoLugar(lugar) {
+    const quantas = lugar.restantes === 1
+      ? "1 pergunta esperando"
+      : `${lugar.restantes} perguntas esperando`;
+
+    const areas = (lugar.areas || []).slice(0, 3).join(", ");
+    return areas ? `${quantas} · ${areas}` : quantas;
+  }
+
   btnSair?.addEventListener('click', async () => {
     await AUTH.logout();
     window.location.href = 'index.html';

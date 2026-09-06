@@ -374,3 +374,147 @@
     min-height: unset;
   }
 }
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+}
+
+.missions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mission-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: background 0.2s, transform 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+
+.mission-item:hover {
+  background: rgba(107, 223, 184, 0.08);
+  border-color: rgba(107, 223, 184, 0.22);
+  transform: translateX(4px);
+}
+
+.mission-item.completed {
+  opacity: 0.55;
+}
+
+.mission-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.mission-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mission-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mission-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mission-xp {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+  color: #6bdfb8;
+  white-space: nowrap;
+}
+
+.mission-done {
+  color: rgba(107, 223, 184, 0.5);
+  font-size: 18px;
+}
+/* ── Missões ativas, embaixo do mapa ────────────────────────────────── */
+
+/* O respiro que faltava: sem isto a seção encosta na borda do card do
+   mapa e os dois viram um bloco só. */
+.col-2 {
+  margin-top: 28px;
+}
+
+/* O ícone deixou de ser emoji e passou a ser a imagem do cenário — a
+   mesma que aparece no mapa. É o que amarra o card ao lugar. */
+.mission-icon {
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0;
+}
+
+.mission-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Tarefa da professora tem peso diferente de passeio pelo bairro:
+   ganha a faixa dourada na lateral. */
+.mission-item--tarefa {
+  border-color: rgba(249, 199, 79, 0.3);
+  box-shadow: inset 3px 0 0 var(--gold, #f9c74f);
+}
+
+.mission-item--tarefa .mission-xp {
+  color: var(--gold, #f9c74f);
+}
+
+.mission-pct {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Lista vazia ou erro de carregamento. */
+.missoes-aviso {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 18px 8px;
+  margin: 0;
+}

@@ -413,10 +413,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+  // O aluno passa pelo menu inicial antes do mapa; o professor vai direto
+  // para o painel. Quem muda o destino do aluno muda aqui — esta função é
+  // usada pelo login, pelo cadastro e pela entrada automática.
   function destinoDoTipo(tipo) {
     return (tipo === 'PROFESSOR' || tipo === 'ADMIN')
       ? { pagina: 'dashboard.html', saudacao: 'Bem-vindo, Mestre! ' }
-      : { pagina: 'mapa.html', saudacao: 'Bem-vindo, Herói! ' };
+      : { pagina: 'loading.html', saudacao: 'Bem-vindo, Herói! ' };
   }
 
   async function destinoDepoisDeEntrar(tipoDeclarado = null) {

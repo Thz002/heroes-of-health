@@ -6,9 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome! - Start Menu</title>
     <link rel="stylesheet" href="../css/style.css" />
+    <!-- auth.js NÃO entra aqui: ele é o controlador da tela de login, e
+         leva junto o bloco de entrada automática, que manda o aluno já
+         logado para esta mesma página — ou seja, um recarregamento sem
+         fim. Quem cuida desta tela é o loading.js. -->
+    <script src="/vendor/supabase.js"></script>
     <script src="../js/supabase.js" defer></script>
     <script src="../js/api.js" defer></script>
-    <script src="../js/auth.js" defer></script>
+    <script src="../js/loading.js" defer></script>
 
     <style>
         .page-main {
@@ -133,11 +138,11 @@
                     </svg>
                 </span>
                 <h1 class="menu__titulo">Heróis<br><span>da Saúde</span></h1>
-                <p class="menu__tagline">Salve o bairro, aprenda sobre saúde!</p>
+                <p class="menu__tagline" id="menu-saudacao">Salve o bairro, aprenda sobre saúde!</p>
             </div>
             <div class="menu__acoes">
-                <button class="menu__btn menu__btn--primario">▶ Jogar</button>
-                <button class="menu__btn">Opções</button>
+                <button class="menu__btn menu__btn--primario" id="btn-jogar">▶ Jogar</button>
+                <button class="menu__btn" id="btn-sair">Sair</button>
             </div>
         </div>
     </main>

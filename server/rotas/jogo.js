@@ -196,7 +196,7 @@ rotas.get('/meus-quizzes', async (req, res) => {
 
   const { data, error } = await admin
     .from('quizzes_professores')
-    .select('id, titulo, tempo_limite_segundos, created_at')
+    .select('id, titulo, descricao, tempo_limite_segundos, created_at')
     .eq('turma_id', req.usuario.turma_id)
     .order('created_at', { ascending: false });
 
@@ -270,7 +270,143 @@ rotas.get('/quizzes/:id/questoes', async (req, res) => {
   const porId = new Map((questoes.data || []).map(q => [q.id, q]));
   const ordenadas = ids.map(id => porId.get(id)).filter(Boolean);
 
-  res.json({ ...quiz.data, questoes: ordenadas });
+  // As que a pessoa já acertou saem da vez. Sem isto, quem fecha a aba no
+  // meio recomeça do zero — e o "faltam 4" do card do mapa não bateria
+  // com o que a tela mostra. A ordem sorteada é preservada: a fila é a
+  // mesma para a turma inteira, só sem o que cada um já resolveu.
+  const acertadas = await admin
+    .from('respostas_alunos').select('questao_id')
+    .eq('usuario_id', req.usuario.id).eq('acertou', true)
+    .eq('quiz_id', quizId).in('questao_id', ids);
+
+  const jaFoi = new Set((acertadas.data || []).map(r => r.questao_id));
+  const pendentes = ordenadas.filter(q => !jaFoi.has(q.id));
+
+  res.json({
+    ...quiz.data,
+    questoes: pendentes,
+    restantes: pendentes.length,
+    total: ordenadas.length
+  });
+});
+
+
+// ── O bairro inteiro, do ponto de vista deste aluno ──────────────────
+//
+// UMA chamada devolve o estado de todos os lugares. O mapa tem 48 pontos
+// clicáveis; perguntar um a um seriam 48 requisições para desenhar uma
+// tela só.
+//
+// Devolve apenas os lugares que TÊM algo para fazer — quem não aparece
+// aqui, ou não tem conteúdo para a idade da pessoa, ou já foi concluído.
+rotas.get('/meu-mapa', async (req, res) => {
+  const nivel = nivelDaIdade(req.usuario.idade);
+
+  // 1. As missões da faixa etária desta pessoa, com o cenário junto.
+  let consulta = admin
+    .from('missoes')
+    .select('id, titulo, descricao, nivel_etario, cenarios!inner(slug, nome)');
+  if (nivel) consulta = consulta.eq('nivel_etario', nivel);
+
+  const missoes = await consulta;
+  if (missoes.error) {
+    return res.status(500).json({ message: 'Não foi possível carregar o mapa.' });
+  }
+
+  const idsMissoes = (missoes.data || []).map(m => m.id);
+  if (!idsMissoes.length) return res.json({ lugares: [], total_pendente: 0 });
+
+  // 2. Tudo o que falta buscar, em consultas únicas — nada dentro de laço.
+  const [questoes, areas, acertos] = await Promise.all([
+    admin.from('questoes').select('id, missao_id').in('missao_id', idsMissoes),
+    admin.from('missao_areas').select('missao_id, area_nome').in('missao_id', idsMissoes),
+    admin.from('respostas_alunos').select('questao_id')
+      .eq('usuario_id', req.usuario.id).eq('acertou', true)
+  ]);
+
+  const jaAcertou = new Set((acertos.data || []).map(r => r.questao_id));
+
+  const porMissao = new Map(idsMissoes.map(id => [id, { total: 0, restantes: 0 }]));
+  for (const q of questoes.data || []) {
+    const c = porMissao.get(q.missao_id);
+    if (!c) continue;
+    c.total++;
+    if (!jaAcertou.has(q.id)) c.restantes++;
+  }
+
+  const areasPorMissao = new Map();
+  for (const a of areas.data || []) {
+    if (!areasPorMissao.has(a.missao_id)) areasPorMissao.set(a.missao_id, []);
+    areasPorMissao.get(a.missao_id).push(a.area_nome);
+  }
+
+  // 3. As tarefas do professor, se a pessoa estiver numa turma.
+  //
+  // Um quiz guarda uma LISTA de cenários, então ele não mora num lugar
+  // só: aparece em cada ponto que cobre. Responder num deles conta nos
+  // outros — é a mesma tarefa vista de janelas diferentes.
+  const quizzesPorSlug = new Map();
+
+  if (req.usuario.turma_id) {
+    const quizzes = await admin
+      .from('quizzes_professores')
+      .select('id, titulo, descricao, cenarios, tempo_limite_segundos')
+      .eq('turma_id', req.usuario.turma_id);
+
+    const idsQuiz = (quizzes.data || []).map(q => q.id);
+
+    if (idsQuiz.length) {
+      const [vinculos, feitas] = await Promise.all([
+        admin.from('quiz_questoes').select('quiz_id, questao_id').in('quiz_id', idsQuiz),
+        admin.from('respostas_alunos').select('quiz_id, questao_id')
+          .eq('usuario_id', req.usuario.id).eq('acertou', true).in('quiz_id', idsQuiz)
+      ]);
+
+      const total = new Map();
+      for (const v of vinculos.data || []) total.set(v.quiz_id, (total.get(v.quiz_id) || 0) + 1);
+
+      const prontas = new Map();
+      for (const f of feitas.data || []) prontas.set(f.quiz_id, (prontas.get(f.quiz_id) || 0) + 1);
+
+      for (const q of quizzes.data || []) {
+        const t = total.get(q.id) || 0;
+        const p = prontas.get(q.id) || 0;
+        if (t === 0 || p >= t) continue;              // vazio ou já concluído
+
+        for (const slug of (q.cenarios || [])) {
+          if (!quizzesPorSlug.has(slug)) quizzesPorSlug.set(slug, []);
+          quizzesPorSlug.get(slug).push({
+            id: q.id, titulo: q.titulo, descricao: q.descricao,
+            restantes: t - p, total: t,
+            tempo_limite_segundos: q.tempo_limite_segundos
+          });
+        }
+      }
+    }
+  }
+
+  // 4. Junta por lugar, escondendo o que não tem nada a fazer.
+  const lugares = (missoes.data || []).map(m => {
+    const c = porMissao.get(m.id) || { total: 0, restantes: 0 };
+    const quizzes = quizzesPorSlug.get(m.cenarios.slug) || [];
+
+    return {
+      slug: m.cenarios.slug,
+      nome: m.cenarios.nome,
+      missao_id: m.id,
+      titulo: m.titulo,
+      descricao: m.descricao,
+      restantes: c.restantes,
+      total: c.total,
+      areas: areasPorMissao.get(m.id) || [],
+      quizzes
+    };
+  }).filter(l => l.restantes > 0 || l.quizzes.length > 0);
+
+  // Tarefa do professor na frente: é dever, não passeio.
+  lugares.sort((a, b) => (b.quizzes.length - a.quizzes.length) || (b.restantes - a.restantes));
+
+  res.json({ lugares, total_pendente: lugares.length });
 });
 
 

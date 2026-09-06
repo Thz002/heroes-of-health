@@ -202,6 +202,18 @@ const API = (() => {
   const responder = (questaoId, resposta, quizId = null) =>
     post('/responder', { questao_id: questaoId, resposta, quiz_id: quizId });
 
+  /**
+   * O bairro inteiro do ponto de vista deste aluno, numa chamada só.
+   *
+   * Devolve { lugares, total_pendente }. Cada lugar traz o que falta
+   * ali: `restantes` da exploração livre e a lista de `quizzes` do
+   * professor. Lugar sem nada a fazer NÃO vem na lista.
+   *
+   * É a fonte da tela de missões embaixo do mapa — e do badge nos
+   * pontos, quando ele existir.
+   */
+  const getMeuMapa = () => get('/meu-mapa');
+
   /** As tarefas que o professor passou para a turma deste aluno */
   const getMeusQuizzes = () => get('/meus-quizzes');
 
@@ -213,8 +225,8 @@ const API = (() => {
 
   // ── Professor ──────────────────────────────
   const getMinhasTurmas = () => get('/professor/turmas');
-  const criarQuiz = ({ turma_id, titulo, cenarios, areas, qtd_questoes, tempo_limite_segundos }) =>
-    post('/professor/quizzes', { turma_id, titulo, cenarios, areas, qtd_questoes, tempo_limite_segundos });
+  const criarQuiz = ({ turma_id, titulo, descricao, cenarios, areas, qtd_questoes, tempo_limite_segundos }) =>
+    post('/professor/quizzes', { turma_id, titulo, descricao, cenarios, areas, qtd_questoes, tempo_limite_segundos });
 
   const getQuizzesDaTurma = (turmaId) => get(`/professor/quizzes?turma_id=${turmaId}`);
 
@@ -252,6 +264,7 @@ const API = (() => {
     getQuestoes,
     responder,
     getMeuProgresso,
+    getMeuMapa,
     getMeusQuizzes,
     getQuestoesDoQuiz,
 
