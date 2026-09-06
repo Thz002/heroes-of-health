@@ -271,9 +271,13 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-xl);
   padding: 26px 22px;
-  min-height: 360px;
+  /* Altura fixa: o painel não pode crescer/encolher conforme o lugar
+     apontado tem 2 ou 8 áreas — o mapa ao lado ficaria pulando a cada
+     hover. Quem rola é só a lista de barras (ver mais abaixo). */
+  height: 455px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .mapa-sidebar__empty {
@@ -284,6 +288,13 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
+}
+
+/* O `display:flex` acima é mais específico que o `[hidden]{display:none}`
+   do navegador: sem esta regra o "Passe o mouse sobre o mapa" continuava
+   desenhado por baixo do conteúdo do hover, mesmo com hidden=true no JS. */
+.mapa-sidebar__empty[hidden] {
+  display: none;
 }
 
 .mapa-sidebar__empty svg {
@@ -307,7 +318,22 @@
 .mapa-sidebar__content:not([hidden]) {
   display: flex;
   flex-direction: column;
+  /* Ocupa a altura toda do painel: é o que faz o "clique no lugar" do
+     rodapé encostar embaixo, e não logo depois da última barra. */
+  flex: 1;
+  /* Sem isto o item flex nunca encolhe abaixo do seu conteúdo e a lista de
+     barras vazaria para fora do painel em vez de rolar. */
+  min-height: 0;
   animation: fade-in 0.25s ease-out;
+}
+
+/* Cabeçalho (imagem + nome) e rodapé ficam fixos; só as barras rolam. */
+.mapa-sidebar__content .mapa-areas {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* Respiro para a barra de rolagem não encostar no texto das áreas. */
+  padding-right: 8px;
 }
 
 .mapa-sidebar__thumb-wrap {
@@ -339,28 +365,157 @@
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
 }
 
+/* Cabeçalho do painel: miniatura + nome, lado a lado. A imagem grande
+   (140px) ficou para o modal — na lateral o espaço agora é das barras. */
+.mapa-sidebar__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-shrink: 0;
+}
+
+.mapa-sidebar__thumb-wrap--mini {
+  width: 62px;
+  height: 62px;
+  flex-shrink: 0;
+  margin-bottom: 0;
+  border-radius: var(--radius-md);
+}
+
+.mapa-sidebar__head-text {
+  min-width: 0;
+}
+
 .mapa-sidebar__content h3 {
   font-family: var(--font-display);
   font-size: 19px;
   font-weight: 800;
   color: #fff;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
-.mapa-sidebar__content p {
+.mapa-sidebar__sub {
+  font-size: 12px;
+  color: var(--text-faint);
+  line-height: 1.4;
+}
+
+/* Empurra o convite ao clique para o rodapé do painel, para a lista de
+   barras não ficar espremida contra ele quando o lugar tem só uma área. */
+.mapa-sidebar__cta {
+  margin-top: auto;
+  flex-shrink: 0;
+  padding-top: 16px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--text-faint);
+}
+
+/* ── Barras de área da saúde ─────────────────── */
+/* Usadas em dois lugares com a mesma marcação: no painel lateral (hover)
+   e dentro do modal (clique). --cor-area é definida no JS, a partir da
+   área que a barra representa. */
+.mapa-areas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fade-in 0.25s ease-out;
+}
+
+.mapa-areas__titulo {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 22px 0 12px;
+}
+
+.mapa-area__topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mapa-area__nome {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.mapa-area__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mapa-area__icone {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.mapa-area__pct {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--cor-area, var(--accent));
+}
+
+.mapa-area__track {
+  height: 7px;
+}
+
+/* Sobrescreve o gradiente padrão de .progress-bar: aqui a cor identifica
+   a área (Vacinação é roxa, Alimentação é verde...), e não o "cheio". */
+.mapa-area__bar {
+  background: linear-gradient(90deg,
+      color-mix(in srgb, var(--cor-area, #2ec4a9) 55%, transparent),
+      var(--cor-area, #2ec4a9));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--cor-area, #2ec4a9) 40%, transparent);
+}
+
+.mapa-areas__aviso {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+/* ── Modal do cenário ────────────────────────── */
+.mapa-modal {
+  position: relative;
+  max-width: 480px;
+  max-height: 86vh;
+  overflow-y: auto;
+}
+
+.mapa-modal__desc {
   font-size: 13.5px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.55;
-  flex: 1;
-  margin-bottom: 20px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
 }
 
-.mapa-sidebar__play {
+.mapa-modal__play {
   width: 100%;
   padding: 12px;
+  margin-top: 22px;
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 14.5px;
+}
+
+/* Com o modal aberto, rolar a página por baixo dele desalinha o mapa e o
+   usuário volta perdido ao fechar. */
+body.modal-aberto {
+  overflow: hidden;
 }
 
 /* ── Responsivo ───────────────────────────────── */
@@ -371,7 +526,6 @@
 
   .mapa-sidebar {
     position: static;
-    min-height: unset;
   }
 }
 
@@ -397,6 +551,15 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Altura fixa: a quantidade de missões varia (e cresce conforme a
+     professora manda tarefas), então a seção rola por dentro em vez de
+     esticar a página. */
+  height: 320px;
+  overflow-y: auto;
+  /* O hover do card desliza 4px para a direita — sem este respiro ele
+     encostaria na barra de rolagem. */
+  overflow-x: hidden;
+  padding-right: 8px;
 }
 
 .mission-item {
@@ -409,6 +572,9 @@
   padding: 14px 16px;
   transition: background 0.2s, transform 0.2s, border-color 0.2s;
   cursor: pointer;
+  /* A lista tem altura fixa: sem isto os cards se espremeriam para caber
+     em vez de a lista rolar. */
+  flex-shrink: 0;
 }
 
 .mission-item:hover {
@@ -472,7 +638,7 @@
 
 /* O respiro que faltava: sem isto a seção encosta na borda do card do
    mapa e os dois viram um bloco só. */
-.col-2 {
+.col-full {
   margin-top: 28px;
 }
 
@@ -516,5 +682,6 @@
   color: var(--text-muted);
   text-align: center;
   padding: 18px 8px;
-  margin: 0;
+  /* Centraliza no meio da lista, que agora tem altura fixa. */
+  margin: auto 0;
 }

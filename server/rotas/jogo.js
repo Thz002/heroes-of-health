@@ -24,14 +24,58 @@ function nivelDaIdade(idade) {
 }
 
 // ── Cenários do mapa ─────────────────────────────────────────────────
+//
+// Cada cenário vem com a lista de ÁREAS que ele alimenta (Saúde,
+// Vacinação, ...). É o que o painel lateral do mapa usa para desenhar,
+// no hover, as barras de progresso do aluno naquele lugar.
+//
+// A lista NÃO é filtrada pela idade de quem pergunta, ao contrário de
+// /meu-mapa: aqui a pergunta é "o que este lugar ensina?", e não "o que
+// eu posso jogar agora?". Filtrar por faixa etária deixaria o painel
+// vazio nos lugares cujo conteúdo ainda só existe para outra idade.
 rotas.get('/cenarios', async (req, res) => {
-  const { data, error } = await admin
+  const cenarios = await admin
     .from('cenarios')
     .select('id, slug, nome, descricao')
     .order('id');
 
-  if (error) return res.status(500).json({ message: 'Não foi possível carregar o mapa.' });
-  res.json(data);
+  if (cenarios.error) {
+    return res.status(500).json({ message: 'Não foi possível carregar o mapa.' });
+  }
+
+  // Três consultas soltas em vez de um join aninhado: missao_areas não
+  // tem ligação direta com cenarios — a ponte entre as duas é missoes.
+  const [missoes, vinculos, areas] = await Promise.all([
+    admin.from('missoes').select('id, cenario_id'),
+    admin.from('missao_areas').select('missao_id, area_nome'),
+    admin.from('areas').select('nome, ordem').order('ordem')
+  ]);
+
+  if (missoes.error || vinculos.error || areas.error) {
+    return res.status(500).json({ message: 'Não foi possível carregar as áreas do mapa.' });
+  }
+
+  const cenarioDaMissao = new Map((missoes.data || []).map(m => [m.id, m.cenario_id]));
+  const ordemDaArea     = new Map((areas.data || []).map(a => [a.nome, a.ordem]));
+
+  // Set por cenário: a mesma área costuma aparecer em várias missões do
+  // mesmo lugar, e não pode virar barra repetida na tela.
+  const areasPorCenario = new Map();
+  for (const v of vinculos.data || []) {
+    const cenarioId = cenarioDaMissao.get(v.missao_id);
+    if (!cenarioId) continue;
+    if (!areasPorCenario.has(cenarioId)) areasPorCenario.set(cenarioId, new Set());
+    areasPorCenario.get(cenarioId).add(v.area_nome);
+  }
+
+  // Sai na ordem canônica das 8 barras (areas.ordem), não na ordem em
+  // que o conteúdo foi cadastrado — assim Saúde vem sempre antes de
+  // Felicidade, em qualquer lugar do mapa.
+  res.json((cenarios.data || []).map(c => ({
+    ...c,
+    areas: [...(areasPorCenario.get(c.id) || [])]
+      .sort((a, b) => (ordemDaArea.get(a) ?? 99) - (ordemDaArea.get(b) ?? 99))
+  })));
 });
 
 // ── Missões de um cenário, já filtradas pela idade ───────────────────

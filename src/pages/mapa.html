@@ -83,6 +83,11 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
           </div>
         </section>
 
+        <!-- Painel lateral: enquanto o mouse passeia pelo mapa ele mostra o
+             PROGRESSO do aluno nas áreas da saúde que aquele lugar alimenta.
+             A descrição do lugar não mora mais aqui — ela abre no modal, no
+             clique. Assim o passeio pelo mapa responde "o que eu ganho ali?"
+             em vez de virar um texto para ler a cada hover. -->
         <aside class="mapa-sidebar" id="mapa-sidebar">
           <div class="mapa-sidebar__empty" id="mapa-sidebar-empty">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -91,20 +96,28 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
                 d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
             <p class="mapa-sidebar__title">Passe o mouse sobre o mapa</p>
-            <p class="mapa-sidebar__hint">Aponte para um dos locais do bairro para ver os detalhes da região aqui.
-            </p>
+            <p class="mapa-sidebar__hint">Aponte para um dos locais do bairro para ver seu progresso nas áreas da
+              saúde que ele fortalece.</p>
           </div>
 
           <div class="mapa-sidebar__content" id="mapa-sidebar-content" hidden>
-            <div class="mapa-sidebar__thumb-wrap">
-              <img id="mapa-sidebar-thumb" class="mapa-sidebar__thumb" alt="">
+            <div class="mapa-sidebar__head">
+              <div class="mapa-sidebar__thumb-wrap mapa-sidebar__thumb-wrap--mini">
+                <img id="mapa-sidebar-thumb" class="mapa-sidebar__thumb" alt="">
+              </div>
+              <div class="mapa-sidebar__head-text">
+                <h3 id="mapa-sidebar-nome"></h3>
+                <p class="mapa-sidebar__sub" id="mapa-sidebar-sub"></p>
+              </div>
             </div>
-            <h3 id="mapa-sidebar-nome"></h3>
-            <p id="mapa-sidebar-desc"></p>
-            <button type="button" id="mapa-sidebar-play" class="btn-primary mapa-sidebar__play">Jogar</button>
+
+            <div class="mapa-areas" id="mapa-sidebar-areas"></div>
+
+            <p class="mapa-sidebar__cta">Clique no lugar para ver os detalhes</p>
           </div>
         </aside>
       </div>
+<<<<<<< HEAD
       <div class="col-2 fade-up">
           <div class="card" style="padding:24px;">
             <h3 class="section-title">
@@ -113,9 +126,50 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
             </h3>
             <div class="missions-list" id="missions-list">
             </div>
+=======
+
+      <!-- Missões ativas: ocupa a largura inteira do conteúdo — do começo do
+           mapa até a borda direita do painel lateral. O `.card` do style.css
+           tem max-width de 440px (ele nasceu para a tela de login); sem o
+           modificador --full a lista ficava numa coluna estreita embaixo do
+           mapa. -->
+      <div class="col-full fade-up">
+        <div class="card card--full" style="padding:24px;">
+          <h3 class="section-title">
+            ⚔️ Missões Ativas
+            <span id="missoes-contador">carregando…</span>
+          </h3>
+          <div class="missions-list" id="missions-list">
+            <!-- Vazio de proposito: os cards vem de API.getMeuMapa(),
+                 montados por mapa.js. Um card de exemplo aqui dentro
+                 apareceria para o aluno sempre que a busca falhasse. -->
+>>>>>>> 5ebab463154e09a957dc363b5cde981eadf653fd
           </div>
         </div>
+      </div>
     </main>
+  </div>
+
+  <!-- ── Modal do cenário ────────────────────────────────────────────
+       Aberto no clique de um ponto do mapa. É aqui que a descrição do
+       lugar aparece, junto das barras de área e do botão de jogar. -->
+  <div class="modal-overlay" id="cenario-modal" role="dialog" aria-modal="true"
+    aria-labelledby="cenario-modal-nome">
+    <div class="modal mapa-modal">
+      <button type="button" class="modal__close" id="cenario-modal-close" aria-label="Fechar">×</button>
+
+      <div class="mapa-sidebar__thumb-wrap">
+        <img id="cenario-modal-thumb" class="mapa-sidebar__thumb" alt="">
+      </div>
+
+      <h3 class="modal__title" id="cenario-modal-nome"></h3>
+      <p class="mapa-modal__desc" id="cenario-modal-desc"></p>
+
+      <h4 class="mapa-areas__titulo">Áreas da saúde que este lugar fortalece</h4>
+      <div class="mapa-areas" id="cenario-modal-areas"></div>
+
+      <button type="button" id="cenario-modal-play" class="btn-primary mapa-modal__play">Jogar</button>
+    </div>
   </div>
 </body>
 
