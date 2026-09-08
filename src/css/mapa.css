@@ -635,6 +635,21 @@
   font-size: 15px;
 }
 
+/* Lugar sem missão: o botão continua ali, cinza e travado, dizendo o
+   porquê. Precisa levar `.btn-primary` no seletor para vencer o
+   `.btn-primary:disabled` do dashboard.css, que só desbota o verde —
+   aqui a cor tem de sair de vez, senão o bloqueio não se lê. O :hover
+   repete a regra porque `.btn-primary:hover` ainda levantaria o botão. */
+.btn-primary.mapa-modal__play--bloqueado,
+.btn-primary.mapa-modal__play--bloqueado:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.55);
+  opacity: 1;
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+}
+
 /* Com o modal aberto, rolar a página por baixo dele desalinha o mapa e o
    usuário volta perdido ao fechar. */
 body.modal-aberto {

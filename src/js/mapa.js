@@ -100,13 +100,16 @@
       nome: "Rua",
       imagem: "Ruas.png",
       descricao: "Missões de caminhada e separação de lixo por cor, reforçando hábitos sustentáveis no dia a dia.",
+      // Uma foto só para todas as ruas clicáveis do mapa.
+      interior: "Ruas.jpg",
     },
     casa: {
       nome: "Casa",
       imagem: "Casa.png",
       descricao: "Visitas do ACS a moradores diferentes, cada um com uma história e um problema de saúde distinto a ser identificado e resolvido.",
-      // Interior padrão da casa: as casas que ainda não têm a sua foto
-      // caem aqui, em vez de abrirem o modal com o aviso de "em breve".
+      // Interior padrão da casa. Hoje todas as casas do mapa têm foto
+      // própria; isto existe para a próxima casa desenhada não abrir o
+      // modal com o aviso de "em breve" enquanto a foto dela não vem.
       interior: "Casa.jpeg",
     },
   };
@@ -144,30 +147,30 @@
     { tipo: "ruas", imagemHotspot: "Ruas15.png", x: 610, y: 175, w: 190, h: 128 },
 
 
-    // As casas que já têm interior próprio apontam para ele aqui: o
-    // recorte da fachada e a foto de dentro são a mesma casa (Casa03.png
-    // -> Casa03.jpg). As demais caem no interior padrão de CENARIOS.casa.
+    // Cada casa aponta para o seu interior: o recorte da fachada e a foto
+    // de dentro são a mesma casa (Casa03.png -> Casa03.jpg). Hoje todas
+    // têm a sua; uma casa nova sem foto cai no padrão de CENARIOS.casa.
     { tipo: "casa", imagem: "Casa.png", x: 253, y: 230, w: 125, h: 126, interior: "Casa.jpeg" },
     { tipo: "casa", imagem: "Casa03.png", x:465, y: 387, w: 85, h: 110, interior: "Casa03.jpg" },
-    { tipo: "casa", imagem: "Casa013.png", x: 372, y: 390, w: 85, h: 105 },
-    { tipo: "casa", imagem: "Casa06.png", x: 930, y: 25, w: 98, h: 93, tooltipPos: "bottom" },
+    { tipo: "casa", imagem: "Casa013.png", x: 372, y: 390, w: 85, h: 105, interior: "Casa13.jpg" },
+    { tipo: "casa", imagem: "Casa06.png", x: 930, y: 25, w: 98, h: 93, tooltipPos: "bottom", interior: "Casa06.jpg" },
     { tipo: "casa", imagem: "Casa07.png", x: 1039, y: 20, w: 110, h: 80, tooltipPos: "bottom", interior: "Casa07.jpg" },
-    { tipo: "casa", imagem: "Casa014.png", x: 480, y: 512, w: 75, h: 100 },
+    { tipo: "casa", imagem: "Casa014.png", x: 480, y: 512, w: 75, h: 100, interior: "Casa14.jpg" },
     { tipo: "casa", imagem: "Casa09.png", x: 385, y: 10, w: 90, h: 100, tooltipPos: "bottom", interior: "Casa09.jpg" },
     { tipo: "casa", imagem: "Casa010.png", x: 350, y: 514, w: 125, h: 100, interior: "Casa10.jpg" },
     { tipo: "casa", imagem: "Casa011.png", x: 253, y: 387, w: 110, h: 115, interior: "Casa11.jpg" },
     { tipo: "casa", imagem: "Casa08.png", x: 548, y: 500, w: 110, h: 115, interior: "Casa08.jpg" },
-    { tipo: "casa", imagem: "Casa012.png", x: 880, y: 502, w: 110, h: 110 },
+    { tipo: "casa", imagem: "Casa012.png", x: 880, y: 502, w: 110, h: 110, interior: "Casa12.jpg" },
     { tipo: "casa", imagem: "Casa02.png", x: 253, y: 139, w: 127, h: 107, interior: "Casa02.jpeg" },
-    { tipo: "casa", imagem: "Casa015.png", x: 238, y: 20, w: 145, h: 100, tooltipPos: "bottom" },
+    { tipo: "casa", imagem: "Casa015.png", x: 238, y: 20, w: 145, h: 100, tooltipPos: "bottom", interior: "Casa15.jpg" },
     { tipo: "casa", imagem: "Casa05.png", x: 80, y: 20, w: 80, h: 90, interior: "Casa05.jpg" },
     { tipo: "casa", imagem: "Casa04.png", x: 1041, y: 515, w: 85, h: 105, tooltipPos: "bottom", interior: "Casa04.jpg" },
-    { tipo: "casa", imagem: "Casa016.png", x: 1182, y: 8, w: 150, h: 100, tooltipPos: "bottom" },
+    { tipo: "casa", imagem: "Casa016.png", x: 1182, y: 8, w: 150, h: 100, tooltipPos: "bottom", interior: "Casa16.jpg" },
 
-    { tipo: "casa", imagem: "CasaLateral03.png", x: 15, y: 200, w: 68, h: 112 },
-    { tipo: "casa", imagem: "CasaLateral01.png", x: 15, y: 442, w: 80, h: 105 },
-    { tipo: "casa", imagem: "CasaLateral02.png", x: 1335, y: 200, w: 70, h: 112 },
-    { tipo: "casa", imagem: "CasaLateral04.png", x: 1335, y: 430, w: 73, h: 113 },
+    { tipo: "casa", imagem: "CasaLateral03.png", x: 15, y: 200, w: 68, h: 112, interior: "CasaLateral03.jpg" },
+    { tipo: "casa", imagem: "CasaLateral01.png", x: 15, y: 442, w: 80, h: 105, interior: "CasaLateral01.jpg" },
+    { tipo: "casa", imagem: "CasaLateral02.png", x: 1335, y: 200, w: 70, h: 112, interior: "CasaLateral02.jpg" },
+    { tipo: "casa", imagem: "CasaLateral04.png", x: 1335, y: 430, w: 73, h: 113, interior: "CasaLateral04.jpg" },
   ];
 
 
@@ -228,6 +231,7 @@
   let progressoPorArea = null;  // nome da área    -> { pontos, porcentagem }
   let erroAreas = "";
   let hotspotAtual = null;      // o ponto que a lateral está mostrando agora
+  let hotspotDoModal = null;    // o ponto que o modal está mostrando agora
 
   async function carregarAreas() {
     try {
@@ -243,8 +247,10 @@
     }
 
     // O mouse pode já estar parado sobre um ponto quando a resposta
-    // chega — sem isto a lateral ficaria presa no "carregando".
+    // chega — sem isto a lateral ficaria presa no "carregando", e o botão
+    // do modal aberto junto com ela.
     if (hotspotAtual) mostrarCenario(hotspotAtual);
+    if (hotspotDoModal) atualizarBotaoJogar(hotspotDoModal);
   }
 
   /**
@@ -340,10 +346,40 @@
   }
 
   // ── Modal: o que o clique abre ────────────────────────────────────
+
+  /**
+   * O botão aparece sempre — o lugar sem missão mostra a versão cinza,
+   * bloqueada, em vez de sumir: o botão faltando fazia o aluno achar que
+   * o modal tinha carregado errado.
+   *
+   * Enquanto a lista de cenários não chegou, `ehJogavel` responde "não"
+   * para todo mundo; dizer "sem missões" aí seria mentira, então o
+   * carregamento tem o seu próprio rótulo. Fica separado de `abrirModal`
+   * porque `carregarAreas` chama só isto quando a resposta chega com o
+   * modal já aberto — remontar o modal inteiro jogaria a foto de volta
+   * ao topo no meio da leitura.
+   */
+  function atualizarBotaoJogar(h) {
+    if (!modalPlay) return;
+
+    const carregando = areasPorSlug === null;
+    const jogavel = ehJogavel(h.tipo);
+
+    modalPlay.disabled = !jogavel;
+    modalPlay.classList.toggle("mapa-modal__play--bloqueado", !jogavel);
+    modalPlay.textContent = jogavel
+      ? "Jogar"
+      : carregando
+        ? "Carregando missões…"
+        : "Sem missões disponíveis";
+    modalPlay.dataset.cenario = h.tipo;
+  }
+
   function abrirModal(h) {
     const cenario = CENARIOS[h.tipo];
     if (!cenario || !modal) return;
 
+    hotspotDoModal = h;
     modalThumb.src = `../imgs/${h.imagem || cenario.imagem}`;
     modalThumb.alt = cenario.nome;
     modalNome.textContent = cenario.nome;
@@ -362,11 +398,7 @@
       modalInterior.alt = `Interior — ${cenario.nome}`;
     }
 
-    // Lugar que ainda não é cenário no banco não tem missão para abrir:
-    // mostrar o botão e cair num "esse lugar não existe no mapa" é pior
-    // do que não oferecer o caminho.
-    modalPlay.hidden = !ehJogavel(h.tipo);
-    modalPlay.dataset.cenario = h.tipo;
+    atualizarBotaoJogar(h);
 
     // Quem rola agora é o modal inteiro: sem isto ele abriria no meio da
     // foto anterior quando o aluno clica num segundo lugar.
@@ -397,7 +429,7 @@
 
   modalPlay?.addEventListener("click", () => {
     const tipo = modalPlay.dataset.cenario;
-    if (!tipo) return;
+    if (!tipo || modalPlay.disabled) return;
     window.location.href = `missao.html?cenario=${encodeURIComponent(tipo)}`;
   });
 
