@@ -490,26 +490,149 @@
 }
 
 /* ── Modal do cenário ────────────────────────── */
+/* Quatro faixas empilhadas: cabeçalho, imagem do interior, descrição e
+   botão. O padding do `.modal` genérico é zerado aqui — cabeçalho e
+   imagem vão de borda a borda, e o respiro passa a ser de cada faixa.
+
+   Quem rola é o modal inteiro, não o corpo: a imagem tem altura livre
+   (ver .mapa-modal__figura) e pode passar da tela sozinha, então prender
+   a rolagem só ao texto deixaria parte da foto inalcançável. */
 .mapa-modal {
   position: relative;
-  max-width: 480px;
-  max-height: 86vh;
+  padding: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  width: 100%;
+  max-width: min(920px, 100%);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cabeçalho ─ mesma cor da barra de navegação (o .topLine do
+   dashboard.css sobre o fundo da página resulta neste teal). */
+.mapa-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  /* Grudado no topo: com a imagem alta o suficiente para rolar, o nome do
+     lugar e o botão de fechar não podem sumir junto com ela. */
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 12px 16px 12px 26px;
+  background: #07373e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+}
+
+.mapa-modal__nome {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mapa-modal__head-acoes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* A miniatura é o recorte do prédio no mapa — é ela que liga o modal ao
+   ponto que o aluno acabou de clicar. */
+.mapa-modal__thumb-wrap {
+  width: 54px;
+  height: 54px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mapa-modal__thumb {
+  max-width: 80%;
+  max-height: 80%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+}
+
+.mapa-modal__close {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.mapa-modal__close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* Imagem do interior ─ largura cheia e altura LIVRE: a foto aparece
+   inteira, na escala dela. Recortar para uma altura fixa cortava fora
+   justamente o que o aluno foi ali ver. */
+.mapa-modal__figura {
+  position: relative;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.28);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mapa-modal__interior {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Lugares que ainda não têm foto de interior desenhada — hoje só a rua;
+   casa sem foto própria usa o interior padrão de CENARIOS.casa. */
+.mapa-modal__em-breve {
+  padding: 52px 20px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.mapa-modal__corpo {
+  padding: 24px 26px 26px;
 }
 
 .mapa-modal__desc {
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .mapa-modal__play {
   width: 100%;
-  padding: 12px;
+  padding: 13px;
   margin-top: 22px;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 14.5px;
+  font-size: 15px;
 }
 
 /* Com o modal aberto, rolar a página por baixo dele desalinha o mapa e o
@@ -684,4 +807,23 @@ body.modal-aberto {
   padding: 18px 8px;
   /* Centraliza no meio da lista, que agora tem altura fixa. */
   margin: auto 0;
+}
+
+@media (max-width: 700px) {
+  .mapa-modal__head {
+    padding: 10px 12px 10px 18px;
+  }
+
+  .mapa-modal__nome {
+    font-size: 18px;
+  }
+
+  .mapa-modal__thumb-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mapa-modal__corpo {
+    padding: 18px;
+  }
 }

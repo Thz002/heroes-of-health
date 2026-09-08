@@ -16,71 +16,85 @@
       nome: "Parque",
       imagem: "Parque.png",
       descricao: "Áreas arborizadas para caminhadas, com missões de limpeza e reforço da separação correta do lixo.",
+      interior: "Parque.png",
     },
     escola: {
       nome: "Escola",
       imagem: "Escola.png",
       descricao: "Calendário anual de campanhas educativas, reforçando a integração entre saúde e educação.",
+      interior: "Escola.jpg",
     },
     farmacia: {
       nome: "Farmácia",
       imagem: "Farmacia.jpg",
       descricao: "Calendário anual de campanhas de saúde, avisos de cobertura vacinal e atividades que relacionam vacinas às doenças que elas previnem.",
+      interior: "Farmacia.jpeg",
     },
     upa: {
       nome: "UPA",
       imagem: "UPA.png",
       descricao: "Casos urgentes que exigem atendimento rápido, ensinando o jogador a identificar prioridades em situações de emergência.",
+      interior: "UPA.jpg",
     },
     ubs: {
       nome: "UBS",
       imagem: "UBS.png",
       descricao: "Centro de referência do bairro, onde o jogador acompanha consultas, campanhas e o cuidado contínuo do seu paciente virtual.",
+      interior: "UBS.jpg",
     },
     banca: {
       nome: "Banca de jornal",
       imagem: "Banca.png",
       descricao: "Charges educativas, avisos de campanhas de vacinação e um espaço dedicado a identificar fake news sobre saúde.",
+      interior: "Banca.jpg",
     },
     praca: {
       nome: "Pracinha",
       imagem: "Praca.jpg",
       descricao: "Ginástica ao ar livre, cuidados com insolação em dias quentes, rodas de conversa e dias de aferição de pressão arterial.",
+      interior: "Praca.jpg",
     },
     mercado: {
       nome: "Mercado",
       imagem: "Mercado.png",
       descricao: "Missões sobre alimentação saudável, leitura de rótulos, segurança alimentar, conservação e higiene dos alimentos.",
+      interior: "Mercado.jpg",
     },
     creche: {
       nome: "Creche",
       imagem: "Creche.png",
       descricao: "Missões voltadas ao cuidado infantil, desenvolvimento na primeira infância e prevenção de doenças comuns nessa fase.",
+      interior: "Creche.jpg",
     },
     igreja: {
       nome: "Centro religioso",
       imagem: "Igreja.png",
       descricao: "Espaço de acolhimento para temas de saúde mental, com foco em escuta e combate ao estigma.",
+      interior: "Igreja.jpg",
     },
     quadra: {
       nome: "Campo de lazer",
       imagem: "Quadra.png",
       descricao: "Atividades físicas coletivas em quadras, incentivando exercício e convivência comunitária.",
+      interior: "Quadra.jpg",
     },
     "terreno-baldio": {
       nome: "Terreno baldio",
       imagem: "Baldio.png",
       descricao: "Representa o lixão do bairro; missões de conscientização sobre descarte irregular de lixo e seus riscos à saúde.",
+      interior: "Baldio.jpg",
     },
     corrego: {
       nome: "Córrego",
       imagem: "Corrego.png",
       descricao: "O jogador aprende a reportar às autoridades civis situações de risco, como surtos de doenças ligadas à água contaminada.",
+      interior: "Corrego.png",
     },
     rio: {
       nome: "Rio",
       imagem: "Rio.png",
       descricao: "Missões de educação ambiental e mutirões de limpeza, ligando meio ambiente e saúde pública.",
+      interior: "Rio.png",
     },
     ruas: {
       nome: "Rua",
@@ -91,6 +105,9 @@
       nome: "Casa",
       imagem: "Casa.png",
       descricao: "Visitas do ACS a moradores diferentes, cada um com uma história e um problema de saúde distinto a ser identificado e resolvido.",
+      // Interior padrão da casa: as casas que ainda não têm a sua foto
+      // caem aqui, em vez de abrirem o modal com o aviso de "em breve".
+      interior: "Casa.jpeg",
     },
   };
 
@@ -127,21 +144,24 @@
     { tipo: "ruas", imagemHotspot: "Ruas15.png", x: 610, y: 175, w: 190, h: 128 },
 
 
-    { tipo: "casa", imagem: "Casa.png", x: 253, y: 230, w: 125, h: 126},
-    { tipo: "casa", imagem: "Casa03.png", x:465, y: 387, w: 85, h: 110 },
+    // As casas que já têm interior próprio apontam para ele aqui: o
+    // recorte da fachada e a foto de dentro são a mesma casa (Casa03.png
+    // -> Casa03.jpg). As demais caem no interior padrão de CENARIOS.casa.
+    { tipo: "casa", imagem: "Casa.png", x: 253, y: 230, w: 125, h: 126, interior: "Casa.jpeg" },
+    { tipo: "casa", imagem: "Casa03.png", x:465, y: 387, w: 85, h: 110, interior: "Casa03.jpg" },
     { tipo: "casa", imagem: "Casa013.png", x: 372, y: 390, w: 85, h: 105 },
     { tipo: "casa", imagem: "Casa06.png", x: 930, y: 25, w: 98, h: 93, tooltipPos: "bottom" },
-    { tipo: "casa", imagem: "Casa07.png", x: 1039, y: 20, w: 110, h: 80, tooltipPos: "bottom" },
+    { tipo: "casa", imagem: "Casa07.png", x: 1039, y: 20, w: 110, h: 80, tooltipPos: "bottom", interior: "Casa07.jpg" },
     { tipo: "casa", imagem: "Casa014.png", x: 480, y: 512, w: 75, h: 100 },
-    { tipo: "casa", imagem: "Casa09.png", x: 385, y: 10, w: 90, h: 100, tooltipPos: "bottom" },
-    { tipo: "casa", imagem: "Casa010.png", x: 350, y: 514, w: 125, h: 100 },
-    { tipo: "casa", imagem: "Casa011.png", x: 253, y: 387, w: 110, h: 115 },
-    { tipo: "casa", imagem: "Casa08.png", x: 548, y: 500, w: 110, h: 115 },
+    { tipo: "casa", imagem: "Casa09.png", x: 385, y: 10, w: 90, h: 100, tooltipPos: "bottom", interior: "Casa09.jpg" },
+    { tipo: "casa", imagem: "Casa010.png", x: 350, y: 514, w: 125, h: 100, interior: "Casa10.jpg" },
+    { tipo: "casa", imagem: "Casa011.png", x: 253, y: 387, w: 110, h: 115, interior: "Casa11.jpg" },
+    { tipo: "casa", imagem: "Casa08.png", x: 548, y: 500, w: 110, h: 115, interior: "Casa08.jpg" },
     { tipo: "casa", imagem: "Casa012.png", x: 880, y: 502, w: 110, h: 110 },
-    { tipo: "casa", imagem: "Casa02.png", x: 253, y: 139, w: 127, h: 107 },
+    { tipo: "casa", imagem: "Casa02.png", x: 253, y: 139, w: 127, h: 107, interior: "Casa02.jpeg" },
     { tipo: "casa", imagem: "Casa015.png", x: 238, y: 20, w: 145, h: 100, tooltipPos: "bottom" },
-    { tipo: "casa", imagem: "Casa05.png", x: 80, y: 20, w: 80, h: 90 },
-    { tipo: "casa", imagem: "Casa04.png", x: 1041, y: 515, w: 85, h: 105, tooltipPos: "bottom" },
+    { tipo: "casa", imagem: "Casa05.png", x: 80, y: 20, w: 80, h: 90, interior: "Casa05.jpg" },
+    { tipo: "casa", imagem: "Casa04.png", x: 1041, y: 515, w: 85, h: 105, tooltipPos: "bottom", interior: "Casa04.jpg" },
     { tipo: "casa", imagem: "Casa016.png", x: 1182, y: 8, w: 150, h: 100, tooltipPos: "bottom" },
 
     { tipo: "casa", imagem: "CasaLateral03.png", x: 15, y: 200, w: 68, h: 112 },
@@ -181,7 +201,9 @@
   const modalThumb = document.getElementById("cenario-modal-thumb");
   const modalNome = document.getElementById("cenario-modal-nome");
   const modalDesc = document.getElementById("cenario-modal-desc");
-  const modalAreas = document.getElementById("cenario-modal-areas");
+  const modalInterior = document.getElementById("cenario-modal-interior");
+  const modalEmBreve = document.getElementById("cenario-modal-em-breve");
+  const modalCaixa = modal?.querySelector(".mapa-modal");
   const modalPlay = document.getElementById("cenario-modal-play");
   const modalClose = document.getElementById("cenario-modal-close");
 
@@ -327,13 +349,28 @@
     modalNome.textContent = cenario.nome;
     modalDesc.textContent = cenario.descricao;
 
-    desenharAreas(modalAreas, areasDoCenario(h.tipo));
+    // A foto do interior vem do hotspot quando ele tem a sua (cada casa
+    // do bairro tem um morador e uma sala diferentes) e, na falta dela,
+    // da do tipo de lugar. Só a rua fica sem foto e cai no aviso.
+    const interior = h.interior || cenario.interior;
+    modalInterior.hidden = !interior;
+    modalEmBreve.hidden = Boolean(interior);
+    // Trocar o src só quando há imagem: apagá-lo faria o navegador pedir a
+    // própria página como imagem e o alt ficaria piscando por trás do aviso.
+    if (interior) {
+      modalInterior.src = `../imgs/Interiores/${interior}`;
+      modalInterior.alt = `Interior — ${cenario.nome}`;
+    }
 
     // Lugar que ainda não é cenário no banco não tem missão para abrir:
     // mostrar o botão e cair num "esse lugar não existe no mapa" é pior
     // do que não oferecer o caminho.
     modalPlay.hidden = !ehJogavel(h.tipo);
     modalPlay.dataset.cenario = h.tipo;
+
+    // Quem rola agora é o modal inteiro: sem isto ele abriria no meio da
+    // foto anterior quando o aluno clica num segundo lugar.
+    if (modalCaixa) modalCaixa.scrollTop = 0;
 
     modal.classList.add("open");
     document.body.classList.add("modal-aberto");

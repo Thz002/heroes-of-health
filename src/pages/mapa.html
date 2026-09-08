@@ -139,24 +139,39 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
   </div>
 
   <!-- ── Modal do cenário ────────────────────────────────────────────
-       Aberto no clique de um ponto do mapa. É aqui que a descrição do
-       lugar aparece, junto das barras de área e do botão de jogar. -->
+       Aberto no clique de um ponto do mapa. Quatro faixas, de cima para
+       baixo: cabeçalho (nome + miniatura do recorte + fechar), a foto do
+       interior do lugar, a descrição e o botão de jogar. As barras de
+       área ficaram só no painel lateral (hover) — aqui o espaço é da
+       imagem. -->
   <div class="modal-overlay" id="cenario-modal" role="dialog" aria-modal="true"
     aria-labelledby="cenario-modal-nome">
     <div class="modal mapa-modal">
-      <button type="button" class="modal__close" id="cenario-modal-close" aria-label="Fechar">×</button>
 
-      <div class="mapa-sidebar__thumb-wrap">
-        <img id="cenario-modal-thumb" class="mapa-sidebar__thumb" alt="">
+      <header class="mapa-modal__head">
+        <h3 class="mapa-modal__nome" id="cenario-modal-nome"></h3>
+
+        <div class="mapa-modal__head-acoes">
+          <div class="mapa-modal__thumb-wrap">
+            <img id="cenario-modal-thumb" class="mapa-modal__thumb" alt="">
+          </div>
+          <button type="button" class="mapa-modal__close" id="cenario-modal-close"
+            aria-label="Fechar">&times;</button>
+        </div>
+      </header>
+
+      <!-- Largura do modal, altura livre: a foto do interior aparece
+           inteira, na escala dela. Se passar da tela, quem rola é o
+           modal. -->
+      <div class="mapa-modal__figura">
+        <img id="cenario-modal-interior" class="mapa-modal__interior" alt="" hidden>
+        <p class="mapa-modal__em-breve" id="cenario-modal-em-breve" hidden>Em breve implementado</p>
       </div>
 
-      <h3 class="modal__title" id="cenario-modal-nome"></h3>
-      <p class="mapa-modal__desc" id="cenario-modal-desc"></p>
-
-      <h4 class="mapa-areas__titulo">Áreas da saúde que este lugar fortalece</h4>
-      <div class="mapa-areas" id="cenario-modal-areas"></div>
-
-      <button type="button" id="cenario-modal-play" class="btn-primary mapa-modal__play">Jogar</button>
+      <div class="mapa-modal__corpo">
+        <p class="mapa-modal__desc" id="cenario-modal-desc"></p>
+        <button type="button" id="cenario-modal-play" class="btn-primary mapa-modal__play">Jogar</button>
+      </div>
     </div>
   </div>
 </body>
