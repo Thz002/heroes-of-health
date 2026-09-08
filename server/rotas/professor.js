@@ -10,6 +10,7 @@
 const express = require('express');
 const { admin } = require('../supabase');
 const { autenticar, exigirTipo } = require('../middleware/autenticar');
+const { falhou } = require('../erros');
 
 const rotas = express.Router();
 rotas.use(autenticar, exigirTipo('PROFESSOR', 'ADMIN'));
@@ -47,6 +48,23 @@ const ANOS_VALIDOS = [
 // enquanto — se um dia precisar variar por turma, vira coluna no banco.
 const LIMITE_ALUNOS_POR_TURMA = 10;
 
+/**
+ * Ponte enquanto a coluna `descricao` de quizzes_professores não existir
+ * em todo banco. Roda a consulta; se o Postgres reclamar dessa coluna,
+ * roda de novo sem ela.
+ *
+ * É temporário. Some quando todos os bancos rodarem:
+ *   alter table quizzes_professores add column if not exists descricao varchar(200);
+ *
+ * A descrição é a frase que o aluno lê no card — perder a frase é bem
+ * menos grave do que a tela inteira de tarefas parar de carregar.
+ */
+async function comOuSemDescricao(montar) {
+  const r = await montar(true);
+  if (r.error && /descricao/.test(r.error.message || '')) return montar(false);
+  return r;
+}
+
 const QTD_MIN = 3;
 const QTD_MAX = 30;
 function nivelDoAnoEscolar(ano) {
@@ -68,7 +86,7 @@ rotas.get('/turmas', async (req, res) => {
     .eq('professor_id', req.usuario.id)
     .order('nome');
 
-  if (error) return res.status(500).json({ message: 'Não foi possível carregar suas turmas.' });
+  if (error) return falhou(res, 500, 'Não foi possível carregar suas turmas.', error, 'GET /professor/turmas');
 
   const ids = data.map(t => t.id);
   const contagem = new Map(ids.map(id => [id, 0]));
@@ -131,7 +149,7 @@ rotas.post('/turmas', async (req, res) => {
     if (error.message.includes('duplicate') || error.code === '23505') {
       return res.status(409).json({ message: 'Você já tem uma turma com esse nome nesta escola.' });
     }
-    return res.status(500).json({ message: 'Não foi possível criar a turma.' });
+    return falhou(res, 500, 'Não foi possível criar a turma.', error, 'POST /professor/turmas');
   }
 
   res.status(201).json({ ...data, total_alunos: 0, limite_alunos: LIMITE_ALUNOS_POR_TURMA });
@@ -212,7 +230,7 @@ rotas.patch('/turmas/:id', async (req, res) => {
     if (error.message.includes('duplicate') || error.code === '23505') {
       return res.status(409).json({ message: 'Você já tem uma turma com esse nome nesta escola.' });
     }
-    return res.status(500).json({ message: 'Não foi possível salvar as mudanças.' });
+    return falhou(res, 500, 'Não foi possível salvar as mudanças.', error, 'PATCH /professor/turmas/:id');
   }
 
   // O card mostra "x/10", então a resposta precisa devolver a contagem
@@ -240,7 +258,7 @@ rotas.delete('/turmas/:id', async (req, res) => {
   const { error } = await admin.from('turmas').delete().eq('id', turmaId);
 
   if (error) {
-    return res.status(500).json({ message: 'Não foi possível desfazer a turma.' });
+    return falhou(res, 500, 'Não foi possível desfazer a turma.', error, 'DELETE /professor/turmas/:id');
   }
 
   res.status(204).end();
@@ -262,7 +280,7 @@ rotas.get('/turmas/:id/alunos', async (req, res) => {
     .order('nome');
 
   if (alunos.error) {
-    return res.status(500).json({ message: 'Não foi possível carregar a turma.' });
+    return falhou(res, 500, 'Não foi possível carregar a turma.', alunos.error, 'GET /professor/turmas/:id/alunos');
   }
 
   const ids = alunos.data.map(a => a.id);
@@ -342,7 +360,7 @@ rotas.post('/quizzes', async (req, res) => {
     .in('cenarios.slug', cenarios);
 
   if (missoes.error) {
-    return res.status(500).json({ message: 'Não foi possível procurar as perguntas.' });
+    return falhou(res, 500, 'Não foi possível procurar as perguntas.', missoes.error, 'POST /professor/quizzes');
   }
 
   let idsMissoes = (missoes.data || []).map(m => m.id);
@@ -366,7 +384,7 @@ rotas.post('/quizzes', async (req, res) => {
     .from('questoes').select('id').in('missao_id', idsMissoes);
 
   if (questoes.error) {
-    return res.status(500).json({ message: 'Não foi possível procurar as perguntas.' });
+    return falhou(res, 500, 'Não foi possível procurar as perguntas.', questoes.error, 'POST /professor/quizzes');
   }
 
   const bolo = (questoes.data || []).map(q => q.id);
@@ -379,24 +397,48 @@ rotas.post('/quizzes', async (req, res) => {
   if (sorteadas.length === 0) {
     return res.status(400).json({ message: 'Não há perguntas para essa combinação.' });
   }
-  const criado = await admin
+  const COLUNAS = 'id, turma_id, titulo, tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at';
+
+  const linha = {
+    turma_id: turmaId,
+    professor_id: req.usuario.id,
+    titulo,
+    descricao,
+    tempo_limite_segundos: tempo,
+    nivel_etario: nivel,
+    cenarios,
+    areas,
+    qtd_pedida: qtd
+  };
+
+  let criado = await admin
     .from('quizzes_professores')
-    .insert({
-      turma_id: turmaId,
-      professor_id: req.usuario.id,
-      titulo,
-      descricao,
-      tempo_limite_segundos: tempo,
-      nivel_etario: nivel,
-      cenarios,
-      areas,
-      qtd_pedida: qtd
-    })
-    .select('id, turma_id, titulo, descricao, tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
+    .insert(linha)
+    .select(COLUNAS + ', descricao')
     .single();
 
+  // A `descricao` é enfeite: é a frase que o aluno lê no card. Se a
+  // coluna ainda não existe neste banco, o quiz é criado sem ela em vez
+  // de a criação inteira falhar — perder a frase é bem menos grave do
+  // que o professor não conseguir passar tarefa nenhuma.
+  //
+  // Some quando alguém rodar:
+  //   alter table quizzes_professores add column if not exists descricao varchar(200);
+  if (criado.error && /descricao/.test(criado.error.message || '')) {
+    console.warn(
+      "  ⚠ quizzes_professores.descricao não existe neste banco — quiz criado sem a descrição.\n" +
+      "    Rode: alter table quizzes_professores add column if not exists descricao varchar(200);");
+
+    delete linha.descricao;
+    criado = await admin
+      .from('quizzes_professores')
+      .insert(linha)
+      .select(COLUNAS)
+      .single();
+  }
+
   if (criado.error) {
-    return res.status(500).json({ message: 'Não foi possível criar o quiz.' });
+    return falhou(res, 500, 'Não foi possível criar o quiz.', criado.error, 'POST /professor/quizzes');
   }
   const vinculo = await admin.from('quiz_questoes').insert(
     sorteadas.map((questaoId, i) => ({
@@ -406,7 +448,7 @@ rotas.post('/quizzes', async (req, res) => {
 
   if (vinculo.error) {
     await admin.from('quizzes_professores').delete().eq('id', criado.data.id);
-    return res.status(500).json({ message: 'Não foi possível sortear as perguntas do quiz.' });
+    return falhou(res, 500, 'Não foi possível sortear as perguntas do quiz.', vinculo.error, 'POST /professor/quizzes');
   }
 
   res.status(201).json({ ...criado.data, total_questoes: sorteadas.length });
@@ -423,13 +465,14 @@ rotas.get('/quizzes', async (req, res) => {
     return res.status(403).json({ message: 'Essa turma não é sua.' });
   }
 
-  const { data, error } = await admin
+  const { data, error } = await comOuSemDescricao(com => admin
     .from('quizzes_professores')
-    .select('id, titulo, descricao, tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
+    .select('id, titulo, ' + (com ? 'descricao, ' : '') +
+            'tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
     .eq('turma_id', turmaId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false }));
 
-  if (error) return res.status(500).json({ message: 'Não foi possível carregar os quizzes.' });
+  if (error) return falhou(res, 500, 'Não foi possível carregar os quizzes.', error, 'GET /professor/quizzes');
 
   const ids = data.map(q => q.id);
   const contagem = new Map(ids.map(id => [id, 0]));
@@ -461,7 +504,7 @@ rotas.delete('/quizzes/:id', async (req, res) => {
   }
 
   const { error } = await admin.from('quizzes_professores').delete().eq('id', quizId);
-  if (error) return res.status(500).json({ message: 'Não foi possível desfazer o quiz.' });
+  if (error) return falhou(res, 500, 'Não foi possível desfazer o quiz.', error, 'DELETE /professor/quizzes/:id');
 
   res.status(204).end();
 });
