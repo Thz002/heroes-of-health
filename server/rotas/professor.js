@@ -458,23 +458,47 @@ rotas.post('/quizzes', async (req, res) => {
 rotas.get('/quizzes', async (req, res) => {
   const turmaId = Number(req.query.turma_id);
 
-  if (!Number.isInteger(turmaId)) {
-    return res.status(400).json({ message: 'Turma inválida.' });
-  }
-  if (!await turmaEhMinha(req.usuario, turmaId)) {
-    return res.status(403).json({ message: 'Essa turma não é sua.' });
+  // Sem turma_id na URL, devolve o histórico INTEIRO de quem pediu — é o
+  // que a página de quizzes usa. Com turma_id, só os daquela turma.
+  const filtrarPorTurma = req.query.turma_id !== undefined && req.query.turma_id !== '';
+
+  if (filtrarPorTurma) {
+    if (!Number.isInteger(turmaId)) {
+      return res.status(400).json({ message: 'Turma inválida.' });
+    }
+    if (!await turmaEhMinha(req.usuario, turmaId)) {
+      return res.status(403).json({ message: 'Essa turma não é sua.' });
+    }
   }
 
-  const { data, error } = await comOuSemDescricao(com => admin
-    .from('quizzes_professores')
-    .select('id, titulo, ' + (com ? 'descricao, ' : '') +
-            'tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
-    .eq('turma_id', turmaId)
-    .order('created_at', { ascending: false }));
+  const { data, error } = await comOuSemDescricao(com => {
+    const consulta = admin
+      .from('quizzes_professores')
+      .select('id, titulo, turma_id, ' + (com ? 'descricao, ' : '') +
+              'tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at')
+      .order('created_at', { ascending: false });
+
+    // ADMIN sem filtro veria o banco inteiro; continua preso ao que é dele.
+    return filtrarPorTurma
+      ? consulta.eq('turma_id', turmaId)
+      : consulta.eq('professor_id', req.usuario.id);
+  });
 
   if (error) return falhou(res, 500, 'Não foi possível carregar os quizzes.', error, 'GET /professor/quizzes');
 
   const ids = data.map(q => q.id);
+
+  // O nome e a cor da turma vêm junto: sem eles a página de histórico
+  // mostraria "quiz da turma 4", que não diz nada a quem tem seis turmas.
+  const turmaDe = new Map();
+  const idsTurmas = [...new Set(data.map(q => q.turma_id).filter(Boolean))];
+
+  if (idsTurmas.length > 0) {
+    const turmas = await admin
+      .from('turmas').select('id, nome, cor').in('id', idsTurmas);
+
+    for (const t of turmas.data || []) turmaDe.set(t.id, t);
+  }
   const contagem = new Map(ids.map(id => [id, 0]));
 
   if (ids.length > 0) {
@@ -484,7 +508,12 @@ rotas.get('/quizzes', async (req, res) => {
     }
   }
 
-  res.json(data.map(q => ({ ...q, total_questoes: contagem.get(q.id) || 0 })));
+  res.json(data.map(q => ({
+    ...q,
+    total_questoes: contagem.get(q.id) || 0,
+    turma_nome: (turmaDe.get(q.turma_id) || {}).nome || null,
+    turma_cor: (turmaDe.get(q.turma_id) || {}).cor || null
+  })));
 });
 
 
@@ -507,6 +536,108 @@ rotas.delete('/quizzes/:id', async (req, res) => {
   if (error) return falhou(res, 500, 'Não foi possível desfazer o quiz.', error, 'DELETE /professor/quizzes/:id');
 
   res.status(204).end();
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   RANKING DAS TURMAS
+
+   Ordena as turmas do professor por desempenho. O número que o professor
+   lê é a taxa crua (acertos ÷ respostas), mas a ORDEM não pode ser essa:
+   uma turma com 3 respostas e 3 acertos daria 100% e passaria na frente
+   de uma com 400 respostas e 92%. Uma amostra de três respostas não diz
+   nada sobre a turma.
+
+   Quem resolve é uma média com peso: cada turma entra na conta já com
+   PESO_INICIAL respostas imaginárias na média geral de todas as turmas.
+   Quem respondeu pouco fica perto da média (não sobe nem desce à toa) e
+   quem respondeu muito domina a própria nota. É a mesma ideia da nota de
+   filme que exige um mínimo de votos.
+
+   As contagens usam count/head: o banco conta e devolve só o número, em
+   vez de mandar todas as respostas para cá para serem contadas aqui.
+   ═══════════════════════════════════════════════════════════════════ */
+
+const PESO_INICIAL = 10;
+
+rotas.get('/ranking', async (req, res) => {
+  const turmas = await admin
+    .from('turmas')
+    .select('id, nome, cor, ano_escolar')
+    .eq('professor_id', req.usuario.id)
+    .order('nome');
+
+  if (turmas.error) {
+    return falhou(res, 500, 'Não foi possível carregar o ranking.', turmas.error, 'GET /professor/ranking');
+  }
+  if (!turmas.data.length) return res.json([]);
+
+  const idsTurmas = turmas.data.map(t => t.id);
+
+  const alunos = await admin
+    .from('usuarios')
+    .select('id, turma_id')
+    .eq('tipo', 'ALUNO')
+    .in('turma_id', idsTurmas);
+
+  if (alunos.error) {
+    return falhou(res, 500, 'Não foi possível carregar os alunos.', alunos.error, 'GET /professor/ranking');
+  }
+
+  const alunosDe = new Map(idsTurmas.map(id => [id, []]));
+  for (const a of alunos.data || []) {
+    if (alunosDe.has(a.turma_id)) alunosDe.get(a.turma_id).push(a.id);
+  }
+
+  const linhas = [];
+
+  for (const turma of turmas.data) {
+    const ids = alunosDe.get(turma.id) || [];
+
+    if (ids.length === 0) {
+      linhas.push({ ...turma, total_alunos: 0, respostas: 0, acertos: 0, taxa: null });
+      continue;
+    }
+
+    const [tudo, certas] = await Promise.all([
+      admin.from('respostas_alunos')
+        .select('*', { count: 'exact', head: true })
+        .in('usuario_id', ids),
+      admin.from('respostas_alunos')
+        .select('*', { count: 'exact', head: true })
+        .in('usuario_id', ids).eq('acertou', true)
+    ]);
+
+    const respostas = tudo.count || 0;
+    const acertos = certas.count || 0;
+
+    linhas.push({
+      ...turma,
+      total_alunos: ids.length,
+      respostas,
+      acertos,
+      // null e não zero: "ninguém respondeu" não é "foi mal".
+      taxa: respostas ? Math.round((acertos / respostas) * 100) : null
+    });
+  }
+
+  // A média geral é a régua: quem respondeu pouco é puxado para ela.
+  const somaRespostas = linhas.reduce((s, l) => s + l.respostas, 0);
+  const somaAcertos = linhas.reduce((s, l) => s + l.acertos, 0);
+  const mediaGeral = somaRespostas ? somaAcertos / somaRespostas : 0;
+
+  for (const l of linhas) {
+    l.nota = (l.acertos + PESO_INICIAL * mediaGeral) / (l.respostas + PESO_INICIAL);
+  }
+
+  // Desempate: quem respondeu mais vem primeiro — fez mais para chegar lá.
+  linhas.sort((a, b) => (b.nota - a.nota) || (b.respostas - a.respostas));
+
+  res.json(linhas.map((l, i) => ({
+    ...l,
+    posicao: i + 1,
+    nota: Math.round(l.nota * 1000) / 1000,
+    media_geral: Math.round(mediaGeral * 100)
+  })));
 });
 
 module.exports = rotas;

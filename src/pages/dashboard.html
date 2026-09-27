@@ -10,6 +10,7 @@
   <script src="/vendor/supabase.js"></script>
   <script src="../js/supabase.js" defer></script>
   <script src="../js/api.js" defer></script>
+  <script src="../js/navbar.js" defer></script>
   <script src="../js/dashboard.js" defer></script>
 </head>
 
@@ -62,15 +63,17 @@ de navegação aqui e deparar tudo entre Barra e conteudo── -->
           </div>
 
           <div style="display:flex;align-items:center;gap:20px;">
+            <!-- data-perfil diz para quem cada item existe; o navbar.js
+                 apaga o que não é de quem está logado. -->
             <ul class="navbar__links">
-              <li><a href="missao.html"> Turmas</a></li>
-              <li><a href="mapa.html"> Quizes</a></li>
+              <li data-perfil="PROFESSOR"><a href="dashboard.html" class="navbar__ativo">Turmas</a></li>
+              <li data-perfil="PROFESSOR"><a href="quizzes.html">Quizes</a></li>
             </ul>
 
             <ul class="navbar__links" style="border-left:1px solid rgba(255,255,255,0.14);padding-left:20px;">
-              <li><a href="mapa.html"> Mapa</a></li>
-              <li><a href="missao.html"> Missões</a></li>
-              <li><a href="#"> Ranking</a></li>
+              <li data-perfil="ALUNO"><a href="mapa.html">Mapa</a></li>
+              <li data-perfil="ALUNO"><a href="missao.html">Missões</a></li>
+              <li data-perfil="PROFESSOR ALUNO"><a href="ranking.html">Ranking</a></li>
             </ul>
 
             <div style="display:flex;align-items:center;gap:12px;">
