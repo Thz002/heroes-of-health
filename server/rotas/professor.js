@@ -11,6 +11,7 @@ const express = require('express');
 const { admin } = require('../supabase');
 const { autenticar, exigirTipo } = require('../middleware/autenticar');
 const { falhou } = require('../erros');
+const { lerTudo } = require('../lerTudo');
 
 const rotas = express.Router();
 rotas.use(autenticar, exigirTipo('PROFESSOR', 'ADMIN'));
@@ -353,41 +354,36 @@ rotas.post('/quizzes', async (req, res) => {
     });
   }
 
-  const missoes = await admin
-    .from('missoes')
-    .select('id, cenarios!inner(slug)')
-    .eq('nivel_etario', nivel)
-    .in('cenarios.slug', cenarios);
+  // As candidatas: questões dos cenários escolhidos, na faixa etária da
+  // turma e — se o professor filtrou — que pontuem em alguma das áreas
+  // pedidas. Os "!inner" fazem o join virar filtro: questão sem o
+  // cenário (ou sem a área) não vem.
+  //
+  // Com filtro de área, a mesma questão pode casar com duas áreas e vir
+  // duas vezes; o Set logo abaixo desfaz a repetição.
+  const questoes = await lerTudo(() => {
+    let consulta = admin
+      .from('questoes')
+      .select('id, cenarios!inner(slug)' + (areas.length ? ', questoes_areas!inner(area_nome)' : ''))
+      .eq('nivel_etario', nivel)
+      .in('cenarios.slug', cenarios);
 
-  if (missoes.error) {
-    return falhou(res, 500, 'Não foi possível procurar as perguntas.', missoes.error, 'POST /professor/quizzes');
-  }
-
-  let idsMissoes = (missoes.data || []).map(m => m.id);
-
-  if (areas.length > 0 && idsMissoes.length > 0) {
-    const comArea = await admin
-      .from('missao_areas').select('missao_id')
-      .in('missao_id', idsMissoes).in('area_nome', areas);
-
-    const permitidas = new Set((comArea.data || []).map(r => r.missao_id));
-    idsMissoes = idsMissoes.filter(id => permitidas.has(id));
-  }
-
-  if (idsMissoes.length === 0) {
-    return res.status(400).json({
-      message: 'Não há perguntas para essa combinação de cenário, área e ano da turma.'
-    });
-  }
-
-  const questoes = await admin
-    .from('questoes').select('id').in('missao_id', idsMissoes);
+    if (areas.length) consulta = consulta.in('questoes_areas.area_nome', areas);
+    return consulta.order('id');
+  });
 
   if (questoes.error) {
     return falhou(res, 500, 'Não foi possível procurar as perguntas.', questoes.error, 'POST /professor/quizzes');
   }
 
-  const bolo = (questoes.data || []).map(q => q.id);
+  const bolo = [...new Set(questoes.data.map(q => q.id))];
+
+  if (bolo.length === 0) {
+    return res.status(400).json({
+      message: 'Não há perguntas para essa combinação de cenário, área e ano da turma.'
+    });
+  }
+
   for (let i = bolo.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [bolo[i], bolo[j]] = [bolo[j], bolo[i]];

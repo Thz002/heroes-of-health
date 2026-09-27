@@ -131,11 +131,22 @@ escolas ──< turmas ──< usuarios
 **Conteúdo do jogo — só leitura pelo site**
 
 ```
-cenarios ──< missoes ──< questoes
+cenarios ──< questoes ──< questoes_areas >── areas
 ```
 
-Ninguém cria conteúdo pelo jogo. Missões e questões são escritas pela equipe de
-Medicina e entram pelo painel. O `seed.sql` planta só os 7 cenários
+Cada questão carrega o próprio cenário (`cenario_id`) e a própria faixa etária
+(`nivel_etario`: 1 = 7 a 10 anos, 2 = 11 a 14, 3 = 15 a 18). `questoes_areas`
+diz quantos pontos a questão dá em cada uma das 8 barras, no primeiro acerto.
+
+Até setembro de 2026 havia uma tabela `missoes` entre `cenarios` e `questoes`
+(uma por cenário × faixa etária), com os pontos em `missao_areas`. Ela foi
+desfeita por `db/migracao-questoes-sem-missoes.sql`, que copiou os pontos de
+cada missão para cada uma das suas questões. Hoje **"missão" é só o nome que o
+aluno vê para o quiz do professor** (`quizzes_professores`), e só se joga
+dentro de um quiz — não existe mais exploração livre pelo mapa.
+
+Ninguém cria conteúdo pelo jogo. As questões são escritas pela equipe de
+Medicina e entram pelo `db/importar-questoes.sql`. O `seed.sql` planta só os 7 cenários
 (`ubs`, `escola`, `mercado`, `farmacia`, `praca`, `corrego`, `terreno-baldio`).
 
 **Progresso — uma linha por aluno**

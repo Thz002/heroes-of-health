@@ -178,39 +178,27 @@ const API = (() => {
   /** Os pontos do bairro que aparecem no mapa */
   const getCenarios = () => get('/cenarios');
 
-  /** As missões de um cenário, já filtradas pela idade do aluno */
-  const getMissoes = (slug) => get(`/cenarios/${encodeURIComponent(slug)}/missoes`);
-
-  /**
-   * Uma RODADA de questões da missão — não a missão inteira.
-   *
-   * Devolve { questoes, restantes, total }: até 10 questões que o aluno
-   * ainda não acertou, sorteadas, mais quantas sobram ao todo. Quando
-   * `questoes` vem vazio, ele já concluiu tudo o que havia ali.
-   *
-   * Nunca traz a resposta correta — essa fica no servidor.
-   */
-  const getQuestoes = (missaoId) => get(`/missoes/${missaoId}/questoes`);
-
   /**
    * Envia uma resposta e recebe { acertou, explicacao, pontos }.
    *
    * Quem confere é o servidor. A `explicacao` volta mesmo quando a pessoa
    * erra — mas a letra certa nunca volta: a ideia é que ela tente de novo
    * com o conteúdo em mãos, não que copie a resposta.
+   *
+   * O `quizId` é obrigatório: só se responde pergunta dentro de uma
+   * missão (quiz) que o professor passou para a turma.
    */
-  const responder = (questaoId, resposta, quizId = null) =>
+  const responder = (questaoId, resposta, quizId) =>
     post('/responder', { questao_id: questaoId, resposta, quiz_id: quizId });
 
   /**
-   * O bairro inteiro do ponto de vista deste aluno, numa chamada só.
+   * As missões ativas deste aluno, numa chamada só.
    *
-   * Devolve { lugares, total_pendente }. Cada lugar traz o que falta
-   * ali: `restantes` da exploração livre e a lista de `quizzes` do
-   * professor. Lugar sem nada a fazer NÃO vem na lista.
+   * Devolve { quizzes, total_pendente }. Cada quiz traz `cenarios` (os
+   * lugares do mapa que ele cobre), `restantes` e `total`. Quiz vazio ou
+   * já concluído NÃO vem na lista.
    *
-   * É a fonte da tela de missões embaixo do mapa — e do badge nos
-   * pontos, quando ele existir.
+   * É a fonte da lista embaixo do mapa e do botão "Jogar" de cada lugar.
    */
   const getMeuMapa = () => get('/meu-mapa');
 
@@ -277,8 +265,6 @@ const API = (() => {
 
     // Jogo (pelo servidor)
     getCenarios,
-    getMissoes,
-    getQuestoes,
     responder,
     getMeuProgresso,
     getMeuMapa,

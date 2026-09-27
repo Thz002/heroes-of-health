@@ -57,13 +57,13 @@ w('--  (o nível 3, por exemplo), o gerador escreve em outro arquivo.')
 w('--')
 w('--  Rode DEPOIS de db/setup.sql e db/seed.sql.')
 w('--')
-w('--  É seguro rodar quantas vezes quiser: cada missão e cada questão tem')
-w('--  um codigo_externo único, e o import é "on conflict do update".')
+w('--  É seguro rodar quantas vezes quiser: cada questão tem um')
+w('--  codigo_externo único, e o import é "on conflict do update".')
 w('--  Rodar de novo corrige o texto SEM apagar nenhuma resposta já dada')
 w('--  pelos alunos — o que um "delete + insert" destruiria, porque')
 w('--  respostas_alunos referencia questoes com on delete cascade.')
 w('--')
-w('--  %d questões, em %d missões (cenário × nível).' % (len(prontas), len(grupos)))
+w('--  %d questões, em %d grupos (cenário × nível).' % (len(prontas), len(grupos)))
 w('--')
 w('--  As explicações nascem como PLACEHOLDER: o arquivo de origem não')
 w('--  trazia o texto que o aluno vê ao errar. Troque cada uma aqui quando')
@@ -107,79 +107,30 @@ w('end $$;')
 w('')
 w('')
 
-w('-- ── 1. As missões ────────────────────────────────────────────────────')
-w('-- Uma por (cenário × nível): é ela que carrega o lugar do mapa, a faixa')
-w('-- etária e as barras que enche. As questões herdam tudo isso.')
+def codigo_do_grupo(slug, nivel):
+    return '%s-N%d' % (slug.upper().replace('-', ''), nivel)
+
+
+w('-- ── 1. As questões ───────────────────────────────────────────────────')
+w('-- Cada uma carrega o próprio cenário e a própria faixa etária.')
 w('')
 for (slug, nivel), itens in sorted(grupos.items()):
-    cod = '%s-N%d' % (slug.upper().replace('-', ''), nivel)
-    titulo = '%s · %s' % (NOMES[slug], FAIXA[nivel])
-    desc = ('Perguntas de saúde ambientadas em %s, para a faixa de %s. %d questões.'
-            % (NOMES[slug].lower(), FAIXA[nivel], len(itens)))
-    w('insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)')
-    w('select %s, c.id, %s, %s, %d' % (q(cod), q(titulo), q(desc), nivel))
-    w('  from cenarios c where c.slug = %s' % q(slug))
-    w('on conflict (codigo_externo) do update')
-    w('  set titulo = excluded.titulo, descricao = excluded.descricao,')
-    w('      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;')
-    w('')
-
-w('')
-w('-- ── 2. Quais barras cada missão enche ────────────────────────────────')
-w('-- SEM ESTAS LINHAS O ALUNO ACERTA E NADA ACONTECE: o servidor lê daqui')
-w('-- para saber o que somar, e zero linhas = zero pontos, sem erro nenhum.')
-w('-- O peso de cada barra é proporcional a quantas questões da missão')
-w('-- realmente tratam daquele tema: numa missão de 39 questões em que só')
-w('-- 1 fala de vetores, acertar vale 10 em Saúde e 1 em Vetores. Sem isso')
-w('-- a barra de Vetores subiria com mérito que não existe.')
-w('')
-for (slug, nivel), itens in sorted(grupos.items()):
-    cod = '%s-N%d' % (slug.upper().replace('-', ''), nivel)
-
-    # Quantos pontos cada área ganha por acerto NESTA missão.
-    #
-    # Não são 10 para todas. As áreas de uma missão são a união do que as
-    # questões dela citam — e numa missão de 39 questões onde só 1 fala de
-    # vetores, dar 10 em Vetores por qualquer acerto inflaria a barra com
-    # mérito que não existe: acertar citologia subiria "controle de
-    # vetores". O peso é a proporção real, com mínimo de 1 (o banco tem
-    # check de pontos > 0).
-    quantas = Counter(a for x in itens for a in x['areas'])
-    pesos = {a: max(1, round(PONTOS_POR_AREA * n / len(itens)))
-             for a, n in quantas.items()}
-    areas = sorted(pesos)
-
-    w('-- %s: %s' % (cod, ', '.join('%s=%d' % (a, pesos[a]) for a in areas)))
-    w('insert into missao_areas (missao_id, area_nome, pontos)')
-    w('select m.id, v.area, v.pontos from missoes m')
-    w('  cross join (values')
-    w(',\n'.join('    (%s, %d)' % (q(a), pesos[a]) for a in areas))
-    w('  ) as v(area, pontos)')
-    w('  where m.codigo_externo = %s' % q(cod))
-    w('on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;')
-    w('')
-
-w('')
-w('-- ── 3. As questões ───────────────────────────────────────────────────')
-w('')
-for (slug, nivel), itens in sorted(grupos.items()):
-    cod_m = '%s-N%d' % (slug.upper().replace('-', ''), nivel)
-    w('-- %s — %d questões' % (cod_m, len(itens)))
+    w('-- %s — %d questões' % (codigo_do_grupo(slug, nivel), len(itens)))
     w('')
     for x in itens:
-        cod_q = x['codigo']
         letra = 'ABCD'[x['certa']]
-        w('insert into questoes (codigo_externo, missao_id, enunciado,')
+        w('insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,')
         w('       opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)')
-        w('select %s, m.id, %s,' % (q(cod_q), q(x['enunciado'])))
+        w('select %s, c.id, %d, %s,' % (q(x['codigo']), nivel, q(x['enunciado'])))
         # Verdadeiro/Falso tem duas opcoes; C e D vao nulas.
         quatro = list(x['alts']) + [None] * (4 - len(x['alts']))
         for a in quatro:
             w('       %s,' % (q(a) if a is not None else 'null'))
         w('       %s, %s' % (q(letra), q(PLACEHOLDER)))
-        w('  from missoes m where m.codigo_externo = %s' % q(cod_m))
+        w('  from cenarios c where c.slug = %s' % q(slug))
         w('on conflict (codigo_externo) do update')
-        w('  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,')
+        w('  set enunciado = excluded.enunciado,')
+        w('      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,')
         w('      opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,')
         w('      opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,')
         w('      resposta_correta = excluded.resposta_correta,')
@@ -187,6 +138,49 @@ for (slug, nivel), itens in sorted(grupos.items()):
         w('')
     w('')
 
+w('')
+w('-- ── 2. Quais barras cada questão enche ───────────────────────────────')
+w('-- SEM ESTAS LINHAS O ALUNO ACERTA E NADA ACONTECE: o servidor lê daqui')
+w('-- para saber o que somar, e zero linhas = zero pontos, sem erro nenhum.')
+w('-- O peso de cada barra é proporcional a quantas questões do mesmo')
+w('-- cenário e nível realmente tratam daquele tema: num grupo de 39')
+w('-- questões em que só 1 fala de vetores, acertar vale 10 em Saúde e 1')
+w('-- em Vetores. Sem isso a barra de Vetores subiria com mérito que não')
+w('-- existe.')
+w('')
+for (slug, nivel), itens in sorted(grupos.items()):
+    cod = codigo_do_grupo(slug, nivel)
+
+    # Quantos pontos cada área ganha por acerto NESTE grupo.
+    #
+    # Não são 10 para todas. As áreas de um grupo são a união do que as
+    # questões dele citam — e num grupo de 39 questões onde só 1 fala de
+    # vetores, dar 10 em Vetores por qualquer acerto inflaria a barra com
+    # mérito que não existe: acertar citologia subiria "controle de
+    # vetores". O peso é a proporção real, com mínimo de 1 (o banco tem
+    # check de pontos > 0).
+    #
+    # É a mesma conta de quando os pontos eram da tabela missao_areas (uma
+    # missão por grupo): a migração copiou aqueles pesos para cada questão,
+    # e gerar de novo tem de dar o mesmo resultado.
+    quantas = Counter(a for x in itens for a in x['areas'])
+    pesos = {a: max(1, round(PONTOS_POR_AREA * n / len(itens)))
+             for a, n in quantas.items()}
+    areas = sorted(pesos)
+
+    w('-- %s: %s' % (cod, ', '.join('%s=%d' % (a, pesos[a]) for a in areas)))
+    w('insert into questoes_areas (questao_id, area_nome, pontos)')
+    w('select qs.id, v.area, v.pontos from questoes qs')
+    w('  cross join (values')
+    w(',\n'.join('    (%s, %d)' % (q(a), pesos[a]) for a in areas))
+    w('  ) as v(area, pontos)')
+    w('  where qs.codigo_externo in (')
+    w(',\n'.join('    %s' % q(x['codigo']) for x in itens))
+    w('  )')
+    w('on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;')
+    w('')
+
+w('')
 w('-- ── As metas das barras ──────────────────────────────────────────────')
 w('-- A meta de cada área é tudo o que o conteúdo dela pode render. Como')
 w('-- este arquivo acabou de mudar o conteúdo, ela precisa ser refeita —')
@@ -196,10 +190,9 @@ w('')
 w('-- select nome, meta from areas order by ordem;')
 w('')
 w('-- ── Conferir depois de rodar ─────────────────────────────────────────')
-w('-- select c.slug, m.nivel_etario, count(q.id) as questoes')
-w('--   from missoes m join cenarios c on c.id = m.cenario_id')
-w('--   left join questoes q on q.missao_id = m.id')
-w('--  group by c.slug, m.nivel_etario order by c.slug, m.nivel_etario;')
+w('-- select c.slug, q.nivel_etario, count(*) as questoes')
+w('--   from questoes q join cenarios c on c.id = q.cenario_id')
+w('--  group by c.slug, q.nivel_etario order by c.slug, q.nivel_etario;')
 
 destino = sys.argv[1] if len(sys.argv) > 1 else os.path.join(RAIZ, 'db', 'importar-questoes.sql')
 io.open(destino, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
@@ -207,10 +200,10 @@ io.open(destino, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
 print('gerado: %s' % destino)
 print('  questoes importadas : %d' % len(prontas))
 print('  deixadas de fora    : %d' % len(fora))
-print('  missoes             : %d' % len(grupos))
+print('  grupos (cen. x niv.): %d' % len(grupos))
 print('  linhas de SQL       : %d' % len(L))
 print('')
-print('missoes por cenario x nivel:')
+print('questoes por cenario x nivel:')
 for (slug, nivel), itens in sorted(grupos.items()):
     areas = sorted({a for x in itens for a in x['areas']})
     print('  %-15s n%d  %3d questoes  | %s' % (slug, nivel, len(itens), ', '.join(areas)))

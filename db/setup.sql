@@ -22,7 +22,19 @@
 --  Depois deste, rode o seed.sql (os 7 cenários do mapa).
 --
 --  Dialeto: PostgreSQL. Não é MySQL, apesar do que diz o README.
+--
+--  Banco criado ANTES de as questões deixarem de ter "missão"? Rode
+--  primeiro db/migracao-questoes-sem-missoes.sql — a trava logo abaixo
+--  recusa seguir enquanto a tabela missoes existir.
 -- =====================================================================
+
+do $$
+begin
+  if to_regclass('public.missoes') is not null then
+    raise exception
+      'Este banco ainda tem a tabela missoes. Rode db/migracao-questoes-sem-missoes.sql antes deste arquivo.';
+  end if;
+end $$;
 
 
 -- #####################################################################
@@ -139,22 +151,19 @@ create table if not exists cenarios (
   descricao text not null
 );
 
-create table if not exists missoes (
-  id bigint primary key generated always as identity,
-  cenario_id bigint not null references cenarios(id) on delete cascade,
-  titulo varchar(150) not null,
-  descricao text not null,
-
-  -- Faixa etária, comparada com usuarios.idade:
-  --   1 = 7 a 10 anos, 2 = 11 a 14, 3 = 15 a 18
-  nivel_etario int not null default 1 check (nivel_etario between 1 and 3),
-
-  eh_especial boolean not null default false
-);
-
+-- Cada questão diz sozinha onde acontece e para que idade é. Antes isso
+-- vinha de uma tabela "missoes" intermediária (cenário × faixa etária);
+-- hoje "missão" é o nome que o aluno vê para o quiz do professor, e a
+-- tabela antiga foi desfeita por db/migracao-questoes-sem-missoes.sql.
 create table if not exists questoes (
   id bigint primary key generated always as identity,
-  missao_id bigint not null references missoes(id) on delete cascade,
+  cenario_id bigint not null references cenarios(id) on delete cascade,
+
+  -- Faixa etária, comparada com usuarios.idade (aluno) e com o ano
+  -- escolar da turma (quiz do professor):
+  --   1 = 7 a 10 anos, 2 = 11 a 14, 3 = 15 a 18
+  nivel_etario int not null check (nivel_etario between 1 and 3),
+
   enunciado text not null,
   opcao_a varchar(255) not null,
   opcao_b varchar(255) not null,
@@ -170,13 +179,9 @@ create table if not exists questoes (
   explicacao text not null
 );
 
--- Os dois filtros mais quentes do jogo, um por tela:
---   abrir um ponto do mapa  -> missoes por cenario + nivel etario
---   abrir uma missão        -> questoes daquela missão
--- Com o banco vazio ninguém sente falta; com o lote de questões
--- importado, sem isto cada abertura vira varredura da tabela inteira.
-create index if not exists missoes_por_cenario_e_nivel on missoes (cenario_id, nivel_etario);
-create index if not exists questoes_por_missao         on questoes (missao_id);
+-- O filtro mais quente do conteúdo: o professor criando um quiz sorteia
+-- entre as questões dos cenários escolhidos, na faixa etária da turma.
+create index if not exists questoes_por_cenario_e_nivel on questoes (cenario_id, nivel_etario);
 
 -- Identidade estavel do conteudo importado (db/importar-questoes.sql).
 --
@@ -188,7 +193,6 @@ create index if not exists questoes_por_missao         on questoes (missao_id);
 --
 -- Com o codigo_externo, o import vira "on conflict do update": corrige o
 -- texto de uma pergunta sem perder nenhuma resposta ja dada.
-alter table missoes  add column if not exists codigo_externo varchar(60);
 alter table questoes add column if not exists codigo_externo varchar(60);
 
 -- O "create table" acima só vale para banco novo; num que já existe ele
@@ -197,7 +201,6 @@ alter table questoes add column if not exists codigo_externo varchar(60);
 alter table questoes alter column opcao_c drop not null;
 alter table questoes alter column opcao_d drop not null;
 
-create unique index if not exists missoes_codigo_externo  on missoes  (codigo_externo);
 create unique index if not exists questoes_codigo_externo on questoes (codigo_externo);
 
 
@@ -224,16 +227,19 @@ insert into areas (nome, ordem) values
   ('Limpeza', 5), ('Alimentação', 6), ('Exercícios', 7), ('Felicidade', 8)
 on conflict (nome) do nothing;
 
--- Quanto cada missão vale em cada barra. Sem uma linha aqui, acertar a
--- questão não pontua nada. Antes esta ligação não existia: a regra das 8
--- áreas estava só na cabeça da equipe, e o servidor não tinha o que
--- consultar na hora de pontuar.
-create table if not exists missao_areas (
-  missao_id bigint not null references missoes(id) on delete cascade,
+-- Quanto cada questão vale em cada barra, no primeiro acerto. Sem uma
+-- linha aqui, acertar a questão não pontua nada — sem erro nenhum, só
+-- silêncio. Uma questão pode encher várias barras (Saúde e Limpeza, por
+-- exemplo), cada uma com o seu peso.
+create table if not exists questoes_areas (
+  questao_id bigint not null references questoes(id) on delete cascade,
   area_nome varchar(50) not null references areas(nome) on delete cascade,
   pontos int not null default 10 check (pontos > 0),
-  primary key (missao_id, area_nome)
+  primary key (questao_id, area_nome)
 );
+
+-- O professor filtra o quiz por área ("só Vacinação").
+create index if not exists questoes_areas_por_area on questoes_areas (area_nome);
 
 
 -- ── Progresso do aluno ───────────────────────────────────────────────
@@ -483,8 +489,8 @@ $$;
 
 -- ── Recalcular as metas a partir do conteúdo ─────────────────────────
 --
--- A meta de uma área é a soma de tudo o que ela pode render: para cada
--- missão que a alimenta, os pontos dela vezes o número de questões.
+-- A meta de uma área é a soma de tudo o que ela pode render: os pontos
+-- de todas as questões que a alimentam.
 --
 -- Chame depois de importar conteúdo. As porcentagens de quem já jogou
 -- são refeitas junto — sem isso um aluno ficaria com 100% numa barra
@@ -494,10 +500,7 @@ returns void language plpgsql security definer set search_path = public as $$
 begin
   update areas a
      set meta = coalesce((
-       select sum(ma.pontos)
-         from missao_areas ma
-         join questoes q on q.missao_id = ma.missao_id
-        where ma.area_nome = a.nome
+       select sum(qa.pontos) from questoes_areas qa where qa.area_nome = a.nome
      ), 0);
 
   update progresso_areas p
@@ -662,10 +665,9 @@ alter table escolas             enable row level security;
 alter table turmas              enable row level security;
 alter table usuarios            enable row level security;
 alter table cenarios            enable row level security;
-alter table missoes             enable row level security;
 alter table questoes            enable row level security;
 alter table areas               enable row level security;
-alter table missao_areas        enable row level security;
+alter table questoes_areas      enable row level security;
 alter table progresso_areas     enable row level security;
 alter table respostas_alunos    enable row level security;
 alter table pacientes_virtuais  enable row level security;
@@ -768,7 +770,7 @@ create policy "admin apaga turma"
 do $$
 declare t text;
 begin
-  foreach t in array array['cenarios', 'missoes', 'questoes', 'areas', 'missao_areas'] loop
+  foreach t in array array['cenarios', 'questoes', 'areas', 'questoes_areas'] loop
     execute format('drop policy if exists "logado le o conteudo" on %I', t);
     execute format('drop policy if exists "admin escreve o conteudo" on %I', t);
 
@@ -916,7 +918,7 @@ grant  select (id, nome, escola_id, created_at) on turmas to anon, authenticated
 -- que roda como postgres e ignora estas permissões — é o mesmo caminho
 -- que o projeto já usa para importar questão.
 revoke select on questoes from anon, authenticated;
-grant  select (id, missao_id, enunciado, opcao_a, opcao_b, opcao_c, opcao_d)
+grant  select (id, cenario_id, nivel_etario, enunciado, opcao_a, opcao_b, opcao_c, opcao_d)
   on questoes to anon, authenticated;
 
 grant execute on function public.buscar_turma_por_codigo(text) to anon, authenticated;
@@ -965,8 +967,8 @@ revoke execute on function public.recalcular_metas() from anon, authenticated;
 -- where tgrelid = 'auth.users'::regclass and not tgisinternal;
 
 -- (e) O aluno não enxerga o gabarito.
---     Devem vir 7 colunas por grantee: enunciado, id, missao_id e
---     opcao_a..opcao_d. Se aparecer resposta_correta ou explicacao, o
+--     Devem vir 8 colunas por grantee: cenario_id, enunciado, id,
+--     nivel_etario e opcao_a..opcao_d. Se aparecer resposta_correta ou explicacao, o
 --     revoke da seção 5 não pegou.
 -- select grantee, column_name from information_schema.column_privileges
 -- where table_name = 'questoes' and privilege_type = 'SELECT'

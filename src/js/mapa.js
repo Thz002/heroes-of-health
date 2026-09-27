@@ -236,6 +236,10 @@
   let hotspotAtual = null;      // o ponto que a lateral está mostrando agora
   let hotspotDoModal = null;    // o ponto que o modal está mostrando agora
 
+  // slug do cenário -> as missões (quizzes do professor) pendentes que
+  // cobrem aquele lugar, a mais recente primeiro. null = ainda não chegou.
+  let quizzesPorSlug = null;
+
   async function carregarAreas() {
     try {
       const [cenarios, progresso] = await Promise.all([
@@ -253,7 +257,6 @@
     // chega — sem isto a lateral ficaria presa no "carregando", e o botão
     // do modal aberto junto com ela.
     if (hotspotAtual) mostrarCenario(hotspotAtual);
-    if (hotspotDoModal) atualizarBotaoJogar(hotspotDoModal);
   }
 
   /**
@@ -267,9 +270,9 @@
     return areasPorSlug.get(tipo) || [];
   }
 
-  /** Um lugar só é jogável se existir como cenário no banco. */
-  function ehJogavel(tipo) {
-    return Boolean(areasPorSlug && areasPorSlug.has(tipo));
+  /** Um lugar só é jogável se alguma missão pendente do aluno o cobrir. */
+  function quizzesDoLugar(tipo) {
+    return (quizzesPorSlug && quizzesPorSlug.get(tipo)) || [];
   }
 
   function avisoDeArea(texto) {
@@ -355,18 +358,22 @@
    * bloqueada, em vez de sumir: o botão faltando fazia o aluno achar que
    * o modal tinha carregado errado.
    *
-   * Enquanto a lista de cenários não chegou, `ehJogavel` responde "não"
-   * para todo mundo; dizer "sem missões" aí seria mentira, então o
-   * carregamento tem o seu próprio rótulo. Fica separado de `abrirModal`
-   * porque `carregarAreas` chama só isto quando a resposta chega com o
-   * modal já aberto — remontar o modal inteiro jogaria a foto de volta
-   * ao topo no meio da leitura.
+   * Só se joga dentro de uma missão (quiz do professor). O botão abre a
+   * mais recente das que cobrem este lugar; lugar que nenhuma missão
+   * pendente cobre fica com o botão cinza.
+   *
+   * Enquanto as missões não chegaram, todo lugar parece sem missão; dizer
+   * "sem missões" aí seria mentira, então o carregamento tem o seu próprio
+   * rótulo. Fica separado de `abrirModal` porque `carregarMissoes` chama
+   * só isto quando a resposta chega com o modal já aberto — remontar o
+   * modal inteiro jogaria a foto de volta ao topo no meio da leitura.
    */
   function atualizarBotaoJogar(h) {
     if (!modalPlay) return;
 
-    const carregando = areasPorSlug === null;
-    const jogavel = ehJogavel(h.tipo);
+    const carregando = quizzesPorSlug === null;
+    const quiz = quizzesDoLugar(h.tipo)[0];
+    const jogavel = Boolean(quiz);
 
     modalPlay.disabled = !jogavel;
     modalPlay.classList.toggle("mapa-modal__play--bloqueado", !jogavel);
@@ -376,6 +383,8 @@
         ? "Carregando missões…"
         : "Sem missões disponíveis";
     modalPlay.dataset.cenario = h.tipo;
+    if (quiz) modalPlay.dataset.quiz = quiz.id;
+    else delete modalPlay.dataset.quiz;
     // Qual casa foi clicada: a tela da missão usa o número para mostrar o
     // interior daquela casa e a família que mora nela.
     if (h.casa) modalPlay.dataset.casa = h.casa;
@@ -435,10 +444,11 @@
   });
 
   modalPlay?.addEventListener("click", () => {
-    const tipo = modalPlay.dataset.cenario;
-    if (!tipo || modalPlay.disabled) return;
-    const casa = modalPlay.dataset.casa;
-    window.location.href = `missao.html?cenario=${encodeURIComponent(tipo)}`
+    const { quiz, cenario: tipo, casa } = modalPlay.dataset;
+    if (!quiz || modalPlay.disabled) return;
+    // O lugar e a casa vão junto só para a tela da missão escolher a foto.
+    window.location.href = `missao.html?quiz=${encodeURIComponent(quiz)}`
+      + `&cenario=${encodeURIComponent(tipo)}`
       + (casa ? `&casa=${encodeURIComponent(casa)}` : "");
   });
 
@@ -496,18 +506,22 @@
   /* ═══════════════════════════════════════════════════════════════════
      MISSÕES ATIVAS — a lista embaixo do mapa
 
-     Uma chamada só (API.getMeuMapa) devolve o bairro inteiro do ponto de
-     vista deste aluno. Lugar sem nada a fazer não vem na resposta, então
-     esta lista nunca precisa filtrar: o que chega, aparece.
+     "Missão" é o nome que o aluno vê para o quiz que o professor passou
+     para a turma. Uma chamada só (API.getMeuMapa) devolve as que ainda
+     têm pergunta para responder — quiz concluído não vem, então esta
+     lista nunca precisa filtrar: o que chega, aparece.
 
-     Cada card usa a IMAGEM do cenário, a mesma do mapa — é o que amarra
-     a lista ao lugar, em vez de virar um catálogo de temas genérico.
+     A mesma resposta acende o botão "Jogar" dos lugares do mapa: um
+     lugar é jogável quando alguma missão pendente o cobre.
+
+     Cada card usa a IMAGEM do primeiro lugar que o quiz cobre, a mesma
+     do mapa — é o que amarra a lista ao bairro.
      ═══════════════════════════════════════════════════════════════════ */
 
   const listaMissoes = document.getElementById("missions-list");
   const contadorMissoes = document.getElementById("missoes-contador");
 
-  // Cada acerto vale 10 pontos em cada barra que a missão alimenta.
+  // Cada acerto vale 10 pontos em cada barra que a questão alimenta.
   // Fixo por enquanto; quando a curva de progressão for definida com a
   // equipe de Medicina, este número sai daqui.
   const PONTOS_POR_ACERTO = 10;
@@ -515,67 +529,78 @@
   carregarMissoes();
 
   async function carregarMissoes() {
-    if (!listaMissoes) return;
+    let quizzes = [];
+    let erro = "";
 
     try {
-      const mapa = await API.getMeuMapa();
-      desenharMissoes(mapa.lugares || []);
-
+      const r = await API.getMeuMapa();
+      quizzes = r.quizzes || [];
     } catch (err) {
+      erro = err.message;
+    }
+
+    // Um quiz aparece em cada lugar que cobre. A resposta já vem da mais
+    // recente para a mais antiga, e essa ordem se mantém por lugar.
+    quizzesPorSlug = new Map();
+    for (const quiz of quizzes) {
+      for (const slug of quiz.cenarios || []) {
+        if (!quizzesPorSlug.has(slug)) quizzesPorSlug.set(slug, []);
+        quizzesPorSlug.get(slug).push(quiz);
+      }
+    }
+
+    // O modal pode já estar aberto, preso no "Carregando missões…".
+    if (hotspotDoModal) atualizarBotaoJogar(hotspotDoModal);
+
+    if (!listaMissoes) return;
+
+    if (erro) {
       listaMissoes.innerHTML = "";
       if (contadorMissoes) contadorMissoes.textContent = "";
 
       const aviso = document.createElement("p");
       aviso.className = "missoes-aviso";
-      aviso.textContent = err.message;
+      aviso.textContent = erro;
       listaMissoes.appendChild(aviso);
+      return;
     }
+
+    desenharMissoes(quizzes);
   }
 
-  function desenharMissoes(lugares) {
+  function desenharMissoes(quizzes) {
     listaMissoes.innerHTML = "";
 
-    if (!lugares.length) {
+    if (!quizzes.length) {
       if (contadorMissoes) contadorMissoes.textContent = "nenhuma agora";
 
       const vazio = document.createElement("p");
       vazio.className = "missoes-aviso";
       vazio.textContent =
-        "Você já cuidou de tudo o que havia no bairro. Volte quando a professora passar uma tarefa nova!";
+        "Nenhuma missão por enquanto. Quando o professor passar uma nova, ela aparece aqui!";
       listaMissoes.appendChild(vazio);
       return;
     }
 
-    // Um lugar pode render mais de um card: a exploração livre dele, e
-    // uma tarefa da professora para cada quiz que cobre aquele ponto.
-    const cards = [];
-    for (const lugar of lugares) {
-      for (const quiz of lugar.quizzes || []) cards.push(montarCard(lugar, quiz));
-      if (lugar.restantes > 0) cards.push(montarCard(lugar, null));
-    }
-
-    cards.forEach(c => listaMissoes.appendChild(c));
+    quizzes.forEach(q => listaMissoes.appendChild(montarCard(q)));
 
     if (contadorMissoes) {
       contadorMissoes.textContent =
-        cards.length === 1 ? "1 disponível" : `${cards.length} disponíveis`;
+        quizzes.length === 1 ? "1 disponível" : `${quizzes.length} disponíveis`;
     }
   }
 
-  /** Um card. Com `quiz`, é tarefa da professora; sem, é exploração livre. */
-  function montarCard(lugar, quiz) {
-    const cenario = CENARIOS[lugar.slug] || {};
-    const ehTarefa = Boolean(quiz);
+  /** O card de uma missão (quiz do professor). */
+  function montarCard(quiz) {
+    const slug = (quiz.cenarios || [])[0];
+    const cenario = CENARIOS[slug] || {};
 
-    const restantes = ehTarefa ? quiz.restantes : lugar.restantes;
-    const total = ehTarefa ? quiz.total : lugar.total;
-    const feitas = Math.max(0, total - restantes);
-    const pct = total ? Math.round((feitas / total) * 100) : 0;
+    const feitas = Math.max(0, quiz.total - quiz.restantes);
+    const pct = quiz.total ? Math.round((feitas / quiz.total) * 100) : 0;
 
     const el = document.createElement("div");
-    el.className = "mission-item" + (ehTarefa ? " mission-item--tarefa" : "");
-    el.dataset.slug = lugar.slug;
-    if (ehTarefa) el.dataset.quiz = quiz.id;
+    el.className = "mission-item mission-item--tarefa";
+    el.dataset.quiz = quiz.id;
 
     el.innerHTML = `
       <div class="mission-icon">
@@ -598,39 +623,22 @@
 
     const img = el.querySelector(".mission-icon img");
     img.src = `../imgs/${cenario.imagem || "UBS.png"}`;
-    img.alt = lugar.nome;
+    img.alt = cenario.nome || "";
 
-    // O título é o nome do quiz quando há tarefa; senão, o convite ao
-    // lugar. "Missão na UBS" diz mais que "UBS · 11 a 14 anos".
-    el.querySelector(".mission-name").textContent =
-      ehTarefa ? quiz.titulo : `Missão na ${lugar.nome}`;
-
-    el.querySelector(".mission-desc").textContent = ehTarefa
-      ? (quiz.descricao || "Tarefa da professora para a sua turma.")
-      : textoDoLugar(lugar);
+    el.querySelector(".mission-name").textContent = quiz.titulo;
+    el.querySelector(".mission-desc").textContent =
+      quiz.descricao || "Missão do professor para a sua turma.";
 
     el.querySelector(".progress-bar").style.width = `${pct}%`;
-    el.querySelector(".mission-xp").textContent = `+${restantes * PONTOS_POR_ACERTO} XP`;
+    el.querySelector(".mission-xp").textContent = `+${quiz.restantes * PONTOS_POR_ACERTO} XP`;
     el.querySelector(".mission-pct").textContent =
       feitas === 0 ? "Nova" : `${pct}%`;
 
     el.addEventListener("click", () => {
-      window.location.href = ehTarefa
-        ? `missao.html?quiz=${encodeURIComponent(quiz.id)}`
-        : `missao.html?cenario=${encodeURIComponent(lugar.slug)}`;
+      window.location.href = `missao.html?quiz=${encodeURIComponent(quiz.id)}`;
     });
 
     return el;
-  }
-
-  /** A linha de apoio da exploração livre: o que falta e o que aquilo enche. */
-  function textoDoLugar(lugar) {
-    const quantas = lugar.restantes === 1
-      ? "1 pergunta esperando"
-      : `${lugar.restantes} perguntas esperando`;
-
-    const areas = (lugar.areas || []).slice(0, 3).join(", ");
-    return areas ? `${quantas} · ${areas}` : quantas;
   }
 
   btnSair?.addEventListener('click', async () => {

@@ -74,16 +74,15 @@
   };
 
   // Segundos por pergunta, escolhidos pela professora ao criar o quiz.
-  // 0 = sem limite, que é o caso da exploração livre pelo mapa.
+  // 0 = sem limite.
   let tempoLimite = 0;
   let sobrandoSeg = 0;
   let relogio = null;   // o setInterval em andamento
 
-  let missao = null;
-  let quizAtual = null;   // null = exploração livre pelo mapa
-  let rodada = [];        
-  let indice = 0;         
-  let sobrando = 0;       
+  let quizAtual = null;
+  let rodada = [];
+  let indice = 0;
+  let sobrando = 0;
   let acertos = 0;
   let ganhos = {};
   let escolhida = null;   // { botao, letra } — marcada, ainda não confirmada
@@ -94,15 +93,15 @@
     const conta = await AUTH.exigirLogin();
     if (!conta) return;
 
-    // Dois modos, decididos pela URL:
-    //   ?quiz=7      -> tarefa da professora, com a lista já congelada
-    //   ?cenario=ubs -> exploração livre, sorteando uma rodada do lugar
+    // Só se joga dentro de uma missão, que é o quiz passado pelo
+    // professor: ?quiz=7. O mapa manda junto o lugar e a casa clicados
+    // (?cenario=casa&casa=3), que servem só para escolher a foto.
     const params = new URLSearchParams(window.location.search);
     const idQuiz = Number(params.get('quiz'));
     const slug = params.get('cenario');
     const casa = Number(params.get('casa'));
 
-    if (!idQuiz && !slug) {
+    if (!idQuiz) {
       window.location.href = 'mapa.html';
       return;
     }
@@ -110,44 +109,24 @@
     if (slug) mostrarFoto(slug, casa);
 
     try {
-      if (idQuiz) {
-        await carregarQuiz(idQuiz);
-        return;
-      }
-
-      // O servidor já devolve só as missões da faixa etária desta pessoa.
-      const missoes = await API.getMissoes(slug);
-
-      if (!missoes.length) {
-        return mostrarAviso(
-          'Nada por aqui ainda',
-          'Este ponto do mapa ainda não tem missão para a sua idade. Tente outro lugar!');
-      }
-
-      missao = missoes[0];
-      await carregarRodada();
-
+      await carregarQuiz(idQuiz, !slug);
     } catch (err) {
-      if (err.status === 404) {
-        return mostrarAviso(
-          'Só de passagem',
-          'Este lugar do bairro ainda não tem missão. Volte ao mapa e procure um ponto com tarefa.');
-      }
       mostrarAviso('Não foi possível carregar', err.message);
     }
   }
 
-  // A tarefa da professora: a lista já foi sorteada e congelada quando
-  // ela criou o quiz, então aqui não há sorteio — só se pula o que esta
-  // pessoa já acertou, para quem parou no meio continuar de onde estava.
-  async function carregarQuiz(id) {
+  // A lista já foi sorteada e congelada quando o professor criou o quiz,
+  // então aqui não há sorteio — só se pula o que esta pessoa já acertou,
+  // para quem parou no meio continuar de onde estava.
+  async function carregarQuiz(id, fotoDoQuiz) {
     const r = await API.getQuestoesDoQuiz(id);
 
     quizAtual = { id: r.id, titulo: r.titulo, descricao: r.descricao };
-    // Um quiz pode cobrir vários lugares; a foto é a do primeiro.
-    if (r.cenarios && r.cenarios.length) mostrarFoto(r.cenarios[0], 0);
+    // Aberto pela lista, sem lugar clicado: a foto é a do primeiro lugar
+    // que o quiz cobre.
+    if (fotoDoQuiz && r.cenarios && r.cenarios.length) mostrarFoto(r.cenarios[0], 0);
 
-    // O tempo vem do quiz, não da tela: foi a professora que escolheu, e
+    // O tempo vem do quiz, não da tela: foi o professor que escolheu, e
     // vale igual para a turma inteira.
     tempoLimite = Number(r.tempo_limite_segundos) || 0;
 
@@ -159,43 +138,16 @@
 
     if (!rodada.length) {
       return mostrarAviso(
-        'Tarefa concluída!',
-        `Você já acertou as ${r.total} questões que a professora passou. Bom trabalho!`);
+        'Missão concluída!',
+        `Você já acertou as ${r.total} questões que o professor passou. Bom trabalho!`);
     }
 
     aviso.hidden = true;
     fim.hidden = true;
     topo.hidden = false;
     titulo.textContent = r.titulo;
-    descricao.textContent = r.descricao || 'Tarefa da professora para a sua turma.';
+    descricao.textContent = r.descricao || 'Missão do professor para a sua turma.';
     document.title = `${r.titulo} - Heróis da Saúde`;
-
-    mostrarQuestao();
-  }
-
-  async function carregarRodada() {
-    const r = await API.getQuestoes(missao.id);
-
-    // Exploração livre: sem professora, sem relógio.
-    tempoLimite = 0;
-
-    rodada = r.questoes || [];
-    sobrando = r.restantes || 0;
-    indice = 0;
-    acertos = 0;
-    ganhos = {};
-
-    if (!rodada.length) {
-      return mostrarAviso(
-        'Você já concluiu tudo aqui!',
-        `Acertou todas as ${r.total} questões deste lugar. Procure outro ponto do mapa.`);
-    }
-
-    aviso.hidden = true;
-    fim.hidden = true;
-    topo.hidden = false;
-    titulo.textContent = missao.titulo;
-    descricao.textContent = missao.descricao || '';
 
     mostrarQuestao();
   }
@@ -346,7 +298,7 @@
     travarOpcoes(true);
 
     try {
-      const r = await API.responder(questao.id, letra, quizAtual ? quizAtual.id : null);
+      const r = await API.responder(questao.id, letra, quizAtual.id);
 
       if (r.acertou) {
         botao.classList.add('quiz-option--correct');
@@ -459,7 +411,7 @@
 
   btnMais.addEventListener('click', async () => {
     try {
-      await carregarRodada();
+      await carregarQuiz(quizAtual.id, false);
     } catch (err) {
       mostrarAviso('Não foi possível carregar', err.message);
     }

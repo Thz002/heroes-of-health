@@ -11,13 +11,13 @@
 --
 --  Rode DEPOIS de db/setup.sql e db/seed.sql.
 --
---  É seguro rodar quantas vezes quiser: cada missão e cada questão tem
---  um codigo_externo único, e o import é "on conflict do update".
+--  É seguro rodar quantas vezes quiser: cada questão tem um
+--  codigo_externo único, e o import é "on conflict do update".
 --  Rodar de novo corrige o texto SEM apagar nenhuma resposta já dada
 --  pelos alunos — o que um "delete + insert" destruiria, porque
 --  respostas_alunos referencia questoes com on delete cascade.
 --
---  225 questões, em 18 missões (cenário × nível).
+--  225 questões, em 18 grupos (cenário × nível).
 --
 --  As explicações nascem como PLACEHOLDER: o arquivo de origem não
 --  trazia o texto que o aluno vê ao errar. Troque cada uma aqui quando
@@ -54,649 +54,312 @@ begin
 end $$;
 
 
--- ── 1. As missões ────────────────────────────────────────────────────
--- Uma por (cenário × nível): é ela que carrega o lugar do mapa, a faixa
--- etária e as barras que enche. As questões herdam tudo isso.
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'CASA-N1', c.id, 'Casa · 7 a 10 anos', 'Perguntas de saúde ambientadas em casa, para a faixa de 7 a 10 anos. 18 questões.', 1
-  from cenarios c where c.slug = 'casa'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'CASA-N2', c.id, 'Casa · 11 a 14 anos', 'Perguntas de saúde ambientadas em casa, para a faixa de 11 a 14 anos. 18 questões.', 2
-  from cenarios c where c.slug = 'casa'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'CRECHE-N1', c.id, 'Creche · 7 a 10 anos', 'Perguntas de saúde ambientadas em creche, para a faixa de 7 a 10 anos. 3 questões.', 1
-  from cenarios c where c.slug = 'creche'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'ESCOLA-N1', c.id, 'Escola · 7 a 10 anos', 'Perguntas de saúde ambientadas em escola, para a faixa de 7 a 10 anos. 39 questões.', 1
-  from cenarios c where c.slug = 'escola'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'ESCOLA-N2', c.id, 'Escola · 11 a 14 anos', 'Perguntas de saúde ambientadas em escola, para a faixa de 11 a 14 anos. 24 questões.', 2
-  from cenarios c where c.slug = 'escola'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'FARMACIA-N1', c.id, 'Farmácia · 7 a 10 anos', 'Perguntas de saúde ambientadas em farmácia, para a faixa de 7 a 10 anos. 1 questões.', 1
-  from cenarios c where c.slug = 'farmacia'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'MERCADO-N1', c.id, 'Mercado · 7 a 10 anos', 'Perguntas de saúde ambientadas em mercado, para a faixa de 7 a 10 anos. 10 questões.', 1
-  from cenarios c where c.slug = 'mercado'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'MERCADO-N2', c.id, 'Mercado · 11 a 14 anos', 'Perguntas de saúde ambientadas em mercado, para a faixa de 11 a 14 anos. 20 questões.', 2
-  from cenarios c where c.slug = 'mercado'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'MERCADO-N3', c.id, 'Mercado · 15 a 18 anos', 'Perguntas de saúde ambientadas em mercado, para a faixa de 15 a 18 anos. 10 questões.', 3
-  from cenarios c where c.slug = 'mercado'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'PARQUE-N2', c.id, 'Parque · 11 a 14 anos', 'Perguntas de saúde ambientadas em parque, para a faixa de 11 a 14 anos. 23 questões.', 2
-  from cenarios c where c.slug = 'parque'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'PRACA-N1', c.id, 'Praça · 7 a 10 anos', 'Perguntas de saúde ambientadas em praça, para a faixa de 7 a 10 anos. 8 questões.', 1
-  from cenarios c where c.slug = 'praca'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'PRACA-N2', c.id, 'Praça · 11 a 14 anos', 'Perguntas de saúde ambientadas em praça, para a faixa de 11 a 14 anos. 3 questões.', 2
-  from cenarios c where c.slug = 'praca'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'QUADRA-N1', c.id, 'Campo de lazer · 7 a 10 anos', 'Perguntas de saúde ambientadas em campo de lazer, para a faixa de 7 a 10 anos. 1 questões.', 1
-  from cenarios c where c.slug = 'quadra'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'QUADRA-N2', c.id, 'Campo de lazer · 11 a 14 anos', 'Perguntas de saúde ambientadas em campo de lazer, para a faixa de 11 a 14 anos. 3 questões.', 2
-  from cenarios c where c.slug = 'quadra'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'UBS-N1', c.id, 'UBS · 7 a 10 anos', 'Perguntas de saúde ambientadas em ubs, para a faixa de 7 a 10 anos. 2 questões.', 1
-  from cenarios c where c.slug = 'ubs'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'UBS-N2', c.id, 'UBS · 11 a 14 anos', 'Perguntas de saúde ambientadas em ubs, para a faixa de 11 a 14 anos. 33 questões.', 2
-  from cenarios c where c.slug = 'ubs'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'UPA-N1', c.id, 'UPA · 7 a 10 anos', 'Perguntas de saúde ambientadas em upa, para a faixa de 7 a 10 anos. 4 questões.', 1
-  from cenarios c where c.slug = 'upa'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-insert into missoes (codigo_externo, cenario_id, titulo, descricao, nivel_etario)
-select 'UPA-N2', c.id, 'UPA · 11 a 14 anos', 'Perguntas de saúde ambientadas em upa, para a faixa de 11 a 14 anos. 5 questões.', 2
-  from cenarios c where c.slug = 'upa'
-on conflict (codigo_externo) do update
-  set titulo = excluded.titulo, descricao = excluded.descricao,
-      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario;
-
-
--- ── 2. Quais barras cada missão enche ────────────────────────────────
--- SEM ESTAS LINHAS O ALUNO ACERTA E NADA ACONTECE: o servidor lê daqui
--- para saber o que somar, e zero linhas = zero pontos, sem erro nenhum.
--- O peso de cada barra é proporcional a quantas questões da missão
--- realmente tratam daquele tema: numa missão de 39 questões em que só
--- 1 fala de vetores, acertar vale 10 em Saúde e 1 em Vetores. Sem isso
--- a barra de Vetores subiria com mérito que não existe.
-
--- CASA-N1: Educação=8, Felicidade=8, Limpeza=3, Saúde=9, Vacinação=1, Vetores=1
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 8),
-    ('Felicidade', 8),
-    ('Limpeza', 3),
-    ('Saúde', 9),
-    ('Vacinação', 1),
-    ('Vetores', 1)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'CASA-N1'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- CASA-N2: Educação=8, Felicidade=8, Saúde=6, Vacinação=1
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 8),
-    ('Felicidade', 8),
-    ('Saúde', 6),
-    ('Vacinação', 1)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'CASA-N2'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- CRECHE-N1: Felicidade=10, Limpeza=10, Saúde=10
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Felicidade', 10),
-    ('Limpeza', 10),
-    ('Saúde', 10)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'CRECHE-N1'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- ESCOLA-N1: Educação=9, Felicidade=10, Limpeza=1, Saúde=10, Vetores=1
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 9),
-    ('Felicidade', 10),
-    ('Limpeza', 1),
-    ('Saúde', 10),
-    ('Vetores', 1)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'ESCOLA-N1'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- ESCOLA-N2: Alimentação=1, Educação=9, Felicidade=4, Saúde=9, Vacinação=1
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Alimentação', 1),
-    ('Educação', 9),
-    ('Felicidade', 4),
-    ('Saúde', 9),
-    ('Vacinação', 1)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'ESCOLA-N2'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- FARMACIA-N1: Educação=10, Limpeza=10, Saúde=10, Vacinação=10, Vetores=10
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 10),
-    ('Limpeza', 10),
-    ('Saúde', 10),
-    ('Vacinação', 10),
-    ('Vetores', 10)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'FARMACIA-N1'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- MERCADO-N1: Alimentação=9, Educação=1, Felicidade=1, Saúde=1
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Alimentação', 9),
-    ('Educação', 1),
-    ('Felicidade', 1),
-    ('Saúde', 1)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'MERCADO-N1'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- MERCADO-N2: Alimentação=10, Educação=1, Felicidade=1, Saúde=2
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Alimentação', 10),
-    ('Educação', 1),
-    ('Felicidade', 1),
-    ('Saúde', 2)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'MERCADO-N2'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- MERCADO-N3: Alimentação=10
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Alimentação', 10)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'MERCADO-N3'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- PARQUE-N2: Educação=10, Felicidade=5, Saúde=10, Vacinação=1
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 10),
-    ('Felicidade', 5),
-    ('Saúde', 10),
-    ('Vacinação', 1)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'PARQUE-N2'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- PRACA-N1: Educação=9, Felicidade=9, Limpeza=2, Saúde=10, Vetores=1
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 9),
-    ('Felicidade', 9),
-    ('Limpeza', 2),
-    ('Saúde', 10),
-    ('Vetores', 1)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'PRACA-N1'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- PRACA-N2: Educação=7, Felicidade=3, Saúde=7, Vacinação=3
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 7),
-    ('Felicidade', 3),
-    ('Saúde', 7),
-    ('Vacinação', 3)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'PRACA-N2'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- QUADRA-N1: Educação=10, Felicidade=10, Saúde=10
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 10),
-    ('Felicidade', 10),
-    ('Saúde', 10)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'QUADRA-N1'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- QUADRA-N2: Felicidade=10, Saúde=7
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Felicidade', 10),
-    ('Saúde', 7)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'QUADRA-N2'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- UBS-N1: Educação=5, Felicidade=10, Limpeza=5, Saúde=10, Vacinação=5
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 5),
-    ('Felicidade', 10),
-    ('Limpeza', 5),
-    ('Saúde', 10),
-    ('Vacinação', 5)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'UBS-N1'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- UBS-N2: Alimentação=1, Educação=3, Felicidade=2, Saúde=8, Vacinação=7
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Alimentação', 1),
-    ('Educação', 3),
-    ('Felicidade', 2),
-    ('Saúde', 8),
-    ('Vacinação', 7)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'UBS-N2'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- UPA-N1: Educação=10, Felicidade=10, Saúde=10
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 10),
-    ('Felicidade', 10),
-    ('Saúde', 10)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'UPA-N1'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
--- UPA-N2: Educação=4, Felicidade=4, Saúde=4, Vacinação=6
-insert into missao_areas (missao_id, area_nome, pontos)
-select m.id, v.area, v.pontos from missoes m
-  cross join (values
-    ('Educação', 4),
-    ('Felicidade', 4),
-    ('Saúde', 4),
-    ('Vacinação', 6)
-  ) as v(area, pontos)
-  where m.codigo_externo = 'UPA-N2'
-on conflict (missao_id, area_nome) do update set pontos = excluded.pontos;
-
-
--- ── 3. As questões ───────────────────────────────────────────────────
+-- ── 1. As questões ───────────────────────────────────────────────────
+-- Cada uma carrega o próprio cenário e a própria faixa etária.
 
 -- CASA-N1 — 18 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-001', m.id, 'No bairro de João, algumas pessoas estão ajudando a combater a dengue. Qual atitude ajuda a evitar que o mosquito Aedes aegypti se reproduza?',
+select 'CASA-N1-001', c.id, 1, 'No bairro de João, algumas pessoas estão ajudando a combater a dengue. Qual atitude ajuda a evitar que o mosquito Aedes aegypti se reproduza?',
        'Deixar vasos e baldes com água no quintal.',
        'Retirar recipientes que possam acumular água.',
        'Manter as caixas-d''água abertas.',
        'Deixar as calhas entupidas.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-002', m.id, 'Depois de uma chuva, Ana percebeu que havia água acumulada em alguns recipientes no quintal. Por que é importante retirar essa água?',
+select 'CASA-N1-002', c.id, 1, 'Depois de uma chuva, Ana percebeu que havia água acumulada em alguns recipientes no quintal. Por que é importante retirar essa água?',
        'Porque a água da chuva deixa o quintal mais bonito.',
        'Para evitar que mosquitos tenham acesso à água e possam se reproduzir.',
        'Porque os mosquitos só aparecem quando está frio.',
        'Porque a água acumulada impede as plantas de crescerem.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-003', m.id, 'Por que devemos intensificar os cuidados contra o mosquito entre os meses de outubro e maio?',
+select 'CASA-N1-003', c.id, 1, 'Por que devemos intensificar os cuidados contra o mosquito entre os meses de outubro e maio?',
        'Porque é a época que o mosquito entra de férias.',
        'Porque é o período com maior risco de casos da doença devido ao clima favorável à reprodução do mosquito.',
        'Porque é quando as escolas estão fechadas.',
        'Porque os mosquitos preferem o inverno.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-004', m.id, 'Deixar os dentes sujos permitem que as bactérias estraguem nossos dentes. Sabendo disso, em quais momentos é importante escovar os dentes?',
+select 'CASA-N1-004', c.id, 1, 'Deixar os dentes sujos permitem que as bactérias estraguem nossos dentes. Sabendo disso, em quais momentos é importante escovar os dentes?',
        'Somente quando os dentes estiverem sujos.',
        'Apenas uma vez por dia.',
        'Sempre que comer e antes de dormir.',
        'Somente quando sentir dor de dente',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-005', m.id, 'Lavar as mãos não é apenas uma regra, é um ato de cuidado. Quando você lava as mãos, quem você está protegendo?',
+select 'CASA-N1-005', c.id, 1, 'Lavar as mãos não é apenas uma regra, é um ato de cuidado. Quando você lava as mãos, quem você está protegendo?',
        'Apenas a mim mesmo.',
        'Apenas as plantas da escola.',
        'A mim mesmo e a todas as pessoas que estão perto de mim.',
        'Somente os médicos e enfermeiros.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-006', m.id, 'Para que a lavagem das mãos funcione de verdade e elimine os microrganismos, como ela deve ser feita?',
+select 'CASA-N1-006', c.id, 1, 'Para que a lavagem das mãos funcione de verdade e elimine os microrganismos, como ela deve ser feita?',
        'Muito rápida, apenas molhando as pontas dos dedos.',
        'Usando apenas água, sem precisar de sabão.',
        'De forma cuidadosa, esfregando bem todas as partes das mãos com água e sabão.',
        'Limpando as mãos na toalha de um amigo.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-007', m.id, 'João quer ajudar na coleta seletiva da sua casa. Quais materiais podem ser separados para a reciclagem?',
+select 'CASA-N1-007', c.id, 1, 'João quer ajudar na coleta seletiva da sua casa. Quais materiais podem ser separados para a reciclagem?',
        'Somente restos de comida.',
        'Apenas roupas e sapatos.',
        'Papel, metal, plástico e vidro.',
        'Terra, folhas e areia',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-008', m.id, 'Pedro tem uma garrafa de vidro para colocar na coleta seletiva. Qual é o cuidado mais importante?',
+select 'CASA-N1-008', c.id, 1, 'Pedro tem uma garrafa de vidro para colocar na coleta seletiva. Qual é o cuidado mais importante?',
        'Jogar a garrafa no chão para quebrá-la.',
        'Misturar o vidro com restos de comida.',
        'Proteger o vidro para evitar acidentes com os trabalhadores.',
        'Esconder a garrafa dentro de uma caixa de papelão sem avisar ninguém.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-009', m.id, 'O que é importante fazer com as embalagens de plástico ou metal antes de colocá-las no saco de lixo?',
+select 'CASA-N1-009', c.id, 1, 'O que é importante fazer com as embalagens de plástico ou metal antes de colocá-las no saco de lixo?',
        'Pintá-las com canetinha colorida.',
        'Higienizá-las (limpá-las) para retirar restos de alimentos e líquidos.',
        'Enchê-las com água para ficarem pesadas.',
        'Rasgá-las em pedaços bem pequenininhos.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-010', m.id, 'Como funciona a coleta seletiva "porta a porta"?',
+select 'CASA-N1-010', c.id, 1, 'Como funciona a coleta seletiva "porta a porta"?',
        'Os moradores levam o lixo até o centro da cidade.',
        'Os moradores separam os recicláveis e os deixam no passeio (calçada) para o caminhão recolher.',
        'O caminhão passa pegando o lixo dentro da cozinha das casas.',
        'Não existe esse tipo de coleta.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-011', m.id, 'O sono é muito importante para a nossa saúde. Por que precisamos dormir bem todas as noites?',
+select 'CASA-N1-011', c.id, 1, 'O sono é muito importante para a nossa saúde. Por que precisamos dormir bem todas as noites?',
        'Porque dormir é uma perda de tempo e não ajuda em nada.',
        'Porque o descanso ajuda o corpo a recuperar as energias e mantém a mente saudável para o dia seguinte.',
        'Porque as crianças não precisam descansar, apenas os adultos.',
        'Porque o corpo só precisa de comida, nunca de descanso.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-012', m.id, 'Qual destas pessoas pode ser um adulto de confiança para uma criança?',
+select 'CASA-N1-012', c.id, 1, 'Qual destas pessoas pode ser um adulto de confiança para uma criança?',
        'Uma pessoa responsável por ela, como um familiar, professor ou outro adulto em quem confia.',
        'Somente uma pessoa que ela conheceu pela internet, pois toda pessoa legal é de confiança.',
        'Qualquer pessoa que peça para guardar um segredo.',
        'Ninguém, porque crianças precisam resolver tudo sozinhas.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-013', m.id, 'Qual destas frases uma criança deve lembrar?',
+select 'CASA-N1-013', c.id, 1, 'Qual destas frases uma criança deve lembrar?',
        '“Se eu conhecer a pessoa, preciso aceitar tudo o que ela fizer, independentemente de como eu me sinto.”',
        '“Se alguém pedir segredo ou me ameaçar, nunca posso contar.”',
        '“Meu corpo merece respeito e, se alguma situação me deixar inseguro ou desconfortável, preciso pedir ajuda.”',
        '“Problemas envolvendo adultos devem ser resolvidos somente por crianças.”',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-014', m.id, 'Se alguém disser que vai machucar uma criança caso ela conte o que aconteceu, o que ela deve fazer?',
+select 'CASA-N1-014', c.id, 1, 'Se alguém disser que vai machucar uma criança caso ela conte o que aconteceu, o que ela deve fazer?',
        'Guardar o segredo para evitar que a ameaça aconteça.',
        'Esperar alguns dias para descobrir se a ameaça realmente vai acontecer.',
        'Contar para um adulto de confiança e pedir ajuda, mesmo que tenha sido ameaçada.',
        'Tentar resolver a situação sozinha para não envolver outras pessoas.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-015', m.id, 'Se você contar para um adulto de confiança que algo ruim aconteceu e ele não acreditar em você de primeira, o que você deve fazer?',
+select 'CASA-N1-015', c.id, 1, 'Se você contar para um adulto de confiança que algo ruim aconteceu e ele não acreditar em você de primeira, o que você deve fazer?',
        'Achar que você está errado e desistir.',
        'Pedir desculpas para a pessoa que te deixou desconfortável.',
        'Continuar procurando e contando para outros adultos de confiança até que alguém te ajude de verdade.',
        'Guardar o segredo só para você a partir de agora.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-016', m.id, 'Por que o trabalho infantil é ruim para as crianças?',
+select 'CASA-N1-016', c.id, 1, 'Por que o trabalho infantil é ruim para as crianças?',
        'Porque diminui o tempo da criança para estudar, brincar, descansar e crescer bem.',
        'Porque pode fazer a criança aprender coisas novas antes dos seus amigos.',
        'Porque pode fazer a criança passar mais tempo fora de casa com outras pessoas.',
        'Porque pode fazer a criança receber responsabilidades diferentes das que costuma ter.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-017', m.id, 'Qual destas atividades é saudável para uma criança fazer?',
+select 'CASA-N1-017', c.id, 1, 'Qual destas atividades é saudável para uma criança fazer?',
        'Cuidar diariamente de outra criança durante muitas horas para que os adultos trabalhem.',
        'Vender produtos na rua durante o horário em que deveria estar estudando.',
        'Organizar os próprios brinquedos e ajudar a manter seu quarto arrumado.',
        'Trabalhar em um estabelecimento para receber dinheiro durante parte do dia.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N1-018', m.id, 'O que acontece quando uma criança gasta muitas horas do dia apenas fazendo "afazeres domésticos" (limpar, cozinhar, cuidar de irmãos)?',
+select 'CASA-N1-018', c.id, 1, 'O que acontece quando uma criança gasta muitas horas do dia apenas fazendo "afazeres domésticos" (limpar, cozinhar, cuidar de irmãos)?',
        'Ela fica mais inteligente que os outros colegas.',
        'Ela perde o tempo que deveria usar para estudar, brincar e descansar.',
        'Ela ajuda a escola a ficar mais vazia.',
        'Ela cresce mais rápido que as outras crianças.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N1'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -705,289 +368,307 @@ on conflict (codigo_externo) do update
 
 -- CASA-N2 — 18 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-001', m.id, 'O intestino grosso tem como principal função:',
+select 'CASA-N2-001', c.id, 2, 'O intestino grosso tem como principal função:',
        'Absorver água e formar as fezes',
        'Digerir proteínas',
        'Produzir bile',
        'Filtrar toxinas',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-002', m.id, 'Irmãos podem ter características diferentes porque:',
+select 'CASA-N2-002', c.id, 2, 'Irmãos podem ter características diferentes porque:',
        'Herdam combinações diferentes de genes dos pais',
        'Mudam seus genes ao nascer',
        'Recebem exatamente o mesmo DNA',
        'Herdam apenas genes da mãe',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-003', m.id, 'O que fazer com o óleo de cozinha usado?',
+select 'CASA-N2-003', c.id, 2, 'O que fazer com o óleo de cozinha usado?',
        'Jogar na pia',
        'Jogar no vaso sanitário',
        'Guardar em uma garrafa fechada e levar a um ponto de coleta',
        'Jogar no quintal',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-004', m.id, 'Pilhas, baterias e lâmpadas queimadas devem ser descartadas:',
+select 'CASA-N2-004', c.id, 2, 'Pilhas, baterias e lâmpadas queimadas devem ser descartadas:',
        'No lixo comum da cozinha',
        'Queimadas junto com folhas secas',
        'Enterradas no jardim',
        'Em pontos de coleta específicos, pois contêm substâncias tóxicas',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-005', m.id, 'Por quanto tempo, aproximadamente, devemos lavar as mãos com água e sabão?',
+select 'CASA-N2-005', c.id, 2, 'Por quanto tempo, aproximadamente, devemos lavar as mãos com água e sabão?',
        'Menos de 5 segundos',
        'Basta molhar as mãos rapidamente, sem sabão',
        'De 40 a 60 segundos, esfregando palmas, dorso, entre os dedos, polegares e unhas',
        'Exatamente 5 minutos',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-006', m.id, 'Qual destes itens NÃO deve ser compartilhado com outras pessoas?',
+select 'CASA-N2-006', c.id, 2, 'Qual destes itens NÃO deve ser compartilhado com outras pessoas?',
        'Escova de dentes, toalha de banho e lâmina de barbear',
        'Livro escolar',
        'Guarda-chuva',
        'Caneta',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-007', m.id, 'Escovar os dentes ao menos três vezes ao dia e usar fio dental previne principalmente:',
+select 'CASA-N2-007', c.id, 2, 'Escovar os dentes ao menos três vezes ao dia e usar fio dental previne principalmente:',
        'Alergia',
        'Gripe',
        'Cárie e doenças da gengiva',
        'Dor de cabeça',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-008', m.id, 'Qual é a melhor forma de evitar escorpiões perto de casa?',
+select 'CASA-N2-008', c.id, 2, 'Qual é a melhor forma de evitar escorpiões perto de casa?',
        'Deixar a porta aberta à noite',
        'Deixar entulho e folhas acumuladas no quintal',
        'Espalhar restos de comida no chão',
        'Manter o quintal limpo, sem entulho, e vedar ralos e frestas',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-009', m.id, 'Qual é o maior órgão do corpo humano e responsável pelo sentido do tato?',
+select 'CASA-N2-009', c.id, 2, 'Qual é o maior órgão do corpo humano e responsável pelo sentido do tato?',
        'Intestino',
        'Pulmão',
        'Pele',
        'Fígado',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-010', m.id, 'Qual órgão é responsável por bombear o sangue para todo o corpo?',
+select 'CASA-N2-010', c.id, 2, 'Qual órgão é responsável por bombear o sangue para todo o corpo?',
        'Estômago',
        'Rim',
        'Coração',
        'Pulmão',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-011', m.id, 'A orelha (ouvido) é responsável pela audição e também por qual outra função?',
+select 'CASA-N2-011', c.id, 2, 'A orelha (ouvido) é responsável pela audição e também por qual outra função?',
        'Respiração',
        'Digestão',
        'Equilíbrio',
        'Circulação',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-012', m.id, 'Qual situação representa uma estratégia saudável para lidar com o estresse?',
+select 'CASA-N2-012', c.id, 2, 'Qual situação representa uma estratégia saudável para lidar com o estresse?',
        'Organizar a rotina, manter atividades prazerosas e buscar apoio.',
        'Evitar qualquer conversa sobre aquilo que está causando preocupação.',
        'Aumentar o consumo de estimulantes para manter a produtividade.',
        'Abandonar atividades sociais até que todos os problemas desapareçam.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-013', m.id, 'Um amigo procura você e diz que não está conseguindo lidar com seus problemas. Qual resposta demonstra maior cuidado?',
+select 'CASA-N2-013', c.id, 2, 'Um amigo procura você e diz que não está conseguindo lidar com seus problemas. Qual resposta demonstra maior cuidado?',
        '“Todo mundo passa por isso; tente esquecer.”',
        '“Estou aqui para ouvir você e podemos procurar ajuda juntos.”',
        '“Você deveria resolver isso sozinho para ficar mais forte.”',
        '“Não conte para ninguém, porque isso precisa ficar entre nós.”',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-014', m.id, 'Qual hábito pode contribuir para a manutenção da saúde mental?',
+select 'CASA-N2-014', c.id, 2, 'Qual hábito pode contribuir para a manutenção da saúde mental?',
        'Manter rotina de sono, alimentação adequada, atividade física e vínculos sociais.',
        'Permanecer conectado às redes sociais durante grande parte do dia.',
        'Utilizar bebidas estimulantes sempre que estiver cansado.',
        'Evitar atividades de lazer para aumentar o tempo dedicado aos estudos.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-015', m.id, 'Um adolescente percebe que as redes sociais estão afetando sua autoestima. Qual atitude pode ser mais adequada?',
+select 'CASA-N2-015', c.id, 2, 'Um adolescente percebe que as redes sociais estão afetando sua autoestima. Qual atitude pode ser mais adequada?',
        'Aumentar o tempo de exposição para tentar se adaptar aos padrões.',
        'Comparar seu cotidiano somente com pessoas consideradas bem-sucedidas.',
        'Rever o conteúdo consumido e estabelecer limites para o uso das redes.',
        'Abandonar todas as relações presenciais para evitar comparações.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-016', m.id, 'Por que o sono é importante para adolescentes?',
+select 'CASA-N2-016', c.id, 2, 'Por que o sono é importante para adolescentes?',
        'Porque elimina completamente o estresse acumulado durante o dia.',
        'Porque participa de processos relacionados à memória, atenção e regulação emocional.',
        'Porque substitui os benefícios proporcionados pela alimentação equilibrada.',
        'Porque impede que alterações emocionais aconteçam durante a adolescência.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-017', m.id, 'Em relação à busca por ajuda psicológica ou médica, qual afirmação é mais adequada?',
+select 'CASA-N2-017', c.id, 2, 'Em relação à busca por ajuda psicológica ou médica, qual afirmação é mais adequada?',
        'Deve acontecer somente quando o problema impedir completamente a rotina.',
        'É necessária apenas quando houver sintomas físicos associados.',
        'Pode substituir todas as relações de amizade e familiares.',
        'Pode ser importante quando o sofrimento persiste ou interfere na vida cotidiana.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CASA-N2-018', m.id, 'Qual comportamento favorece a construção de uma rede de apoio?',
+select 'CASA-N2-018', c.id, 2, 'Qual comportamento favorece a construção de uma rede de apoio?',
        'Evitar conversar sobre problemas pessoais com qualquer pessoa.',
        'Manter contato apenas com pessoas que concordam com todas as suas opiniões.',
        'Construir relações baseadas em respeito, confiança e escuta.',
        'Resolver conflitos exclusivamente por meio de mensagens nas redes sociais.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CASA-N2'
+  from cenarios c where c.slug = 'casa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -996,49 +677,52 @@ on conflict (codigo_externo) do update
 
 -- CRECHE-N1 — 3 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CRECHE-N1-001', m.id, 'Você sabia que lavar as mãos com frequência protege você e as pessoas próximas de pegarem doenças? Escolha a opção correta de quando devemos lavar as mãos:',
+select 'CRECHE-N1-001', c.id, 1, 'Você sabia que lavar as mãos com frequência protege você e as pessoas próximas de pegarem doenças? Escolha a opção correta de quando devemos lavar as mãos:',
        'Uma vez por dia',
        'Só quando tem sujeira visível, pois não é preciso lavar quando estão sem impurezas.',
        'Várias vezes por dia, principalmente antes de comer.',
        'Somente depois de ir ao banheiro.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CRECHE-N1'
+  from cenarios c where c.slug = 'creche'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CRECHE-N1-002', m.id, 'Você sabia que as mãos podem carregar "bichinhos" invisíveis chamados microrganismos que nos fazem ficar doentes? Segundo os especialistas, qual é a medida mais importante para evitar que esses microrganismos se espalhem?',
+select 'CRECHE-N1-002', c.id, 1, 'Você sabia que as mãos podem carregar "bichinhos" invisíveis chamados microrganismos que nos fazem ficar doentes? Segundo os especialistas, qual é a medida mais importante para evitar que esses microrganismos se espalhem?',
        'Usar roupas sempre novas.',
        'Lavar as mãos de forma correta e frequente.',
        'Brincar apenas dentro de casa.',
        'Beber muita água com açúcar.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CRECHE-N1'
+  from cenarios c where c.slug = 'creche'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'CRECHE-N1-003', m.id, 'Às vezes, nossas mãos parecem limpas, mas elas são o principal caminho para os microrganismos entrarem em nosso corpo. Por que devemos lavar as mãos mesmo quando não vemos sujeira nelas?',
+select 'CRECHE-N1-003', c.id, 1, 'Às vezes, nossas mãos parecem limpas, mas elas são o principal caminho para os microrganismos entrarem em nosso corpo. Por que devemos lavar as mãos mesmo quando não vemos sujeira nelas?',
        'Porque a água gelada é divertida.',
        'Porque os microrganismos são tão pequenos que não conseguimos enxergar, mas eles continuam lá.',
        'Porque o sabão deixa a mão brilhando no escuro.',
        'Não precisamos lavar se não houver sujeira visível.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'CRECHE-N1'
+  from cenarios c where c.slug = 'creche'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -1047,625 +731,664 @@ on conflict (codigo_externo) do update
 
 -- ESCOLA-N1 — 39 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-001', m.id, 'A escola de Pedro está realizando uma campanha contra a dengue. Qual atitude mostra que os alunos também podem ajudar?',
+select 'ESCOLA-N1-001', c.id, 1, 'A escola de Pedro está realizando uma campanha contra a dengue. Qual atitude mostra que os alunos também podem ajudar?',
        'Jogar lixo e recipientes no pátio.',
        'Deixar água acumulada nos vasos de plantas.',
        'Tirar o lixo e evitar locais que possam acumular água.',
        'Abrir as caixas-d''água para verificar se há mosquitos.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-002', m.id, 'Na escola, Ana diz que está com as mãos sujas depois de brincar. Ela diz: “Não preciso lavar, porque não estou doente”. Isso está certo?',
+select 'ESCOLA-N1-002', c.id, 1, 'Na escola, Ana diz que está com as mãos sujas depois de brincar. Ela diz: “Não preciso lavar, porque não estou doente”. Isso está certo?',
        'Sim, pois só pessoas doentes precisam higienizar as mãos.',
        'Sim, pois sujeira não pode carregar microrganismos.',
        'Não, pois a higiene das mãos ajuda a prevenir a transmissão de microrganismos.',
        'Não, porque devemos lavar as mãos somente no hospital.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-003', m.id, 'Na escola, cada criança deve cuidar dos seus objetos pessoais. Qual atitude ajuda a manter bons hábitos de higiene e prevenir doenças?',
+select 'ESCOLA-N1-003', c.id, 1, 'Na escola, cada criança deve cuidar dos seus objetos pessoais. Qual atitude ajuda a manter bons hábitos de higiene e prevenir doenças?',
        'Compartilhar a garrafinha, o copo e os talheres com os colegas.',
        'Usar apenas os próprios objetos pessoais, como garrafinha e copo.',
        'Pegar a garrafinha de um colega quando esquecer a sua.',
        'Trocar a garrafinha com os amigos durante o recreio.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-004', m.id, 'Quando usamos o corrimão de uma escada no shopping ou pegamos em notas de dinheiro, nossas mãos tocam em lugares por onde muitas pessoas já passaram. Por que é fundamental lavar as mãos depois disso?',
+select 'ESCOLA-N1-004', c.id, 1, 'Quando usamos o corrimão de uma escada no shopping ou pegamos em notas de dinheiro, nossas mãos tocam em lugares por onde muitas pessoas já passaram. Por que é fundamental lavar as mãos depois disso?',
        'Porque o dinheiro e os corrimãos são sempre limpos e não oferecem risco.',
        'Porque as mãos são o principal caminho para a transmissão de microrganismos de uma pessoa para outra que podem nos deixar doentes.',
        'Porque só devemos lavar as mãos se elas estiverem visivelmente manchadas de sujeira.',
        'Porque a higiene só é importante quando estamos dentro de um hospital.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-005', m.id, 'Qual das situações abaixo é um exemplo de quando NÃO devemos chamar o SAMU?.',
+select 'ESCOLA-N1-005', c.id, 1, 'Qual das situações abaixo é um exemplo de quando NÃO devemos chamar o SAMU?.',
        'Queimaduras graves.',
        'Agressão por arma ou objetos afiados',
        'Afogamento.',
        'Dor de dente.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-006', m.id, 'Imagine que você presenciou um acidente de moto na rua. De acordo com as orientações do SAMU, o que NÃO devemos fazer?',
+select 'ESCOLA-N1-006', c.id, 1, 'Imagine que você presenciou um acidente de moto na rua. De acordo com as orientações do SAMU, o que NÃO devemos fazer?',
        'Ligar para o número 192.',
        'Tocar na pessoa ou retirar o capacete dela.',
        'Observar se a pessoa está consciente.',
        'Esperar a ajuda chegar.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-007', m.id, 'Em uma situação de emergência, às vezes queremos ajudar dando algo para a pessoa beber. Qual é a recomendação do SAMU sobre isso?',
+select 'ESCOLA-N1-007', c.id, 1, 'Em uma situação de emergência, às vezes queremos ajudar dando algo para a pessoa beber. Qual é a recomendação do SAMU sobre isso?',
        'Devemos dar bastante água gelada.',
        'Pode-se dar suco para a pessoa ganhar energia.',
        'Não se deve dar água aos acidentados.',
        'Devemos oferecer comida para a vítima se acalmar.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-008', m.id, 'Quando se liga para o 192 para pedir ajuda em um acidente, quais informações se deve tentar passar para os técnicos do SAMU?',
+select 'ESCOLA-N1-008', c.id, 1, 'Quando se liga para o 192 para pedir ajuda em um acidente, quais informações se deve tentar passar para os técnicos do SAMU?',
        'A cor favorita das pessoas que estão no local.',
        'O que as pessoas comeram no café da manhã.',
        'A quantidade de vítimas, se elas estão conscientes e a localização do ocorrido.',
        'Apenas o nome da rua, sem dizer o que aconteceu.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-009', m.id, 'Qual destas atitudes demonstra que uma pessoa está ajudando na coleta seletiva?',
+select 'ESCOLA-N1-009', c.id, 1, 'Qual destas atitudes demonstra que uma pessoa está ajudando na coleta seletiva?',
        'Misturar papel, plástico, metal e vidro com restos de comida.',
        'Separar os materiais recicláveis, higienizá-los e colocá-los corretamente para a coleta.',
        'Jogar embalagens recicláveis na rua.',
        'Deixar garrafas de vidro quebradas na calçada sem proteção.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-010', m.id, 'É correto misturar restos de comida ou líquidos com o papel e o plástico da coleta seletiva?',
+select 'ESCOLA-N1-010', c.id, 1, 'É correto misturar restos de comida ou líquidos com o papel e o plástico da coleta seletiva?',
        'Sim, porque tudo vai ser jogado fora mesmo.',
        'Não, pois isso causa contaminação e atrapalha a reciclagem dos materiais.',
        'Sim, para o lixo ficar com um cheiro diferente.',
        'Não, porque o caminhão só aceita lixo seco e sujo.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-011', m.id, 'Para onde os materiais recicláveis são levados para serem separados e aproveitados ao máximo?',
+select 'ESCOLA-N1-011', c.id, 1, 'Para onde os materiais recicláveis são levados para serem separados e aproveitados ao máximo?',
        'Para o meio da floresta.',
        'Para as cooperativas, onde trabalhadores treinados fazem a triagem.',
        'Para o fundo do rio.',
        'Para um parquinho de diversões.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-012', m.id, 'Como preferencialmente deve ser o saco plástico usado para colocar os materiais recicláveis?',
+select 'ESCOLA-N1-012', c.id, 1, 'Como preferencialmente deve ser o saco plástico usado para colocar os materiais recicláveis?',
        'Saco preto e grosso.',
        'Saco transparente.',
        'Sacola de pano colorida.',
        'Caixa de madeira pregada.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-013', m.id, 'Qual tipo de caminhão é usado para que a coleta seja mais rápida e consiga atender mais pessoas?',
+select 'ESCOLA-N1-013', c.id, 1, 'Qual tipo de caminhão é usado para que a coleta seja mais rápida e consiga atender mais pessoas?',
        'Caminhão de sorvete.',
        'Caminhão compactador (que consegue carregar muito mais material).',
        'Caminhão-baú pequeno.',
        'Caminhonete aberta.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-014', m.id, 'Por que os sentidos são importantes para o nosso dia a dia?',
+select 'ESCOLA-N1-014', c.id, 1, 'Por que os sentidos são importantes para o nosso dia a dia?',
        'Porque servem apenas para sentir sabores, já que os outros sentidos não são tão importantes.',
        'Porque funcionam somente quando estamos brincando.',
        'Porque ajudam o corpo a perceber o que acontece ao nosso redor e a reagir a diferentes situações.',
        'Porque substituem a necessidade de cuidar do nosso corpo.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-015', m.id, 'Maria começou a correr para pegar a bola. Para conseguir correr, seu corpo precisa trabalhar de forma integrada. Qual alternativa explica melhor isso?',
+select 'ESCOLA-N1-015', c.id, 1, 'Maria começou a correr para pegar a bola. Para conseguir correr, seu corpo precisa trabalhar de forma integrada. Qual alternativa explica melhor isso?',
        'Apenas os pés trabalham durante a corrida.',
        'Apenas os músculos trabalham durante a corrida.',
        'Diferentes partes do corpo trabalham juntas para realizar o movimento.',
        'O corpo não precisa de energia para se movimentar.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-016', m.id, 'Pedro percebeu que está cansado depois de brincar bastante. O que ele pode fazer para cuidar do seu corpo?',
+select 'ESCOLA-N1-016', c.id, 1, 'Pedro percebeu que está cansado depois de brincar bastante. O que ele pode fazer para cuidar do seu corpo?',
        'Continuar brincando sem parar, pois é normal e vai passar.',
        'Descansar, beber água e prestar atenção às necessidades do seu corpo.',
        'Ficar sem beber água, por que não precisa preocupar com a hidratação.',
        'Ignorar o cansaço, pois faz parte.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-017', m.id, 'Lucas ouviu um barulho muito alto e inesperado. Ele se assustou e rapidamente se afastou. O que essa situação mostra?',
+select 'ESCOLA-N1-017', c.id, 1, 'Lucas ouviu um barulho muito alto e inesperado. Ele se assustou e rapidamente se afastou. O que essa situação mostra?',
        'O corpo consegue perceber o que acontece ao seu redor e reagir.',
        'O corpo não percebe vários sentidos de uma só vez.',
        'Apenas as pernas participaram da reação.',
        'O corpo só reage quando alguém manda.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-018', m.id, 'Caio pegou uma pedra e percebeu que ela era áspera e fria. Qual sentido o ajudou principalmente a perceber essas características?',
+select 'ESCOLA-N1-018', c.id, 1, 'Caio pegou uma pedra e percebeu que ela era áspera e fria. Qual sentido o ajudou principalmente a perceber essas características?',
        'Audição.',
        'Visão.',
        'Tato.',
        'Movimento.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-019', m.id, 'O que pode acontecer com uma criança que fica muito tempo sem se movimentar ou praticar esportes (vida sedentária)?',
+select 'ESCOLA-N1-019', c.id, 1, 'O que pode acontecer com uma criança que fica muito tempo sem se movimentar ou praticar esportes (vida sedentária)?',
        'Ela terá muito mais energia e força.',
        'O corpo pode ficar preguiçoso e surgir problemas como falta de sono ou indisposição.',
        'Nada acontece, o corpo continua igual.',
        'Ela vai crescer mais rápido do que quem faz exercícios.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-020', m.id, 'Sobre a nossa alimentação, qual o caminho que a comida faz para nos dar energia?',
+select 'ESCOLA-N1-020', c.id, 1, 'Sobre a nossa alimentação, qual o caminho que a comida faz para nos dar energia?',
        'Ela entra pela boca e some assim que engolimos.',
        'Começa na boca, passa pelo estômago e os nutrientes são aproveitados por todo o corpo para nos dar força.',
        'A comida vai direto para os pés para podermos correr.',
        'O corpo não usa a comida para ter energia, apenas para sentir o sabor.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-021', m.id, 'Para crescer com saúde e alegria, o que as crianças devem aprender sobre seu próprio corpo?',
+select 'ESCOLA-N1-021', c.id, 1, 'Para crescer com saúde e alegria, o que as crianças devem aprender sobre seu próprio corpo?',
        'Que não precisam se preocupar com o que comem.',
        'Que devem apenas brincar no celular e não precisam dormir.',
        'Que é fundamental conhecer e cuidar do corpo, tendo bons hábitos todos os dias.',
        'Que o corpo se cuida sozinho, sem precisarmos de água ou boa comida.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-022', m.id, 'Lucas estava ajudando na cozinha e, sem querer, encostou o dedo em uma tampa de panela muito quente. Ele sentiu o calor imediatamente e puxou a mão bem rápido para não se queimar. Por que é importante que o nosso corpo, por meio de sentidos como o tato, perceba o calor e a dor?',
+select 'ESCOLA-N1-022', c.id, 1, 'Lucas estava ajudando na cozinha e, sem querer, encostou o dedo em uma tampa de panela muito quente. Ele sentiu o calor imediatamente e puxou a mão bem rápido para não se queimar. Por que é importante que o nosso corpo, por meio de sentidos como o tato, perceba o calor e a dor?',
        'Porque sentir dor é algo ruim e o corpo deveria aprender a ignorar o que acontece no ambiente ao nosso redor.',
        'Porque os sentidos nos ajudam a perceber o mundo e funcionam como um alerta, permitindo que o corpo reaja rápido para nos proteger de perigos e manter a nossa saúde.',
        'Porque o tato serve apenas para sentirmos se um brinquedo é macio ou duro, não tendo utilidade para a nossa proteção.',
        'Porque o corpo humano é uma máquina que não precisa sentir nada para saber como se desviar de objetos perigosos.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-023', m.id, 'Se uma criança estiver em uma situação que a deixe assustada, desconfortável ou insegura, o que ela deve fazer?',
+select 'ESCOLA-N1-023', c.id, 1, 'Se uma criança estiver em uma situação que a deixe assustada, desconfortável ou insegura, o que ela deve fazer?',
        'Guardar o segredo e não contar para ninguém o que aconteceu.',
        'Fazer de conta que nada aconteceu.',
        'Contar para um adulto de confiança e pedir ajuda.',
        'Achar que é culpa dela.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-024', m.id, 'O que significa respeitar os limites de uma criança?',
+select 'ESCOLA-N1-024', c.id, 1, 'O que significa respeitar os limites de uma criança?',
        'Perguntar se ela está confortável e respeitar quando ela disser que não quer algo.',
        'Continuar fazendo algo mesmo quando ela demonstra que não está confortável.',
        'Decidir por ela o que pode acontecer, sem perguntar como ela se sente.',
        'Fazer algo que ela não quer, desde que seja uma pessoa conhecida.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-025', m.id, 'O que significa abuso contra uma criança?',
+select 'ESCOLA-N1-025', c.id, 1, 'O que significa abuso contra uma criança?',
        'Quando um adulto orienta a criança sobre algo que ela fez de errado.',
        'Quando alguém ultrapassa os limites da criança e desrespeita seu corpo ou sua segurança.',
        'Quando uma criança fica triste por não poder fazer algo que gostaria.',
        'Quando um adulto estabelece uma regra para proteger a criança de algum perigo.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-026', m.id, 'Se uma criança disser “não” para alguma coisa relacionada ao seu corpo, o que deve acontecer?',
+select 'ESCOLA-N1-026', c.id, 1, 'Se uma criança disser “não” para alguma coisa relacionada ao seu corpo, o que deve acontecer?',
        'A outra pessoa deve respeitar sua decisão e parar o que estiver fazendo.',
        'A outra pessoa pode continuar, porque adultos sabem o que é melhor para ela.',
        'A outra pessoa pode insistir até que a criança mude de ideia sozinha.',
        'A outra pessoa pode continuar se disser que aquilo é apenas uma brincadeira.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-027', m.id, 'Se um amigo contar que está passando por uma situação que o deixa com medo ou desconfortável, o que você pode fazer?',
+select 'ESCOLA-N1-027', c.id, 1, 'Se um amigo contar que está passando por uma situação que o deixa com medo ou desconfortável, o que você pode fazer?',
        'Dizer que ele deve tentar resolver a situação sozinho primeiro.',
        'Pedir para ele contar somente para outras crianças que também sejam amigas dele.',
        'Dizer para ele esperar alguns dias para ver se a situação melhora antes de procurar ajuda.',
        'Ouvir o amigo e ajudá-lo a procurar um adulto de confiança.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-028', m.id, 'Qual situação mostra uma atitude de proteção?',
+select 'ESCOLA-N1-028', c.id, 1, 'Qual situação mostra uma atitude de proteção?',
        'Uma criança percebe que algo está errado, mas não conta para ninguém.',
        'Uma criança percebe que algo está errado, mas tenta resolver sozinha mesmo estando com medo.',
        'Uma criança percebe que algo está errado, mas continua na situação para não deixar a outra pessoa triste.',
        'Uma criança percebe que algo está errado, se afasta e procura um adulto de confiança.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-029', m.id, 'Sobre o seu corpo, o que é mais importante lembrar?',
+select 'ESCOLA-N1-029', c.id, 1, 'Sobre o seu corpo, o que é mais importante lembrar?',
        'Que qualquer adulto pode tocá-lo se for conhecido.',
        'Que meu corpo é meu íntimo e ninguém pode tocar em minhas partes íntimas sem um motivo de saúde ou higiene.',
        'Que não preciso aprender sobre como me proteger.',
        'Que outras pessoas decidem o que me deixa confortável.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-030', m.id, 'Qual dessas situações define o que é o abuso contra uma criança?',
+select 'ESCOLA-N1-030', c.id, 1, 'Qual dessas situações define o que é o abuso contra uma criança?',
        'É quando um adulto coloca regras para proteger a saúde da criança.',
        'É quando alguém desrespeita o corpo ou a segurança da criança, fazendo algo que a deixa assustada ou desconfortável.',
        'É quando um professor pede para o aluno fazer a lição de casa.',
        'É quando os pais pedem para a criança dormir cedo.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-031', m.id, 'As crianças têm direito de estudar, brincar, descansar e crescer com segurança. Por isso, existem regras que protegem as crianças de atividades de trabalho que podem prejudicar seu desenvolvimento. Com isso, você sabe o que é trabalho infantil?',
+select 'ESCOLA-N1-031', c.id, 1, 'As crianças têm direito de estudar, brincar, descansar e crescer com segurança. Por isso, existem regras que protegem as crianças de atividades de trabalho que podem prejudicar seu desenvolvimento. Com isso, você sabe o que é trabalho infantil?',
        'É quando uma criança ajuda a organizar seus brinquedos em casa.',
        'É quando uma criança participa de uma brincadeira com seus amigos.',
        'É quando uma criança aprende uma tarefa simples com sua família.',
        'É quando uma criança realiza um trabalho que não deveria fazer pela sua idade.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-032', m.id, 'Qual destas situações pode ser um exemplo de trabalho infantil?',
+select 'ESCOLA-N1-032', c.id, 1, 'Qual destas situações pode ser um exemplo de trabalho infantil?',
        'Uma criança ajuda a guardar seus brinquedos depois de brincar.',
        'Uma criança ajuda a colocar a mesa antes de uma refeição.',
        'Uma criança trabalha vendendo produtos na rua durante parte do dia.',
        'Uma criança ajuda a organizar seus materiais antes de ir para a escola.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-033', m.id, 'Por que é importante que uma criança tenha tempo para brincar?',
+select 'ESCOLA-N1-033', c.id, 1, 'Por que é importante que uma criança tenha tempo para brincar?',
        'Porque brincar ajuda a criança a se desenvolver, aprender e conviver com outras pessoas.',
        'Porque brincar faz com que a criança não precise participar das atividades da escola.',
        'Porque brincar permite que a criança tenha menos responsabilidades dentro de casa.',
        'Porque brincar é uma atividade que deve substituir todas as outras atividades da criança.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-034', m.id, 'Por que a escola é importante na prevenção do trabalho infantil?',
+select 'ESCOLA-N1-034', c.id, 1, 'Por que a escola é importante na prevenção do trabalho infantil?',
        'Porque ajuda a criança a ocupar seu tempo e seguir regras durante o dia.',
        'Porque ajuda a criança a aprender tarefas e responsabilidades para o futuro.',
        'Porque ajuda a criança a aprender, desenvolver habilidades e conhecer seus direitos.',
        'Porque ajuda a criança a se preparar para escolher uma profissão no futuro.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-035', m.id, 'Se uma criança tiver dúvidas sobre uma situação de trabalho, o que ela pode fazer?',
+select 'ESCOLA-N1-035', c.id, 1, 'Se uma criança tiver dúvidas sobre uma situação de trabalho, o que ela pode fazer?',
        'Guardar a dúvida para si e esperar até ficar mais velha para procurar uma resposta.',
        'Procurar informações sozinha na internet e decidir o que fazer sem contar a ninguém.',
        'Perguntar a outras crianças e seguir o conselho que receber da maioria delas.',
        'Conversar com um adulto de confiança e perguntar se aquela situação é segura e adequada.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-036', m.id, 'De acordo com as leis do Brasil, como o Estatuto da Criança e do Adolescente (ECA), o que as crianças têm direito de fazer?',
+select 'ESCOLA-N1-036', c.id, 1, 'De acordo com as leis do Brasil, como o Estatuto da Criança e do Adolescente (ECA), o que as crianças têm direito de fazer?',
        'Trabalhar o dia todo para ajudar os adultos.',
        'Estudar, brincar e crescer com proteção e segurança.',
        'Vender produtos em semáforos durante o horário da aula.',
        'Cuidar sozinhas de todos os afazeres da casa.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-037', m.id, 'No Brasil, existe uma idade mínima para que alguém possa começar a trabalhar de forma protegida, como "aprendiz". Que idade é essa?',
+select 'ESCOLA-N1-037', c.id, 1, 'No Brasil, existe uma idade mínima para que alguém possa começar a trabalhar de forma protegida, como "aprendiz". Que idade é essa?',
        '5 anos.',
        '10 anos.',
        '14 anos.',
        '8 anos.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-038', m.id, 'Existem programas do governo (como o PETI) que ajudam famílias em dificuldade. O que a criança deve fazer para que a família receba esse apoio?',
+select 'ESCOLA-N1-038', c.id, 1, 'Existem programas do governo (como o PETI) que ajudam famílias em dificuldade. O que a criança deve fazer para que a família receba esse apoio?',
        'Trabalhar em dobro durante as férias.',
        'Frequentar a escola regularmente e participar das atividades educativas.',
        'Aprender a vender doces na rua.',
        'Ficar em casa ajudando apenas nos afazeres domésticos.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N1-039', m.id, 'Se você conhecer um amigo que está deixando de ir à escola porque precisa trabalhar, o que seria o mais correto a fazer?',
+select 'ESCOLA-N1-039', c.id, 1, 'Se você conhecer um amigo que está deixando de ir à escola porque precisa trabalhar, o que seria o mais correto a fazer?',
        'Pedir para ele trabalhar mais para ganhar dinheiro.',
        'Não falar nada para ninguém.',
        'Conversar com um professor ou um adulto de confiança para que eles possam ajudar essa criança.',
        'Parar de estudar para trabalhar junto com ele.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N1'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -1674,385 +1397,409 @@ on conflict (codigo_externo) do update
 
 -- ESCOLA-N2 — 24 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-001', m.id, 'Qual estrutura controla a entrada e saída de substâncias da célula?',
+select 'ESCOLA-N2-001', c.id, 2, 'Qual estrutura controla a entrada e saída de substâncias da célula?',
        'Mitocôndria',
        'Núcleo',
        'Ribossomo',
        'Membrana plasmática',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-002', m.id, 'Se uma célula possui núcleo definido, ela é classificada como:',
+select 'ESCOLA-N2-002', c.id, 2, 'Se uma célula possui núcleo definido, ela é classificada como:',
        'Unicelular',
        'Viral',
        'Eucarionte',
        'Procarionte',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-003', m.id, 'A organela responsável pela produção de proteínas é o:',
+select 'ESCOLA-N2-003', c.id, 2, 'A organela responsável pela produção de proteínas é o:',
        'Lisossomo',
        'Centríolo',
        'Ribossomo',
        'Vacúolo',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-004', m.id, 'O citoplasma é importante porque:',
+select 'ESCOLA-N2-004', c.id, 2, 'O citoplasma é importante porque:',
        'É onde ficam as organelas e ocorrem diversas reações químicas',
        'Guarda o DNA',
        'Produz oxigênio',
        'Filtra o sangue',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-005', m.id, 'Qual destas células NÃO possui parede celular?',
+select 'ESCOLA-N2-005', c.id, 2, 'Qual destas células NÃO possui parede celular?',
        'Vegetal',
        'Bactéria',
        'Fungo',
        'Animal',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-006', m.id, 'A troca de oxigênio e gás carbônico acontece nos:',
+select 'ESCOLA-N2-006', c.id, 2, 'A troca de oxigênio e gás carbônico acontece nos:',
        'Diafragma',
        'Traqueia',
        'Brônquios',
        'Alvéolos',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-007', m.id, 'O fígado participa da digestão porque produz:',
+select 'ESCOLA-N2-007', c.id, 2, 'O fígado participa da digestão porque produz:',
        'Suco gástrico',
        'Saliva',
        'Insulina',
        'Bile',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-008', m.id, 'Qual sistema trabalha junto ao respiratório para distribuir oxigênio?',
+select 'ESCOLA-N2-008', c.id, 2, 'Qual sistema trabalha junto ao respiratório para distribuir oxigênio?',
        'Circulatório',
        'Esquelético',
        'Endócrino',
        'Linfático',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-009', m.id, 'O DNA é importante porque:',
+select 'ESCOLA-N2-009', c.id, 2, 'O DNA é importante porque:',
        'Contém as informações genéticas do organismo',
        'Forma os ossos',
        'Fabrica hormônios',
        'Produz sangue',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-010', m.id, 'Uma mutação é:',
+select 'ESCOLA-N2-010', c.id, 2, 'Uma mutação é:',
        'Um órgão',
        'Um tipo de bactéria',
        'Uma alteração no material genético',
        'Uma vitamina',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-011', m.id, 'Os cromossomos são encontrados principalmente no:',
+select 'ESCOLA-N2-011', c.id, 2, 'Os cromossomos são encontrados principalmente no:',
        'Núcleo',
        'Lisossomo',
        'Citoplasma',
        'Complexo de Golgi',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-012', m.id, 'Mendel realizou seus experimentos utilizando:',
+select 'ESCOLA-N2-012', c.id, 2, 'Mendel realizou seus experimentos utilizando:',
        'Feijão',
        'Milho',
        'Trigo',
        'Ervilhas',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-013', m.id, 'Existe uma vacina, disponível gratuitamente no SUS para adolescentes, que previne uma IST. Qual é essa infecção?',
+select 'ESCOLA-N2-013', c.id, 2, 'Existe uma vacina, disponível gratuitamente no SUS para adolescentes, que previne uma IST. Qual é essa infecção?',
        'Herpes',
        'Gonorreia',
        'Sífilis',
        'HPV (Papilomavírus Humano)',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-014', m.id, 'Qual número você deve ligar para chamar uma ambulância em uma emergência médica?',
+select 'ESCOLA-N2-014', c.id, 2, 'Qual número você deve ligar para chamar uma ambulância em uma emergência médica?',
        '192 (SAMU)',
        '193',
        '190',
        '100',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-015', m.id, 'Ratos em áreas com lixo acumulado podem transmitir qual doença, principalmente em épocas de enchente?',
+select 'ESCOLA-N2-015', c.id, 2, 'Ratos em áreas com lixo acumulado podem transmitir qual doença, principalmente em épocas de enchente?',
        'Dengue',
        'Catapora',
        'Caxumba',
        'Leptospirose',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-016', m.id, 'Restos de comida, cascas de fruta e borra de café são classificados como lixo:',
+select 'ESCOLA-N2-016', c.id, 2, 'Restos de comida, cascas de fruta e borra de café são classificados como lixo:',
        'Hospitalar',
        'Reciclável',
        'Orgânico',
        'Eletrônico',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-017', m.id, 'Qual é o número do Corpo de Bombeiros?',
+select 'ESCOLA-N2-017', c.id, 2, 'Qual é o número do Corpo de Bombeiros?',
        '190',
        '192',
        '181',
        '193',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-018', m.id, 'As partes íntimas do corpo (aquelas cobertas pelo maiô ou pela sunga) são:',
+select 'ESCOLA-N2-018', c.id, 2, 'As partes íntimas do corpo (aquelas cobertas pelo maiô ou pela sunga) são:',
        'Suas e particulares — ninguém deve tocá-las ou pedir para vê-las; em consultas de saúde, apenas com a presença e a autorização de um responsável',
        'De qualquer adulto que cuide de você',
        'De todos da família',
        'De quem oferecer presentes',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-019', m.id, 'Se um adulto ou outra pessoa te pedir para guardar um segredo sobre algo que te deixou desconfortável ou com medo, o certo é:',
+select 'ESCOLA-N2-019', c.id, 2, 'Se um adulto ou outra pessoa te pedir para guardar um segredo sobre algo que te deixou desconfortável ou com medo, o certo é:',
        'Fingir que nada aconteceu',
        'Guardar o segredo para não criar problema',
        'Contar só depois de muitos anos',
        'Contar imediatamente a um adulto de confiança, como pai, mãe, professor ou profissional da UBS',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-020', m.id, 'Qual é o canal nacional para denunciar violações de direitos de crianças e adolescentes, como violência e abuso?',
+select 'ESCOLA-N2-020', c.id, 2, 'Qual é o canal nacional para denunciar violações de direitos de crianças e adolescentes, como violência e abuso?',
        '199',
        '192',
        'Disque 100 (Disque Direitos Humanos), além do Conselho Tutelar',
        '190',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-021', m.id, 'Sobre o trabalho infantil no Brasil, é correto afirmar que:',
+select 'ESCOLA-N2-021', c.id, 2, 'Sobre o trabalho infantil no Brasil, é correto afirmar que:',
        'É bom porque ensina responsabilidade desde cedo',
        'É permitido em qualquer idade, desde que fora do horário escolar',
        'É permitido a partir dos 10 anos, se a família precisar',
        'É proibido; só é permitido trabalhar a partir dos 16 anos, ou aos 14 na condição de aprendiz, porque o trabalho precoce prejudica os estudos, a saúde e o desenvolvimento',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-022', m.id, 'Um estudante percebe que está há várias semanas desanimado, perdeu o interesse por atividades que gostava e apresenta dificuldade para realizar tarefas cotidianas. Qual atitude é mais adequada?',
+select 'ESCOLA-N2-022', c.id, 2, 'Um estudante percebe que está há várias semanas desanimado, perdeu o interesse por atividades que gostava e apresenta dificuldade para realizar tarefas cotidianas. Qual atitude é mais adequada?',
        'Esperar que o problema desapareça sem comentar com ninguém.',
        'Tentar esconder os sentimentos para evitar preocupação.',
        'Conversar com alguém de confiança e buscar orientação profissional.',
        'Procurar na internet um medicamento para controlar os sintomas.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-023', m.id, 'Um estudante está enfrentando dificuldades emocionais e acadêmicas simultaneamente. Qual abordagem é mais adequada?',
+select 'ESCOLA-N2-023', c.id, 2, 'Um estudante está enfrentando dificuldades emocionais e acadêmicas simultaneamente. Qual abordagem é mais adequada?',
        'Considerar os diferentes aspectos da situação e buscar apoio quando necessário.',
        'Concentrar-se exclusivamente nas notas para resolver os demais problemas.',
        'Abandonar atividades sociais até recuperar completamente o rendimento.',
        'Utilizar medicamentos por conta própria para aumentar a concentração.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'ESCOLA-N2-024', m.id, 'Por que o ambiente escolar pode contribuir para a promoção da alimentação saudável?',
+select 'ESCOLA-N2-024', c.id, 2, 'Por que o ambiente escolar pode contribuir para a promoção da alimentação saudável?',
        'Pode estimular escolhas alimentares adequadas e ampliar conhecimentos sobre alimentação.',
        'Pode substituir completamente as orientações dadas pela família e pelos serviços de saúde.',
        'Deve determinar uma dieta única para todos os estudantes.',
        'Deve concentrar suas ações exclusivamente na prevenção do excesso de peso.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'ESCOLA-N2'
+  from cenarios c where c.slug = 'escola'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -2061,17 +1808,18 @@ on conflict (codigo_externo) do update
 
 -- FARMACIA-N1 — 1 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'FARMACIA-N1-001', m.id, 'As vacinas ajudam a proteger não apenas uma pessoa, mas também toda a comunidade. Por que a vacinação é importante para a saúde coletiva?',
+select 'FARMACIA-N1-001', c.id, 1, 'As vacinas ajudam a proteger não apenas uma pessoa, mas também toda a comunidade. Por que a vacinação é importante para a saúde coletiva?',
        'Porque ajuda a prevenir doenças e a proteger a população.',
        'Porque faz com que ninguém nunca mais fique doente.',
        'Porque substitui todos os outros cuidados com a saúde.',
        'Porque somente pessoas que já tiveram uma doença precisam se vacinar.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'FARMACIA-N1'
+  from cenarios c where c.slug = 'farmacia'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -2080,161 +1828,171 @@ on conflict (codigo_externo) do update
 
 -- MERCADO-N1 — 10 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N1-001', m.id, 'Verdadeiro ou Falso',
+select 'MERCADO-N1-001', c.id, 1, 'Verdadeiro ou Falso',
        'O sono permite que o corpo recupere as energias e evita a sobrecarga, garantindo o bem-estar mental e físico necessário para o cérebro processar o conhecimento e memorizar o que foi estudado.',
        'Casa',
        '– Verdadeiro ou Falso',
        'As necessidades do corpo, como o sono e o descanso, são menos importantes do que passar a noite inteira acordado lendo.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N1'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N1-002', m.id, 'Bruno comeu só biscoito recheado no café da manhã e ficou com fome de novo rapidinho. Qual seria uma troca melhor para ele sentir menos fome?',
+select 'MERCADO-N1-002', c.id, 1, 'Bruno comeu só biscoito recheado no café da manhã e ficou com fome de novo rapidinho. Qual seria uma troca melhor para ele sentir menos fome?',
        'Comer mais biscoito recheado',
        'Comer uma fruta com um copo de leite',
        'Beber só refrigerante',
        'Não comer nada',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N1'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N1-003', m.id, 'Por que é importante ter frutas, verduras, carnes e cereais no prato, e não só um tipo de alimento?',
+select 'MERCADO-N1-003', c.id, 1, 'Por que é importante ter frutas, verduras, carnes e cereais no prato, e não só um tipo de alimento?',
        'Porque fica mais bonito',
        'Porque é mais barato',
        'Não tem nenhum motivo',
        'Porque cada tipo de alimento ajuda o corpo de um jeito diferente',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N1'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N1-004', m.id, 'Qual desses lanches é o mais equilibrado para levar para a escola?',
+select 'MERCADO-N1-004', c.id, 1, 'Qual desses lanches é o mais equilibrado para levar para a escola?',
        'Uma fruta, um pão e um suco natural',
        'Um pacote de salgadinho e um refrigerante',
        'Só um punhado de balas',
        'Um pote de sorvete',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N1'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N1-005', m.id, 'Ana notou que, quando come muita besteira antes do almoço, ela come menos comida saudável na hora da refeição principal. Isso acontece porque:',
+select 'MERCADO-N1-005', c.id, 1, 'Ana notou que, quando come muita besteira antes do almoço, ela come menos comida saudável na hora da refeição principal. Isso acontece porque:',
        'Besteiras dão mais fome depois',
        'Besteiras enchem a barriga sem nutrir o corpo direito',
        'Isso nunca acontece',
        'Comer besteira antes do almoço é sempre bom',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N1'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N1-006', m.id, 'No mercado, dois sucos estão lado a lado: um de caixinha industrializado e outro feito na hora com fruta de verdade. Qual costuma ser a opção mais saudável?',
+select 'MERCADO-N1-006', c.id, 1, 'No mercado, dois sucos estão lado a lado: um de caixinha industrializado e outro feito na hora com fruta de verdade. Qual costuma ser a opção mais saudável?',
        'O industrializado, porque dura mais tempo',
        'Os dois são exatamente iguais',
        'O feito com fruta de verdade',
        'Nenhum dos dois é bom',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N1'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N1-007', m.id, 'Comer o mesmo tipo de alimento todos os dias é melhor do que variar entre frutas, verduras, carnes e cereais.',
+select 'MERCADO-N1-007', c.id, 1, 'Comer o mesmo tipo de alimento todos os dias é melhor do que variar entre frutas, verduras, carnes e cereais.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N1'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N1-008', m.id, 'Uma criança que bebe muito refrigerante no lugar de água pode sentir mais sede ao longo do dia.',
+select 'MERCADO-N1-008', c.id, 1, 'Uma criança que bebe muito refrigerante no lugar de água pode sentir mais sede ao longo do dia.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N1'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N1-009', m.id, 'Se uma criança comer biscoito recheado pouco antes do almoço, é provável que ela coma menos da comida saudável do prato principal.',
+select 'MERCADO-N1-009', c.id, 1, 'Se uma criança comer biscoito recheado pouco antes do almoço, é provável que ela coma menos da comida saudável do prato principal.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N1'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N1-010', m.id, 'Lavar frutas e verduras antes de comer não faz diferença nenhuma para a saúde.',
+select 'MERCADO-N1-010', c.id, 1, 'Lavar frutas e verduras antes de comer não faz diferença nenhuma para a saúde.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N1'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -2243,321 +2001,341 @@ on conflict (codigo_externo) do update
 
 -- MERCADO-N2 — 20 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-001', m.id, 'Antes de comer frutas e verduras cruas, o correto é:',
+select 'MERCADO-N2-001', c.id, 2, 'Antes de comer frutas e verduras cruas, o correto é:',
        'Passar apenas um pano',
        'Descascar com a faca suja',
        'Lavar bem em água corrente e higienizar conforme orientação',
        'Comer direto da feira',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-002', m.id, 'Qual escolha está mais próxima das orientações de alimentação saudável?',
+select 'MERCADO-N2-002', c.id, 2, 'Qual escolha está mais próxima das orientações de alimentação saudável?',
        'Priorizar produtos ultraprocessados pela praticidade cotidiana.',
        'Organizar a alimentação com variedade e priorizar alimentos in natura ou minimamente processados.',
        'Retirar completamente os carboidratos independentemente das necessidades individuais.',
        'Substituir refeições principais por bebidas com vitaminas e minerais.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-003', m.id, 'Qual situação pode favorecer uma alimentação inadequada?',
+select 'MERCADO-N2-003', c.id, 2, 'Qual situação pode favorecer uma alimentação inadequada?',
        'Variar os alimentos consumidos ao longo da semana.',
        'Planejar refeições considerando a rotina e os alimentos disponíveis.',
        'Consumir frutas e verduras regularmente.',
        'Fazer grande parte das refeições com produtos ultraprocessados.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-004', m.id, 'Um adolescente deseja melhorar sua alimentação sem realizar dietas extremas. Qual estratégia é mais adequada?',
+select 'MERCADO-N2-004', c.id, 2, 'Um adolescente deseja melhorar sua alimentação sem realizar dietas extremas. Qual estratégia é mais adequada?',
        'Fazer mudanças graduais e buscar orientação quando houver necessidade.',
        'Eliminar grupos alimentares inteiros sem avaliação profissional.',
        'Substituir refeições por suplementos diariamente.',
        'Reduzir drasticamente a quantidade de alimentos consumidos.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-005', m.id, 'Qual opção representa uma fonte de hidratação adequada para o cotidiano?',
+select 'MERCADO-N2-005', c.id, 2, 'Qual opção representa uma fonte de hidratação adequada para o cotidiano?',
        'Refrigerantes com baixo teor calórico.',
        'Bebidas energéticas utilizadas regularmente.',
        'Água como principal bebida para hidratação.',
        'Bebidas alcoólicas em pequenas quantidades.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-006', m.id, 'Qual comportamento pode aumentar a ingestão de açúcar e sódio?',
+select 'MERCADO-N2-006', c.id, 2, 'Qual comportamento pode aumentar a ingestão de açúcar e sódio?',
        'Priorizar preparações feitas com alimentos básicos.',
        'Consumir frequentemente produtos ultraprocessados.',
        'Variar frutas e hortaliças ao longo da semana.',
        'Preparar refeições em casa sempre que possível.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-007', m.id, 'Qual estratégia pode contribuir para uma relação mais saudável com a alimentação?',
+select 'MERCADO-N2-007', c.id, 2, 'Qual estratégia pode contribuir para uma relação mais saudável com a alimentação?',
        'Comparar o próprio corpo constantemente com modelos das redes sociais.',
        'Classificar todos os alimentos como “permitidos” ou “proibidos”.',
        'Desenvolver hábitos equilibrados e evitar práticas alimentares extremas.',
        'Ignorar sinais de fome e saciedade para controlar o peso.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-008', m.id, 'Sobre alimentação saudável, qual afirmação é mais adequada?',
+select 'MERCADO-N2-008', c.id, 2, 'Sobre alimentação saudável, qual afirmação é mais adequada?',
        'Uma alimentação saudável exige excluir permanentemente alimentos específicos.',
        'O equilíbrio alimentar envolve variedade, qualidade e adequação à realidade da pessoa.',
        'O valor nutricional de uma refeição depende exclusivamente das calorias.',
        'Todos os adolescentes precisam consumir exatamente os mesmos alimentos.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-009', m.id, 'Qual alternativa apresenta uma forma de incorporar atividade física à rotina?',
+select 'MERCADO-N2-009', c.id, 2, 'Qual alternativa apresenta uma forma de incorporar atividade física à rotina?',
        'Escolher atividades prazerosas e adequadas à idade e às condições individuais.',
        'Realizar somente exercícios de alta intensidade.',
        'Praticar exercícios apenas quando houver tempo livre no fim do mês.',
        'Substituir todas as atividades de lazer por exercícios estruturados.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-010', m.id, 'Qual é um possível benefício da prática regular de atividade física?',
+select 'MERCADO-N2-010', c.id, 2, 'Qual é um possível benefício da prática regular de atividade física?',
        'Reduzir a necessidade de sono.',
        'Substituir a necessidade de alimentação equilibrada.',
        'Contribuir para saúde cardiovascular, física e mental.',
        'Evitar completamente o desenvolvimento de doenças.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-011', m.id, 'Qual situação caracteriza comportamento sedentário?',
+select 'MERCADO-N2-011', c.id, 2, 'Qual situação caracteriza comportamento sedentário?',
        'Caminhar até a escola diariamente.',
        'Permanecer longos períodos sentado utilizando dispositivos eletrônicos.',
        'Participar de uma aula de educação física.',
        'Praticar um esporte com amigos.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-012', m.id, 'Qual desses nutrientes é a principal fonte de energia rápida para o corpo?',
+select 'MERCADO-N2-012', c.id, 2, 'Qual desses nutrientes é a principal fonte de energia rápida para o corpo?',
        'Proteínas',
        'Carboidratos',
        'Vitaminas',
        'Fibras',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-013', m.id, 'O que são alimentos ultraprocessados?',
+select 'MERCADO-N2-013', c.id, 2, 'O que são alimentos ultraprocessados?',
        'Produtos industrializados com muitos aditivos, açúcar, sódio e gordura',
        'Alimentos colhidos diretamente da natureza',
        'Apenas frutas e verduras',
        'Alimentos orgânicos sem conservantes',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-014', m.id, 'Ao ler o rótulo de um alimento, qual informação ajuda a saber se ele tem muito sal?',
+select 'MERCADO-N2-014', c.id, 2, 'Ao ler o rótulo de um alimento, qual informação ajuda a saber se ele tem muito sal?',
        'Cor da embalagem',
        'Data de fabricação',
        'Quantidade de sódio',
        'Nome da marca',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-015', m.id, 'Qual desses grupos de alimentos é rico em proteínas?',
+select 'MERCADO-N2-015', c.id, 2, 'Qual desses grupos de alimentos é rico em proteínas?',
        'Arroz, pão e macarrão',
        'Balas e chocolates',
        'Refrigerantes',
        'Ovos, feijão e carnes',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-016', m.id, 'Alimentos in natura, como frutas, legumes e verduras, geralmente têm mais nutrientes que os ultraprocessados',
+select 'MERCADO-N2-016', c.id, 2, 'Alimentos in natura, como frutas, legumes e verduras, geralmente têm mais nutrientes que os ultraprocessados',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-017', m.id, 'Comer muito sódio (sal) não traz nenhum risco à saúde.',
+select 'MERCADO-N2-017', c.id, 2, 'Comer muito sódio (sal) não traz nenhum risco à saúde.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-018', m.id, 'Fibras, encontradas em alimentos como feijão e frutas, ajudam no bom funcionamento do intestino.',
+select 'MERCADO-N2-018', c.id, 2, 'Fibras, encontradas em alimentos como feijão e frutas, ajudam no bom funcionamento do intestino.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-019', m.id, 'Pular refeições regularmente é uma boa estratégia para ter mais energia no dia.',
+select 'MERCADO-N2-019', c.id, 2, 'Pular refeições regularmente é uma boa estratégia para ter mais energia no dia.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N2-020', m.id, 'Ler o rótulo dos alimentos ajuda a fazer escolhas mais saudáveis no mercado.',
+select 'MERCADO-N2-020', c.id, 2, 'Ler o rótulo dos alimentos ajuda a fazer escolhas mais saudáveis no mercado.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N2'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -2566,161 +2344,171 @@ on conflict (codigo_externo) do update
 
 -- MERCADO-N3 — 10 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N3-001', m.id, 'Segundo o Guia Alimentar para a População Brasileira, qual é a base recomendada da alimentação?',
+select 'MERCADO-N3-001', c.id, 3, 'Segundo o Guia Alimentar para a População Brasileira, qual é a base recomendada da alimentação?',
        'Alimentos ultraprocessados, por serem práticos',
        'Alimentos in natura e minimamente processados',
        'Suplementos alimentares industrializados',
        'Refeições prontas congeladas',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N3'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N3-002', m.id, 'O que caracteriza um "deserto alimentar" nas discussões de saúde pública?',
+select 'MERCADO-N3-002', c.id, 3, 'O que caracteriza um "deserto alimentar" nas discussões de saúde pública?',
        'Áreas urbanas ou rurais com pouco acesso a alimentos frescos e saudáveis a preços acessíveis',
        'Regiões com excesso de restaurantes saudáveis',
        'Locais onde só se vende água',
        'Regiões agrícolas com produção excessiva',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N3'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N3-003', m.id, 'Qual é uma consequência do consumo excessivo de alimentos ultraprocessados, segundo estudos de saúde pública?',
+select 'MERCADO-N3-003', c.id, 3, 'Qual é uma consequência do consumo excessivo de alimentos ultraprocessados, segundo estudos de saúde pública?',
        'Redução do risco de doenças crônicas',
        'Melhora automática da microbiota intestinal',
        'Aumento do risco de obesidade, diabetes tipo 2 e doenças cardiovasculares',
        'Nenhum efeito relevante à saúde',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N3'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N3-004', m.id, 'No rótulo de rotulagem nutricional frontal (selo de advertência), o que indica um alimento "alto em açúcar adicionado"?',
+select 'MERCADO-N3-004', c.id, 3, 'No rótulo de rotulagem nutricional frontal (selo de advertência), o que indica um alimento "alto em açúcar adicionado"?',
        'Um selo verde de "produto natural"',
        'Uma lupa preta com a informação "ALTO EM AÇÚCAR ADICIONADO"',
        'Nenhuma indicação é exigida por lei',
        'Apenas o preço do produto',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N3'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N3-005', m.id, 'Qual fator socioeconômico costuma influenciar diretamente o acesso a uma alimentação saudável?',
+select 'MERCADO-N3-005', c.id, 3, 'Qual fator socioeconômico costuma influenciar diretamente o acesso a uma alimentação saudável?',
        'Cor da embalagem dos produtos',
        'Marca do supermercado apenas',
        'Nenhum fator socioeconômico influencia o acesso',
        'Renda familiar e preço dos alimentos in natura em relação aos ultraprocessados',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N3'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N3-006', m.id, 'A insegurança alimentar está relacionada não apenas à quantidade, mas também à qualidade nutricional dos alimentos disponíveis para uma população.',
+select 'MERCADO-N3-006', c.id, 3, 'A insegurança alimentar está relacionada não apenas à quantidade, mas também à qualidade nutricional dos alimentos disponíveis para uma população.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N3'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N3-007', m.id, 'O Sistema Único de Saúde (SUS) não tem nenhuma política voltada à segurança alimentar e nutricional.',
+select 'MERCADO-N3-007', c.id, 3, 'O Sistema Único de Saúde (SUS) não tem nenhuma política voltada à segurança alimentar e nutricional.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N3'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N3-008', m.id, 'A rotulagem nutricional frontal, adotada no Brasil, tem como objetivo alertar o consumidor sobre excesso de açúcar, sódio e gorduras saturadas.',
+select 'MERCADO-N3-008', c.id, 3, 'A rotulagem nutricional frontal, adotada no Brasil, tem como objetivo alertar o consumidor sobre excesso de açúcar, sódio e gorduras saturadas.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N3'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N3-009', m.id, 'O consumo de alimentos ultraprocessados tem diminuído consistentemente no Brasil nas últimas décadas.',
+select 'MERCADO-N3-009', c.id, 3, 'O consumo de alimentos ultraprocessados tem diminuído consistentemente no Brasil nas últimas décadas.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N3'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'MERCADO-N3-010', m.id, 'Políticas públicas, como a taxação de bebidas açucaradas em alguns países, buscam reduzir o consumo excessivo de açúcar na população.',
+select 'MERCADO-N3-010', c.id, 3, 'Políticas públicas, como a taxação de bebidas açucaradas em alguns países, buscam reduzir o consumo excessivo de açúcar na população.',
        'Verdadeiro',
        'Falso',
        null,
        null,
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'MERCADO-N3'
+  from cenarios c where c.slug = 'mercado'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -2729,369 +2517,392 @@ on conflict (codigo_externo) do update
 
 -- PARQUE-N2 — 23 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-001', m.id, 'Se todos os predadores de um ambiente desaparecerem, é provável que:',
+select 'PARQUE-N2-001', c.id, 2, 'Se todos os predadores de um ambiente desaparecerem, é provável que:',
        'A população de presas aumente inicialmente',
        'A água desapareça',
        'Os produtores desapareçam primeiro',
        'Não ocorra nenhuma mudança',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-002', m.id, 'Os decompositores são essenciais porque:',
+select 'PARQUE-N2-002', c.id, 2, 'Os decompositores são essenciais porque:',
        'Produzem luz',
        'Fabricam chuva',
        'Reciclam nutrientes para o ambiente',
        'Eliminam oxigênio',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-003', m.id, 'Em uma cadeia alimentar, quem possui maior quantidade de energia?',
+select 'PARQUE-N2-003', c.id, 2, 'Em uma cadeia alimentar, quem possui maior quantidade de energia?',
        'Consumidores terciários',
        'Carnívoros',
        'Produtores',
        'Onívoros',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-004', m.id, 'A extinção de uma espécie pode afetar outras porque:',
+select 'PARQUE-N2-004', c.id, 2, 'A extinção de uma espécie pode afetar outras porque:',
        'Os seres vivos dependem uns dos outros nas cadeias alimentares',
        'Apenas os animais são afetados',
        'As espécies vivem isoladas',
        'As plantas não participam',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-005', m.id, 'Biodiversidade elevada geralmente indica:',
+select 'PARQUE-N2-005', c.id, 2, 'Biodiversidade elevada geralmente indica:',
        'Ausência de insetos',
        'Pouca vegetação',
        'Ambiente degradado',
        'Maior variedade de espécies e equilíbrio ecológico',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-006', m.id, 'A clorofila tem a função de:',
+select 'PARQUE-N2-006', c.id, 2, 'A clorofila tem a função de:',
        'Captar energia luminosa',
        'Produzir sementes',
        'Produzir água',
        'Absorver oxigênio',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-007', m.id, 'Durante a fotossíntese, a planta transforma energia:',
+select 'PARQUE-N2-007', c.id, 2, 'Durante a fotossíntese, a planta transforma energia:',
        'Elétrica em térmica',
        'Sonora em luminosa',
        'Térmica em elétrica',
        'Luminosa em energia química',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-008', m.id, 'Os estômatos são estruturas responsáveis principalmente por:',
+select 'PARQUE-N2-008', c.id, 2, 'Os estômatos são estruturas responsáveis principalmente por:',
        'Absorver nutrientes do solo',
        'Transportar seiva',
        'Produzir flores',
        'Realizar trocas gasosas',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-009', m.id, 'A raiz contribui para a sobrevivência da planta porque:',
+select 'PARQUE-N2-009', c.id, 2, 'A raiz contribui para a sobrevivência da planta porque:',
        'Produz frutos',
        'Libera sementes',
        'Absorve água e sais minerais',
        'Faz fotossíntese',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-010', m.id, 'O xilema transporta principalmente:',
+select 'PARQUE-N2-010', c.id, 2, 'O xilema transporta principalmente:',
        'Água e sais minerais',
        'Oxigênio',
        'Açúcar',
        'Gás carbônico',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-011', m.id, 'Qual mudança de estado físico ocorre na formação da chuva?',
+select 'PARQUE-N2-011', c.id, 2, 'Qual mudança de estado físico ocorre na formação da chuva?',
        'Fusão',
        'Solidificação',
        'Condensação',
        'Sublimação',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-012', m.id, 'O efeito estufa natural é importante porque:',
+select 'PARQUE-N2-012', c.id, 2, 'O efeito estufa natural é importante porque:',
        'Produz oxigênio',
        'Elimina a atmosfera',
        'Mantém a Terra em temperatura adequada para a vida',
        'Impede a luz solar',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-013', m.id, 'O aumento do efeito estufa está relacionado principalmente ao excesso de:',
+select 'PARQUE-N2-013', c.id, 2, 'O aumento do efeito estufa está relacionado principalmente ao excesso de:',
        'Hélio',
        'Vapor de água apenas',
        'Oxigênio',
        'Gás carbônico',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-014', m.id, 'Um recurso natural renovável é:',
+select 'PARQUE-N2-014', c.id, 2, 'Um recurso natural renovável é:',
        'Energia solar',
        'Petróleo',
        'Gás natural',
        'Carvão',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-015', m.id, 'Qual camada da atmosfera abriga a maior parte dos fenômenos meteorológicos?',
+select 'PARQUE-N2-015', c.id, 2, 'Qual camada da atmosfera abriga a maior parte dos fenômenos meteorológicos?',
        'Troposfera',
        'Mesosfera',
        'Estratosfera',
        'Exosfera',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-016', m.id, 'Uma planta foi colocada em um armário escuro por duas semanas. O que provavelmente acontecerá?',
+select 'PARQUE-N2-016', c.id, 2, 'Uma planta foi colocada em um armário escuro por duas semanas. O que provavelmente acontecerá?',
        'Terá dificuldade em produzir alimento pela falta de luz',
        'Crescerá normalmente',
        'Formará mais flores',
        'Produzirá mais oxigênio',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-017', m.id, 'Um peixe é retirado de um lago muito poluído. O fator ambiental que mais pode comprometer sua sobrevivência é:',
+select 'PARQUE-N2-017', c.id, 2, 'Um peixe é retirado de um lago muito poluído. O fator ambiental que mais pode comprometer sua sobrevivência é:',
        'Rotação da Terra',
        'Excesso de luz',
        'Gravidade',
        'Baixa qualidade da água',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-018', m.id, 'Um cientista testa duas plantas: uma recebe água diariamente e outra não. A água é a:',
+select 'PARQUE-N2-018', c.id, 2, 'Um cientista testa duas plantas: uma recebe água diariamente e outra não. A água é a:',
        'Hipótese',
        'Resultado',
        'Variável do experimento',
        'Conclusão',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-019', m.id, 'Qual atitude representa desenvolvimento sustentável?',
+select 'PARQUE-N2-019', c.id, 2, 'Qual atitude representa desenvolvimento sustentável?',
        'Desmatar para expandir cidades',
        'Descartar lixo em rios',
        'Queimar florestas',
        'Utilizar recursos naturais de forma responsável',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-020', m.id, 'Um morcego alimenta-se de frutos e ajuda a espalhar sementes. Nesse caso, ele exerce importante papel de:',
+select 'PARQUE-N2-020', c.id, 2, 'Um morcego alimenta-se de frutos e ajuda a espalhar sementes. Nesse caso, ele exerce importante papel de:',
        'Predador',
        'Produtor',
        'Dispersor de sementes',
        'Decompositor',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-021', m.id, 'Qual destas doenças é transmitida pela picada do mosquito Aedes aegypti?',
+select 'PARQUE-N2-021', c.id, 2, 'Qual destas doenças é transmitida pela picada do mosquito Aedes aegypti?',
        'Tuberculose',
        'Sarampo',
        'Catapora',
        'Dengue, zika e chikungunya',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-022', m.id, '“Saúde coletiva” significa que:',
+select 'PARQUE-N2-022', c.id, 2, '“Saúde coletiva” significa que:',
        'Cada um cuida apenas de si mesmo',
        'Saúde é assunto exclusivo do hospital',
        'A saúde de uma pessoa depende também do ambiente e das atitudes de toda a comunidade',
        'Só o médico é responsável pela saúde',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PARQUE-N2-023', m.id, 'Por que separar o lixo é importante?',
+select 'PARQUE-N2-023', c.id, 2, 'Por que separar o lixo é importante?',
        'Porque permite a reciclagem, reduz a poluição e melhora as condições de trabalho dos catadores',
        'Porque diminui a conta de luz',
        'Só para deixar a rua mais bonita',
        'Porque a lei obriga e não há outro motivo',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PARQUE-N2'
+  from cenarios c where c.slug = 'parque'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -3100,129 +2911,137 @@ on conflict (codigo_externo) do update
 
 -- PRACA-N1 — 8 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N1-001', m.id, 'Qual dessas atitudes representa melhor o cuidado coletivo com a saúde?',
+select 'PRACA-N1-001', c.id, 1, 'Qual dessas atitudes representa melhor o cuidado coletivo com a saúde?',
        'Pensar somente na própria saúde.',
        'Deixar os problemas do bairro para outras pessoas resolverem.',
        'Participar de ações de prevenção e ajudar a proteger a comunidade.',
        'Evitar conversar sobre problemas de saúde.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N1'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N1-002', m.id, 'Lucas terminou de brincar no parquinho e está na hora do lanche. Qual atitude é mais adequada antes de comer?',
+select 'PRACA-N1-002', c.id, 1, 'Lucas terminou de brincar no parquinho e está na hora do lanche. Qual atitude é mais adequada antes de comer?',
        'Comer logo, pois suas mãos parecem limpas. B) Limpar as mãos na roupa e começar a comer.',
        'Lavar as mãos com água e sabão antes de pegar o lanche.',
        'Esperar terminar o lanche para lavar as mãos.',
        'Escola e pracinha',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N1'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N1-003', m.id, 'O SAMU quer ajudar o maior número de pessoas possível, mesmo em lugares difíceis de chegar. Além das ambulâncias que andam nas ruas, que outros transportes eles podem usar? A) Patins e skates para ir mais rápido.',
+select 'PRACA-N1-003', c.id, 1, 'O SAMU quer ajudar o maior número de pessoas possível, mesmo em lugares difíceis de chegar. Além das ambulâncias que andam nas ruas, que outros transportes eles podem usar? A) Patins e skates para ir mais rápido.',
        'Ambulanchas (barcos) para atender em rios e aeromédicos (aviões ou helicópteros) para lugares distantes.',
        'Carroças puxadas por cavalos.',
        'Eles usam apenas um tipo de ambulância para todas as situações.',
        'UPA',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N1'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N1-004', m.id, 'Por que a coleta seletiva é importante para a nossa cidade e para o meio ambiente?',
+select 'PRACA-N1-004', c.id, 1, 'Por que a coleta seletiva é importante para a nossa cidade e para o meio ambiente?',
        'Porque separa materiais que podem ser aproveitados e reciclados.',
        'Porque faz com que todo o lixo seja mandado separado para o lixão.',
        'Porque aumenta a quantidade de lixo nas ruas.',
        'Porque permite misturar todos os tipos de lixo.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N1'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N1-005', m.id, 'A coleta seletiva traz benefícios para a sociedade e para o meio ambiente. Qual alternativa mostra uma dessas vantagens?',
+select 'PRACA-N1-005', c.id, 1, 'A coleta seletiva traz benefícios para a sociedade e para o meio ambiente. Qual alternativa mostra uma dessas vantagens?',
        'Ajuda a manter a cidade mais organizada e permite que materiais sejam reaproveitados.',
        'Aumenta a quantidade de lixo nas ruas e nos espaços públicos.',
        'Faz com que os materiais recicláveis sejam misturados ao lixo comum.',
        'Dificulta o trabalho das pessoas que fazem a separação dos materiais.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N1'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N1-006', m.id, 'Imagine que Pedro está comendo seu lanche enquanto conversa com um amigo. Qual alternativa mostra melhor como devemos entender o corpo humano?',
+select 'PRACA-N1-006', c.id, 1, 'Imagine que Pedro está comendo seu lanche enquanto conversa com um amigo. Qual alternativa mostra melhor como devemos entender o corpo humano?',
        'Cada parte do corpo funciona completamente sozinha, sem ligação com outros órgãos.',
        'Apenas os órgãos internos fazem parte do corpo.',
        'O corpo só funciona quando estamos fazendo exercícios.',
        'O corpo é formado por partes que podem trabalhar juntas e se relacionar com o ambiente.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N1'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N1-007', m.id, 'A frase "O corpo humano é uma máquina feita para o movimento" quer nos dizer que:  A) Devemos passar o dia todo sentados vendo televisão.',
+select 'PRACA-N1-007', c.id, 1, 'A frase "O corpo humano é uma máquina feita para o movimento" quer nos dizer que:  A) Devemos passar o dia todo sentados vendo televisão.',
        'Nosso corpo precisa de atividades físicas, como correr, pular e dançar, para funcionar bem e ter saúde.',
        'O corpo humano é exatamente igual a um carro de metal.',
        'Movimentar o corpo é ruim e nos deixa doentes.',
        'Escola e quadra',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N1'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N1-008', m.id, 'Verdadeiro ou Falso',
+select 'PRACA-N1-008', c.id, 1, 'Verdadeiro ou Falso',
        'A escola é um lugar seguro onde posso aprender a identificar situações perigosas e pedir ajuda se algo estiver errado.',
        'Escola',
        null,
        null,
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N1'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -3231,49 +3050,52 @@ on conflict (codigo_externo) do update
 
 -- PRACA-N2 — 3 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N2-001', m.id, 'Durante uma corrida entre Bruno e Ana, ele percebeu que ela estava muito ofegante e com o coração acelerado. A frequência cardíaca aumenta principalmente para:',
+select 'PRACA-N2-001', c.id, 2, 'Durante uma corrida entre Bruno e Ana, ele percebeu que ela estava muito ofegante e com o coração acelerado. A frequência cardíaca aumenta principalmente para:',
        'Produzir mais gordura',
        'Diminuir a temperatura',
        'Produzir saliva',
        'Levar mais oxigênio aos músculos',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N2'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N2-002', m.id, 'Qual atitude ajuda a evitar a proliferação do mosquito da dengue?',
+select 'PRACA-N2-002', c.id, 2, 'Qual atitude ajuda a evitar a proliferação do mosquito da dengue?',
        'Não deixar água parada em vasos, garrafas e caixas d’água destampadas',
        'Deixar pneus velhos acumulados no quintal',
        'Regar as plantas todos os dias',
        'Deixar o lixo aberto na calçada',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N2'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'PRACA-N2-003', m.id, 'Na coleta seletiva, a lixeira azul é destinada a qual material?',
+select 'PRACA-N2-003', c.id, 2, 'Na coleta seletiva, a lixeira azul é destinada a qual material?',
        'Papel e papelão',
        'Metal',
        'Plástico',
        'Vidro',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'PRACA-N2'
+  from cenarios c where c.slug = 'praca'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -3282,17 +3104,18 @@ on conflict (codigo_externo) do update
 
 -- QUADRA-N1 — 1 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'QUADRA-N1-001', m.id, 'Brincar, correr, dançar e praticar esportes são formas de movimentar o corpo. Por que esses movimentos são importantes?',
+select 'QUADRA-N1-001', c.id, 1, 'Brincar, correr, dançar e praticar esportes são formas de movimentar o corpo. Por que esses movimentos são importantes?',
        'Porque fazem apenas os braços ficarem mais fortes.',
        'Porque ajudam o corpo a funcionar bem e contribuem para o bem-estar.',
        'Porque o corpo precisa ficar em movimento o tempo todo, sem descansar.',
        'Porque substituem a alimentação.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'QUADRA-N1'
+  from cenarios c where c.slug = 'quadra'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -3301,49 +3124,52 @@ on conflict (codigo_externo) do update
 
 -- QUADRA-N2 — 3 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'QUADRA-N2-001', m.id, 'Um adolescente quer começar a praticar exercícios regularmente. Qual atitude é mais adequada?',
+select 'QUADRA-N2-001', c.id, 2, 'Um adolescente quer começar a praticar exercícios regularmente. Qual atitude é mais adequada?',
        'Reproduzir o treino de um atleta profissional.',
        'Começar imediatamente com exercícios de máxima intensidade.',
        'Utilizar suplementos antes de avaliar sua necessidade.',
        'Escolher atividades adequadas e aumentar a prática progressivamente.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'QUADRA-N2'
+  from cenarios c where c.slug = 'quadra'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'QUADRA-N2-002', m.id, 'Como a atividade física pode contribuir para a saúde mental?',
+select 'QUADRA-N2-002', c.id, 2, 'Como a atividade física pode contribuir para a saúde mental?',
        'Pode favorecer bem-estar, disposição e redução do estresse em muitas pessoas.',
        'Elimina a necessidade de acompanhamento profissional em saúde mental.',
        'Impede que emoções negativas ocorram durante a adolescência.',
        'Substitui completamente o sono como estratégia de recuperação.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'QUADRA-N2'
+  from cenarios c where c.slug = 'quadra'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'QUADRA-N2-003', m.id, 'Um adolescente sente dor persistente durante determinada atividade física. Qual atitude é mais adequada?',
+select 'QUADRA-N2-003', c.id, 2, 'Um adolescente sente dor persistente durante determinada atividade física. Qual atitude é mais adequada?',
        'Aumentar a intensidade para tentar superar a dor.',
        'Utilizar medicamentos sem orientação e continuar normalmente.',
        'Interromper ou adaptar a atividade e buscar avaliação quando necessário.',
        'Ignorar o sintoma se outras pessoas conseguirem realizar o exercício.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'QUADRA-N2'
+  from cenarios c where c.slug = 'quadra'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -3352,33 +3178,35 @@ on conflict (codigo_externo) do update
 
 -- UBS-N1 — 2 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N1-001', m.id, 'Lucas aprendeu na escola que a dengue é transmitida por um "vetor". O que é o vetor da dengue no Brasil?',
+select 'UBS-N1-001', c.id, 1, 'Lucas aprendeu na escola que a dengue é transmitida por um "vetor". O que é o vetor da dengue no Brasil?',
        'Uma formiga que vive no jardim.',
        'A fêmea do mosquito Aedes aegypti.',
        'Um passarinho que voa pela cidade.',
        'O lixo acumulado nas calçadas.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N1'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N1-002', m.id, 'Pedro está aprendendo sobre o corpo humano. A professora perguntou quais são os cinco sentidos que usamos para perceber o mundo ao nosso redor. Qual alternativa está correta?',
+select 'UBS-N1-002', c.id, 1, 'Pedro está aprendendo sobre o corpo humano. A professora perguntou quais são os cinco sentidos que usamos para perceber o mundo ao nosso redor. Qual alternativa está correta?',
        'Visão, audição, olfato, paladar e tato.',
        'Visão, respiração, olfato, paladar e movimento.',
        'Audição, coração, tato, respiração e paladar.',
        'Olfato, visão, movimento, audição e digestão.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N1'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -3387,529 +3215,562 @@ on conflict (codigo_externo) do update
 
 -- UBS-N2 — 33 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-001', m.id, 'Antibióticos combatem principalmente:',
+select 'UBS-N2-001', c.id, 2, 'Antibióticos combatem principalmente:',
        'Bactérias',
        'Parasitas',
        'Fungos',
        'Vírus',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-002', m.id, 'A vacinação cria proteção porque estimula a produção de:',
+select 'UBS-N2-002', c.id, 2, 'A vacinação cria proteção porque estimula a produção de:',
        'Anticorpos e memória imunológica',
        'Glicose',
        'Hemoglobina',
        'Plaquetas',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-003', m.id, 'Qual hábito reduz a transmissão de doenças respiratórias?',
+select 'UBS-N2-003', c.id, 2, 'Qual hábito reduz a transmissão de doenças respiratórias?',
        'Compartilhar copos',
        'Beber refrigerante',
        'Higienizar as mãos e cobrir a boca ao tossir',
        'Dormir menos',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-004', m.id, 'Uma dieta pobre em ferro pode causar:',
+select 'UBS-N2-004', c.id, 2, 'Uma dieta pobre em ferro pode causar:',
        'Miopia',
        'Asma',
        'Anemia',
        'Diabetes',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-005', m.id, 'O excesso de radiação ultravioleta pode aumentar o risco de:',
+select 'UBS-N2-005', c.id, 2, 'O excesso de radiação ultravioleta pode aumentar o risco de:',
        'Pneumonia',
        'Fratura',
        'Gastrite',
        'Câncer de pele',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-006', m.id, 'O que significa a sigla “IST”?',
+select 'UBS-N2-006', c.id, 2, 'O que significa a sigla “IST”?',
        'Inflamação Súbita da Traqueia',
        'Infecção Simples do Tórax',
        'Índice de Saúde Total',
        'Infecção Sexualmente Transmissível',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-007', m.id, 'Qual é o único método que protege ao mesmo tempo contra ISTs e gravidez?',
+select 'UBS-N2-007', c.id, 2, 'Qual é o único método que protege ao mesmo tempo contra ISTs e gravidez?',
        'Preservativo (camisinha)',
        'DIU',
        'Pílula anticoncepcional',
        'Injeção anticoncepcional',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-008', m.id, 'Qual destas situações NÃO transmite o HIV?',
+select 'UBS-N2-008', c.id, 2, 'Qual destas situações NÃO transmite o HIV?',
        'Abraçar, beijar o rosto ou dividir um copo com uma pessoa que vive com HIV',
        'Compartilhamento de seringas',
        'Relação sexual sem preservativo',
        'Da mãe para o bebê, sem tratamento na gravidez',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-009', m.id, 'Sobre os sintomas das ISTs, é correto afirmar que:',
+select 'UBS-N2-009', c.id, 2, 'Sobre os sintomas das ISTs, é correto afirmar que:',
        'Sempre causam dor forte',
        'Só aparecem em pessoas adultas',
        'Muitas vezes não causam sintoma nenhum, por isso é importante fazer exames',
        'Desaparecem sozinhas sem tratamento',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-010', m.id, 'Onde o bebê se desenvolve durante a gravidez?',
+select 'UBS-N2-010', c.id, 2, 'Onde o bebê se desenvolve durante a gravidez?',
        'No útero',
        'No estômago',
        'Nas trompas',
        'Nos ovários',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-011', m.id, 'Como se chama a célula reprodutora masculina?',
+select 'UBS-N2-011', c.id, 2, 'Como se chama a célula reprodutora masculina?',
        'Espermatozoide',
        'Glóbulo branco',
        'Óvulo',
        'Hormônio',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-012', m.id, 'A menstruação acontece porque:',
+select 'UBS-N2-012', c.id, 2, 'A menstruação acontece porque:',
        'O revestimento interno do útero descama quando não há gravidez',
        'A pessoa comeu algo errado',
        'O corpo está doente',
        'Os rins param de funcionar',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-013', m.id, 'Quais destas mudanças são normais na puberdade?',
+select 'UBS-N2-013', c.id, 2, 'Quais destas mudanças são normais na puberdade?',
        'Crescimento rápido de altura e aparecimento de espinhas',
        'Crescimento de pelos e mudança na voz',
        'Aumento da transpiração e mudanças de humor',
        'Todas as anteriores',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-014', m.id, 'Os ovários são responsáveis por:',
+select 'UBS-N2-014', c.id, 2, 'Os ovários são responsáveis por:',
        'Filtrar o sangue',
        'Digerir alimentos',
        'Produzir os óvulos e hormônios femininos',
        'Bombear o sangue',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-015', m.id, 'Você se queimou levemente com água quente. O que fazer primeiro?',
+select 'UBS-N2-015', c.id, 2, 'Você se queimou levemente com água quente. O que fazer primeiro?',
        'Passar pasta de dente',
        'Passar manteiga ou óleo',
        'Colocar a região embaixo de água corrente fria por alguns minutos',
        'Estourar as bolhas',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-016', m.id, 'Diabetes e hipertensão são doenças que:',
+select 'UBS-N2-016', c.id, 2, 'Diabetes e hipertensão são doenças que:',
        'São causadas por vírus',
        'São transmitidas por aperto de mão',
        'Só aparecem em idosos e não têm tratamento',
        'Não são contagiosas e podem ser controladas com hábitos saudáveis e acompanhamento na UBS',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-017', m.id, 'Sobre as infecções sexualmente transmissíveis (ISTs), é correto afirmar que:',
+select 'UBS-N2-017', c.id, 2, 'Sobre as infecções sexualmente transmissíveis (ISTs), é correto afirmar que:',
        'Todas provocam sintomas logo após a transmissão.',
        'Algumas podem permanecer sem sintomas durante determinado período.',
        'A presença de sintomas é suficiente para confirmar qualquer IST.',
        'Pessoas que apresentam aparência saudável não podem transmitir ISTs.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-018', m.id, 'Um adolescente deseja reduzir o risco de adquirir uma IST durante uma relação sexual. Qual estratégia apresenta maior relevância?',
+select 'UBS-N2-018', c.id, 2, 'Um adolescente deseja reduzir o risco de adquirir uma IST durante uma relação sexual. Qual estratégia apresenta maior relevância?',
        'Utilizar antibiótico antes da relação.',
        'Realizar higiene corporal imediatamente após a relação.',
        'Evitar qualquer conversa sobre saúde sexual.',
        'Utilizar preservativo corretamente e manter acompanhamento de saúde.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-019', m.id, 'Qual alternativa apresenta uma estratégia relacionada à prevenção do HPV?',
+select 'UBS-N2-019', c.id, 2, 'Qual alternativa apresenta uma estratégia relacionada à prevenção do HPV?',
        'Uso preventivo de antibióticos.',
        'Restrição de atividades físicas durante a adolescência.',
        'Realização periódica de exames de sangue para todos os adolescentes.',
        'Vacinação de acordo com as recomendações do Programa Nacional de Imunizações.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-020', m.id, 'Sobre métodos contraceptivos, qual afirmação é mais adequada?',
+select 'UBS-N2-020', c.id, 2, 'Sobre métodos contraceptivos, qual afirmação é mais adequada?',
        'Todos apresentam exatamente o mesmo mecanismo de ação.',
        'Os métodos possuem características diferentes e devem ser escolhidos considerando cada situação.',
        'Métodos hormonais protegem de maneira geral contra todas as ISTs.',
        'O uso de contraceptivos elimina a necessidade de orientação em saúde sexual.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-021', m.id, 'Em uma relação, consentimento significa:',
+select 'UBS-N2-021', c.id, 2, 'Em uma relação, consentimento significa:',
        'Concordar porque existe pressão do parceiro ou grupo de amigos.',
        'Aceitar determinada situação para evitar conflitos.',
        'Manifestar concordância de forma livre, consciente e sem coerção.',
        'Considerar que um relacionamento anterior significa consentimento permanente.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-022', m.id, 'Um adolescente suspeita que teve contato com uma IST. Qual conduta é mais adequada?',
+select 'UBS-N2-022', c.id, 2, 'Um adolescente suspeita que teve contato com uma IST. Qual conduta é mais adequada?',
        'Procurar um serviço de saúde para avaliação, orientação e, quando indicado, testagem.',
        'Utilizar medicamentos que tenham funcionado para outra pessoa.',
        'Esperar obrigatoriamente o surgimento de sintomas antes de procurar atendimento.',
        'Evitar comentar a situação para impedir qualquer constrangimento.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-023', m.id, 'Qual situação demonstra uma atitude responsável em relação à saúde sexual?',
+select 'UBS-N2-023', c.id, 2, 'Qual situação demonstra uma atitude responsável em relação à saúde sexual?',
        'Evitar qualquer conversa sobre prevenção para não gerar desconforto.',
        'Buscar informações confiáveis e conversar sobre prevenção e consentimento.',
        'Considerar que a prevenção é responsabilidade exclusiva de uma das pessoas.',
        'Basear decisões exclusivamente nas experiências relatadas por amigos.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-024', m.id, 'Sobre o preservativo, qual alternativa é correta?',
+select 'UBS-N2-024', c.id, 2, 'Sobre o preservativo, qual alternativa é correta?',
        'Sua função está relacionada exclusivamente à prevenção da gravidez.',
        'Deve ser utilizado somente quando houver suspeita de IST.',
        'Pode ser reutilizado se permanecer aparentemente íntegro.',
        'Seu uso correto contribui para prevenir gravidez e diversas ISTs.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-025', m.id, 'Um adolescente percebe que possui vacinas atrasadas. Qual deve ser sua primeira atitude?',
+select 'UBS-N2-025', c.id, 2, 'Um adolescente percebe que possui vacinas atrasadas. Qual deve ser sua primeira atitude?',
        'Procurar uma unidade de saúde para verificar e atualizar sua situação vacinal.',
        'Reiniciar todas as vacinas desde o nascimento por conta própria.',
        'Aguardar uma campanha nacional antes de procurar atendimento.',
        'Considerar desnecessárias as doses que não foram tomadas na idade prevista.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-026', m.id, 'Qual é uma das principais funções da vacinação?',
+select 'UBS-N2-026', c.id, 2, 'Qual é uma das principais funções da vacinação?',
        'Tratar qualquer infecção depois que ela se manifesta.',
        'Substituir medidas de higiene e prevenção ambiental.',
        'Estimular proteção contra determinadas doenças imunopreveníveis.',
        'Garantir que uma pessoa jamais desenvolva qualquer doença infecciosa.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-027', m.id, 'De acordo com o calendário de vacinação de 2026, a vacina HPV4 é indicada rotineiramente para:',
+select 'UBS-N2-027', c.id, 2, 'De acordo com o calendário de vacinação de 2026, a vacina HPV4 é indicada rotineiramente para:',
        'Apenas pessoas com mais de 20 anos.',
        'Apenas adolescentes que já tiveram contato com HPV.',
        'Somente pessoas que apresentam sintomas relacionados ao HPV.',
        'Crianças e adolescentes conforme faixa etária e histórico vacinal.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-028', m.id, 'Por que manter a vacinação atualizada é importante durante a adolescência?',
+select 'UBS-N2-028', c.id, 2, 'Por que manter a vacinação atualizada é importante durante a adolescência?',
        'Porque todas as vacinas da infância deixam de funcionar nessa fase.',
        'Porque adolescentes deixam de transmitir doenças após completar 15 anos.',
        'Porque algumas vacinas e reforços são indicados nessa etapa da vida.',
        'Porque a vacinação nessa idade elimina a necessidade de vacinação futura.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-029', m.id, 'Qual conjunto apresenta doenças que podem ser prevenidas por vacinação?',
+select 'UBS-N2-029', c.id, 2, 'Qual conjunto apresenta doenças que podem ser prevenidas por vacinação?',
        'Sarampo, hepatite B e tétano.',
        'Miopia, cárie e escoliose.',
        'Obesidade, ansiedade e hipertensão.',
        'Diabetes, acne e alergia alimentar.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-030', m.id, 'Um adolescente não sabe quais vacinas já recebeu. Qual fonte deve ser priorizada para verificar essa informação?',
+select 'UBS-N2-030', c.id, 2, 'Um adolescente não sabe quais vacinas já recebeu. Qual fonte deve ser priorizada para verificar essa informação?',
        'Comentários publicados em redes sociais.',
        'Relatos de familiares sobre as vacinas recebidas.',
        'Vídeos produzidos por influenciadores digitais.',
        'Cartão de vacinação e registros disponíveis nos serviços de saúde.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-031', m.id, 'Qual atitude contribui para a proteção coletiva por vacinação?',
+select 'UBS-N2-031', c.id, 2, 'Qual atitude contribui para a proteção coletiva por vacinação?',
        'Manter a própria vacinação atualizada conforme as recomendações.',
        'Vacinar-se somente quando houver casos próximos de determinada doença.',
        'Compartilhar medicamentos com pessoas que não estejam vacinadas.',
        'Substituir a vacinação por medidas individuais de higiene.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-032', m.id, 'Qual afirmação sobre vacinação é mais adequada?',
+select 'UBS-N2-032', c.id, 2, 'Qual afirmação sobre vacinação é mais adequada?',
        'Uma vacina protege obrigatoriamente contra todas as doenças infecciosas.',
        'As vacinas eliminam a necessidade de acompanhamento de saúde.',
        'A proteção proporcionada depende da vacina, do esquema e da situação individual.',
        'Uma pessoa vacinada nunca precisa verificar novamente seu cartão.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UBS-N2-033', m.id, 'Sobre obesidade na adolescência, qual afirmação é mais adequada?',
+select 'UBS-N2-033', c.id, 2, 'Sobre obesidade na adolescência, qual afirmação é mais adequada?',
        'É explicada exclusivamente pela quantidade de comida consumida.',
        'Pode ser resolvida sempre com dietas muito restritivas.',
        'Não possui relação com fatores sociais e ambientais.',
        'Envolve fatores biológicos, comportamentais, sociais e ambientais.',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UBS-N2'
+  from cenarios c where c.slug = 'ubs'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -3918,65 +3779,69 @@ on conflict (codigo_externo) do update
 
 -- UPA-N1 — 4 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UPA-N1-001', m.id, 'Em situações de emergência, devemos chamar o SAMU (Serviço de Atendimento Móvel de Urgência). Basta discar 192 no celular ou telefone fixo para conseguir ajuda. Esse serviço é gratuito e funciona TODOS os dias! Você sabe identificar situações de emergência? Selecione abaixo quando devemos chamar o SAMU:',
+select 'UPA-N1-001', c.id, 1, 'Em situações de emergência, devemos chamar o SAMU (Serviço de Atendimento Móvel de Urgência). Basta discar 192 no celular ou telefone fixo para conseguir ajuda. Esse serviço é gratuito e funciona TODOS os dias! Você sabe identificar situações de emergência? Selecione abaixo quando devemos chamar o SAMU:',
        'Corte com pouco sangramento.',
        'Febre prolongada.',
        'Acidentes com produtos perigosos.',
        'Vômito e diarreia.',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UPA-N1'
+  from cenarios c where c.slug = 'upa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UPA-N1-002', m.id, 'O SAMU pode ajudar pessoas que estão passando por uma situação de emergência. Sobre o serviço, qual alternativa está correta?',
+select 'UPA-N1-002', c.id, 1, 'O SAMU pode ajudar pessoas que estão passando por uma situação de emergência. Sobre o serviço, qual alternativa está correta?',
        'O SAMU funciona somente durante o dia.',
        'O SAMU pode ser chamado gratuitamente pelo número 192.',
        'Para chamar o SAMU, é preciso pagar.',
        'O SAMU atende apenas pessoas que sofreram acidentes.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UPA-N1'
+  from cenarios c where c.slug = 'upa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UPA-N1-003', m.id, 'Imagine que uma pessoa sofreu um choque elétrico e precisa de ajuda. O que devemos fazer?',
+select 'UPA-N1-003', c.id, 1, 'Imagine que uma pessoa sofreu um choque elétrico e precisa de ajuda. O que devemos fazer?',
        'Chamar o SAMU pelo número 192.',
        'Esperar algumas horas para ver se ela melhora.',
        'Levar a pessoa para fazer um exame no médico.',
        'Ligar para o SAMU somente se ela estiver com febre.',
        'A', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UPA-N1'
+  from cenarios c where c.slug = 'upa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UPA-N1-004', m.id, 'O SAMU conta com profissionais preparados para orientar as pessoas durante uma emergência. O que acontece quando ligamos para o 192?',
+select 'UPA-N1-004', c.id, 1, 'O SAMU conta com profissionais preparados para orientar as pessoas durante uma emergência. O que acontece quando ligamos para o 192?',
        'A ligação é encerrada imediatamente.',
        'Os profissionais coletam informações e podem orientar sobre os primeiros cuidados.',
        'A pessoa que ligou precisa ir até uma ambulância para receber atendimento.',
        'O SAMU sempre envia um avião, independentemente da situação.',
        'B', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UPA-N1'
+  from cenarios c where c.slug = 'upa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
@@ -3985,85 +3850,560 @@ on conflict (codigo_externo) do update
 
 -- UPA-N2 — 5 questões
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UPA-N2-001', m.id, 'Um colega está engasgado, tossindo forte e conseguindo respirar. O que fazer?',
+select 'UPA-N2-001', c.id, 2, 'Um colega está engasgado, tossindo forte e conseguindo respirar. O que fazer?',
        'Colocar o dedo na boca dele para retirar o alimento',
        'Bater forte nas costas com o punho fechado',
        'Incentivar que continue tossindo e pedir ajuda de um adulto',
        'Dar água imediatamente',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UPA-N2'
+  from cenarios c where c.slug = 'upa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UPA-N2-002', m.id, 'Alguém se cortou e está sangrando bastante. Qual a atitude correta?',
+select 'UPA-N2-002', c.id, 2, 'Alguém se cortou e está sangrando bastante. Qual a atitude correta?',
        'Passar pó de café ou terra',
        'Lavar com álcool e esfregar',
        'Pressionar o local com um pano limpo e procurar ajuda',
        'Deixar sangrar até parar sozinho',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UPA-N2'
+  from cenarios c where c.slug = 'upa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UPA-N2-003', m.id, 'Uma pessoa desmaiou perto de você. O que você deve fazer?',
+select 'UPA-N2-003', c.id, 2, 'Uma pessoa desmaiou perto de você. O que você deve fazer?',
        'Jogar água gelada no rosto',
        'Sacudir e levantar a pessoa rapidamente',
        'Deitar a pessoa de costas, elevar as pernas, afrouxar roupas apertadas e chamar ajuda',
        'Dar comida ou bebida imediatamente',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UPA-N2'
+  from cenarios c where c.slug = 'upa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UPA-N2-004', m.id, 'Ao ligar para o SAMU (192), qual informação é essencial passar?',
+select 'UPA-N2-004', c.id, 2, 'Ao ligar para o SAMU (192), qual informação é essencial passar?',
        'O nome do médico da família',
        'Apenas o seu nome',
        'Nada, basta ligar e desligar',
        'O endereço completo, o que aconteceu e quantas pessoas precisam de ajuda',
        'D', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UPA-N2'
+  from cenarios c where c.slug = 'upa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
 
-insert into questoes (codigo_externo, missao_id, enunciado,
+insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,
        opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)
-select 'UPA-N2-005', m.id, 'Durante uma ligação de emergência, você deve:',
+select 'UPA-N2-005', c.id, 2, 'Durante uma ligação de emergência, você deve:',
        'Desligar assim que falar o endereço',
        'Gritar até alguém atender',
        'Manter a calma, responder às perguntas e só desligar quando o atendente autorizar',
        'Passar informações inventadas para agilizar',
        'C', 'Explicação em elaboração pela equipe de Medicina. Confira a resposta correta e siga em frente — errar faz parte de aprender!'
-  from missoes m where m.codigo_externo = 'UPA-N2'
+  from cenarios c where c.slug = 'upa'
 on conflict (codigo_externo) do update
-  set enunciado = excluded.enunciado, missao_id = excluded.missao_id,
+  set enunciado = excluded.enunciado,
+      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,
       opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,
       opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,
       resposta_correta = excluded.resposta_correta,
       explicacao = excluded.explicacao;
+
+
+
+-- ── 2. Quais barras cada questão enche ───────────────────────────────
+-- SEM ESTAS LINHAS O ALUNO ACERTA E NADA ACONTECE: o servidor lê daqui
+-- para saber o que somar, e zero linhas = zero pontos, sem erro nenhum.
+-- O peso de cada barra é proporcional a quantas questões do mesmo
+-- cenário e nível realmente tratam daquele tema: num grupo de 39
+-- questões em que só 1 fala de vetores, acertar vale 10 em Saúde e 1
+-- em Vetores. Sem isso a barra de Vetores subiria com mérito que não
+-- existe.
+
+-- CASA-N1: Educação=8, Felicidade=8, Limpeza=3, Saúde=9, Vacinação=1, Vetores=1
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 8),
+    ('Felicidade', 8),
+    ('Limpeza', 3),
+    ('Saúde', 9),
+    ('Vacinação', 1),
+    ('Vetores', 1)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'CASA-N1-001',
+    'CASA-N1-002',
+    'CASA-N1-003',
+    'CASA-N1-004',
+    'CASA-N1-005',
+    'CASA-N1-006',
+    'CASA-N1-007',
+    'CASA-N1-008',
+    'CASA-N1-009',
+    'CASA-N1-010',
+    'CASA-N1-011',
+    'CASA-N1-012',
+    'CASA-N1-013',
+    'CASA-N1-014',
+    'CASA-N1-015',
+    'CASA-N1-016',
+    'CASA-N1-017',
+    'CASA-N1-018'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- CASA-N2: Educação=8, Felicidade=8, Saúde=6, Vacinação=1
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 8),
+    ('Felicidade', 8),
+    ('Saúde', 6),
+    ('Vacinação', 1)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'CASA-N2-001',
+    'CASA-N2-002',
+    'CASA-N2-003',
+    'CASA-N2-004',
+    'CASA-N2-005',
+    'CASA-N2-006',
+    'CASA-N2-007',
+    'CASA-N2-008',
+    'CASA-N2-009',
+    'CASA-N2-010',
+    'CASA-N2-011',
+    'CASA-N2-012',
+    'CASA-N2-013',
+    'CASA-N2-014',
+    'CASA-N2-015',
+    'CASA-N2-016',
+    'CASA-N2-017',
+    'CASA-N2-018'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- CRECHE-N1: Felicidade=10, Limpeza=10, Saúde=10
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Felicidade', 10),
+    ('Limpeza', 10),
+    ('Saúde', 10)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'CRECHE-N1-001',
+    'CRECHE-N1-002',
+    'CRECHE-N1-003'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- ESCOLA-N1: Educação=9, Felicidade=10, Limpeza=1, Saúde=10, Vetores=1
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 9),
+    ('Felicidade', 10),
+    ('Limpeza', 1),
+    ('Saúde', 10),
+    ('Vetores', 1)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'ESCOLA-N1-001',
+    'ESCOLA-N1-002',
+    'ESCOLA-N1-003',
+    'ESCOLA-N1-004',
+    'ESCOLA-N1-005',
+    'ESCOLA-N1-006',
+    'ESCOLA-N1-007',
+    'ESCOLA-N1-008',
+    'ESCOLA-N1-009',
+    'ESCOLA-N1-010',
+    'ESCOLA-N1-011',
+    'ESCOLA-N1-012',
+    'ESCOLA-N1-013',
+    'ESCOLA-N1-014',
+    'ESCOLA-N1-015',
+    'ESCOLA-N1-016',
+    'ESCOLA-N1-017',
+    'ESCOLA-N1-018',
+    'ESCOLA-N1-019',
+    'ESCOLA-N1-020',
+    'ESCOLA-N1-021',
+    'ESCOLA-N1-022',
+    'ESCOLA-N1-023',
+    'ESCOLA-N1-024',
+    'ESCOLA-N1-025',
+    'ESCOLA-N1-026',
+    'ESCOLA-N1-027',
+    'ESCOLA-N1-028',
+    'ESCOLA-N1-029',
+    'ESCOLA-N1-030',
+    'ESCOLA-N1-031',
+    'ESCOLA-N1-032',
+    'ESCOLA-N1-033',
+    'ESCOLA-N1-034',
+    'ESCOLA-N1-035',
+    'ESCOLA-N1-036',
+    'ESCOLA-N1-037',
+    'ESCOLA-N1-038',
+    'ESCOLA-N1-039'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- ESCOLA-N2: Alimentação=1, Educação=9, Felicidade=4, Saúde=9, Vacinação=1
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Alimentação', 1),
+    ('Educação', 9),
+    ('Felicidade', 4),
+    ('Saúde', 9),
+    ('Vacinação', 1)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'ESCOLA-N2-001',
+    'ESCOLA-N2-002',
+    'ESCOLA-N2-003',
+    'ESCOLA-N2-004',
+    'ESCOLA-N2-005',
+    'ESCOLA-N2-006',
+    'ESCOLA-N2-007',
+    'ESCOLA-N2-008',
+    'ESCOLA-N2-009',
+    'ESCOLA-N2-010',
+    'ESCOLA-N2-011',
+    'ESCOLA-N2-012',
+    'ESCOLA-N2-013',
+    'ESCOLA-N2-014',
+    'ESCOLA-N2-015',
+    'ESCOLA-N2-016',
+    'ESCOLA-N2-017',
+    'ESCOLA-N2-018',
+    'ESCOLA-N2-019',
+    'ESCOLA-N2-020',
+    'ESCOLA-N2-021',
+    'ESCOLA-N2-022',
+    'ESCOLA-N2-023',
+    'ESCOLA-N2-024'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- FARMACIA-N1: Educação=10, Limpeza=10, Saúde=10, Vacinação=10, Vetores=10
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 10),
+    ('Limpeza', 10),
+    ('Saúde', 10),
+    ('Vacinação', 10),
+    ('Vetores', 10)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'FARMACIA-N1-001'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- MERCADO-N1: Alimentação=9, Educação=1, Felicidade=1, Saúde=1
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Alimentação', 9),
+    ('Educação', 1),
+    ('Felicidade', 1),
+    ('Saúde', 1)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'MERCADO-N1-001',
+    'MERCADO-N1-002',
+    'MERCADO-N1-003',
+    'MERCADO-N1-004',
+    'MERCADO-N1-005',
+    'MERCADO-N1-006',
+    'MERCADO-N1-007',
+    'MERCADO-N1-008',
+    'MERCADO-N1-009',
+    'MERCADO-N1-010'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- MERCADO-N2: Alimentação=10, Educação=1, Felicidade=1, Saúde=2
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Alimentação', 10),
+    ('Educação', 1),
+    ('Felicidade', 1),
+    ('Saúde', 2)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'MERCADO-N2-001',
+    'MERCADO-N2-002',
+    'MERCADO-N2-003',
+    'MERCADO-N2-004',
+    'MERCADO-N2-005',
+    'MERCADO-N2-006',
+    'MERCADO-N2-007',
+    'MERCADO-N2-008',
+    'MERCADO-N2-009',
+    'MERCADO-N2-010',
+    'MERCADO-N2-011',
+    'MERCADO-N2-012',
+    'MERCADO-N2-013',
+    'MERCADO-N2-014',
+    'MERCADO-N2-015',
+    'MERCADO-N2-016',
+    'MERCADO-N2-017',
+    'MERCADO-N2-018',
+    'MERCADO-N2-019',
+    'MERCADO-N2-020'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- MERCADO-N3: Alimentação=10
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Alimentação', 10)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'MERCADO-N3-001',
+    'MERCADO-N3-002',
+    'MERCADO-N3-003',
+    'MERCADO-N3-004',
+    'MERCADO-N3-005',
+    'MERCADO-N3-006',
+    'MERCADO-N3-007',
+    'MERCADO-N3-008',
+    'MERCADO-N3-009',
+    'MERCADO-N3-010'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- PARQUE-N2: Educação=10, Felicidade=5, Saúde=10, Vacinação=1
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 10),
+    ('Felicidade', 5),
+    ('Saúde', 10),
+    ('Vacinação', 1)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'PARQUE-N2-001',
+    'PARQUE-N2-002',
+    'PARQUE-N2-003',
+    'PARQUE-N2-004',
+    'PARQUE-N2-005',
+    'PARQUE-N2-006',
+    'PARQUE-N2-007',
+    'PARQUE-N2-008',
+    'PARQUE-N2-009',
+    'PARQUE-N2-010',
+    'PARQUE-N2-011',
+    'PARQUE-N2-012',
+    'PARQUE-N2-013',
+    'PARQUE-N2-014',
+    'PARQUE-N2-015',
+    'PARQUE-N2-016',
+    'PARQUE-N2-017',
+    'PARQUE-N2-018',
+    'PARQUE-N2-019',
+    'PARQUE-N2-020',
+    'PARQUE-N2-021',
+    'PARQUE-N2-022',
+    'PARQUE-N2-023'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- PRACA-N1: Educação=9, Felicidade=9, Limpeza=2, Saúde=10, Vetores=1
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 9),
+    ('Felicidade', 9),
+    ('Limpeza', 2),
+    ('Saúde', 10),
+    ('Vetores', 1)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'PRACA-N1-001',
+    'PRACA-N1-002',
+    'PRACA-N1-003',
+    'PRACA-N1-004',
+    'PRACA-N1-005',
+    'PRACA-N1-006',
+    'PRACA-N1-007',
+    'PRACA-N1-008'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- PRACA-N2: Educação=7, Felicidade=3, Saúde=7, Vacinação=3
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 7),
+    ('Felicidade', 3),
+    ('Saúde', 7),
+    ('Vacinação', 3)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'PRACA-N2-001',
+    'PRACA-N2-002',
+    'PRACA-N2-003'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- QUADRA-N1: Educação=10, Felicidade=10, Saúde=10
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 10),
+    ('Felicidade', 10),
+    ('Saúde', 10)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'QUADRA-N1-001'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- QUADRA-N2: Felicidade=10, Saúde=7
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Felicidade', 10),
+    ('Saúde', 7)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'QUADRA-N2-001',
+    'QUADRA-N2-002',
+    'QUADRA-N2-003'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- UBS-N1: Educação=5, Felicidade=10, Limpeza=5, Saúde=10, Vacinação=5
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 5),
+    ('Felicidade', 10),
+    ('Limpeza', 5),
+    ('Saúde', 10),
+    ('Vacinação', 5)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'UBS-N1-001',
+    'UBS-N1-002'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- UBS-N2: Alimentação=1, Educação=3, Felicidade=2, Saúde=8, Vacinação=7
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Alimentação', 1),
+    ('Educação', 3),
+    ('Felicidade', 2),
+    ('Saúde', 8),
+    ('Vacinação', 7)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'UBS-N2-001',
+    'UBS-N2-002',
+    'UBS-N2-003',
+    'UBS-N2-004',
+    'UBS-N2-005',
+    'UBS-N2-006',
+    'UBS-N2-007',
+    'UBS-N2-008',
+    'UBS-N2-009',
+    'UBS-N2-010',
+    'UBS-N2-011',
+    'UBS-N2-012',
+    'UBS-N2-013',
+    'UBS-N2-014',
+    'UBS-N2-015',
+    'UBS-N2-016',
+    'UBS-N2-017',
+    'UBS-N2-018',
+    'UBS-N2-019',
+    'UBS-N2-020',
+    'UBS-N2-021',
+    'UBS-N2-022',
+    'UBS-N2-023',
+    'UBS-N2-024',
+    'UBS-N2-025',
+    'UBS-N2-026',
+    'UBS-N2-027',
+    'UBS-N2-028',
+    'UBS-N2-029',
+    'UBS-N2-030',
+    'UBS-N2-031',
+    'UBS-N2-032',
+    'UBS-N2-033'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- UPA-N1: Educação=10, Felicidade=10, Saúde=10
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 10),
+    ('Felicidade', 10),
+    ('Saúde', 10)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'UPA-N1-001',
+    'UPA-N1-002',
+    'UPA-N1-003',
+    'UPA-N1-004'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
+
+-- UPA-N2: Educação=4, Felicidade=4, Saúde=4, Vacinação=6
+insert into questoes_areas (questao_id, area_nome, pontos)
+select qs.id, v.area, v.pontos from questoes qs
+  cross join (values
+    ('Educação', 4),
+    ('Felicidade', 4),
+    ('Saúde', 4),
+    ('Vacinação', 6)
+  ) as v(area, pontos)
+  where qs.codigo_externo in (
+    'UPA-N2-001',
+    'UPA-N2-002',
+    'UPA-N2-003',
+    'UPA-N2-004',
+    'UPA-N2-005'
+  )
+on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
 
 
 -- ── As metas das barras ──────────────────────────────────────────────
@@ -4075,7 +4415,6 @@ select public.recalcular_metas();
 -- select nome, meta from areas order by ordem;
 
 -- ── Conferir depois de rodar ─────────────────────────────────────────
--- select c.slug, m.nivel_etario, count(q.id) as questoes
---   from missoes m join cenarios c on c.id = m.cenario_id
---   left join questoes q on q.missao_id = m.id
---  group by c.slug, m.nivel_etario order by c.slug, m.nivel_etario;
+-- select c.slug, q.nivel_etario, count(*) as questoes
+--   from questoes q join cenarios c on c.id = q.cenario_id
+--  group by c.slug, q.nivel_etario order by c.slug, q.nivel_etario;
