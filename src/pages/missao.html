@@ -59,6 +59,13 @@
               <span class="dado__num" id="missao-restantes">—</span>
               <span class="dado__rot">a responder</span>
             </div>
+
+            <!-- Só aparece em tarefa da professora: é ela quem define o
+                 tempo de cada pergunta. Na exploração livre não há relógio. -->
+            <div class="dado dado--tempo" id="missao-cronometro" hidden>
+              <span class="dado__num" id="missao-tempo">--</span>
+              <span class="dado__rot">nesta pergunta</span>
+            </div>
           </div>
         </div>
       </div>
@@ -74,10 +81,13 @@
         </div>
       </section>
 
-      <!-- A questão da vez, com o lugar e as ações ao lado -->
-      <div class="missao-jogo" id="quiz" hidden>
-        <section class="quiz-card missao-perguntas">
-          <p class="quiz-question" id="quiz-enunciado"></p>
+      <!-- A questão da vez -->
+      <section class="quiz-card" id="quiz" hidden>
+        <!-- A barra encolhe junto com o tempo. O número já está no topo;
+             a barra é para quem está lendo a pergunta e não olha para lá. -->
+        <div class="quiz-tempo" id="quiz-tempo-barra" hidden><i></i></div>
+
+        <p class="quiz-question" id="quiz-enunciado"></p>
 
           <div class="quiz-options" id="quiz-opcoes"></div>
 

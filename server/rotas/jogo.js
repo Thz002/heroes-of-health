@@ -10,9 +10,27 @@
 const express = require('express');
 const { admin } = require('../supabase');
 const { autenticar } = require('../middleware/autenticar');
+const { falhou } = require('../erros');
 
 const rotas = express.Router();
 rotas.use(autenticar);
+
+/**
+ * Ponte enquanto a coluna `descricao` de quizzes_professores não existir
+ * em todo banco. Roda a consulta; se o Postgres reclamar dessa coluna,
+ * roda de novo sem ela.
+ *
+ * É temporário. Some quando todos os bancos rodarem:
+ *   alter table quizzes_professores add column if not exists descricao varchar(200);
+ *
+ * A descrição é a frase que o aluno lê no card — perder a frase é bem
+ * menos grave do que a tela inteira de tarefas parar de carregar.
+ */
+async function comOuSemDescricao(montar) {
+  const r = await montar(true);
+  if (r.error && /descricao/.test(r.error.message || '')) return montar(false);
+  return r;
+}
 
 const QUESTOES_POR_RODADA = 10;
 
@@ -40,7 +58,7 @@ rotas.get('/cenarios', async (req, res) => {
     .order('id');
 
   if (cenarios.error) {
-    return res.status(500).json({ message: 'Não foi possível carregar o mapa.' });
+    return falhou(res, 500, 'Não foi possível carregar o mapa.', cenarios.error, 'GET /cenarios');
   }
 
   // Três consultas soltas em vez de um join aninhado: missao_areas não
@@ -52,7 +70,7 @@ rotas.get('/cenarios', async (req, res) => {
   ]);
 
   if (missoes.error || vinculos.error || areas.error) {
-    return res.status(500).json({ message: 'Não foi possível carregar as áreas do mapa.' });
+    return falhou(res, 500, 'Não foi possível carregar as áreas do mapa.', missoes.error, 'GET /cenarios');
   }
 
   const cenarioDaMissao = new Map((missoes.data || []).map(m => [m.id, m.cenario_id]));
@@ -103,7 +121,7 @@ rotas.get('/cenarios/:slug/missoes', async (req, res) => {
 
   const { data, error } = await consulta.order('id');
 
-  if (error) return res.status(500).json({ message: 'Não foi possível carregar as missões.' });
+  if (error) return falhou(res, 500, 'Não foi possível carregar as missões.', error, 'GET /cenarios/:slug/missoes');
   res.json(data);
 });
 
@@ -125,7 +143,7 @@ rotas.get('/missoes/:id/questoes', async (req, res) => {
     .eq('missao_id', missaoId)
     .order('id');
 
-  if (error) return res.status(500).json({ message: 'Não foi possível carregar as questões.' });
+  if (error) return falhou(res, 500, 'Não foi possível carregar as questões.', error, 'GET /missoes/:id/questoes');
   const acertadas = await admin
     .from('respostas_alunos')
     .select('questao_id')
@@ -134,7 +152,7 @@ rotas.get('/missoes/:id/questoes', async (req, res) => {
     .in('questao_id', data.map(q => q.id));
 
   if (acertadas.error) {
-    return res.status(500).json({ message: 'Não foi possível carregar seu progresso.' });
+    return falhou(res, 500, 'Não foi possível carregar seu progresso.', acertadas.error, 'GET /missoes/:id/questoes');
   }
 
   const jaFoi = new Set((acertadas.data || []).map(r => r.questao_id));
@@ -189,7 +207,7 @@ rotas.post('/responder', async (req, res) => {
   });
 
   if (gravou.error) {
-    return res.status(500).json({ message: 'Não foi possível registrar sua resposta.' });
+    return falhou(res, 500, 'Não foi possível registrar sua resposta.', gravou.error, 'POST /responder');
   }
 
   let pontosGanhos = [];
@@ -238,13 +256,13 @@ rotas.post('/responder', async (req, res) => {
 rotas.get('/meus-quizzes', async (req, res) => {
   if (!req.usuario.turma_id) return res.json([]);   // ainda sem turma
 
-  const { data, error } = await admin
+  const { data, error } = await comOuSemDescricao(com => admin
     .from('quizzes_professores')
-    .select('id, titulo, descricao, tempo_limite_segundos, created_at')
+    .select('id, titulo, ' + (com ? 'descricao, ' : '') + 'tempo_limite_segundos, created_at')
     .eq('turma_id', req.usuario.turma_id)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false }));
 
-  if (error) return res.status(500).json({ message: 'Não foi possível carregar suas tarefas.' });
+  if (error) return falhou(res, 500, 'Não foi possível carregar suas tarefas.', error, 'GET /meus-quizzes');
   if (!data.length) return res.json([]);
 
   const ids = data.map(q => q.id);
@@ -296,7 +314,7 @@ rotas.get('/quizzes/:id/questoes', async (req, res) => {
     .eq('quiz_id', quizId).order('ordem');
 
   if (vinculos.error) {
-    return res.status(500).json({ message: 'Não foi possível carregar o quiz.' });
+    return falhou(res, 500, 'Não foi possível carregar o quiz.', vinculos.error, 'GET /quizzes/:id/questoes');
   }
 
   const ids = (vinculos.data || []).map(v => v.questao_id);
@@ -308,7 +326,7 @@ rotas.get('/quizzes/:id/questoes', async (req, res) => {
     .in('id', ids);
 
   if (questoes.error) {
-    return res.status(500).json({ message: 'Não foi possível carregar as questões.' });
+    return falhou(res, 500, 'Não foi possível carregar as questões.', questoes.error, 'GET /quizzes/:id/questoes');
   }
 
   const porId = new Map((questoes.data || []).map(q => [q.id, q]));
@@ -354,7 +372,7 @@ rotas.get('/meu-mapa', async (req, res) => {
 
   const missoes = await consulta;
   if (missoes.error) {
-    return res.status(500).json({ message: 'Não foi possível carregar o mapa.' });
+    return falhou(res, 500, 'Não foi possível carregar o mapa.', missoes.error, 'GET /meu-mapa');
   }
 
   const idsMissoes = (missoes.data || []).map(m => m.id);
@@ -392,10 +410,10 @@ rotas.get('/meu-mapa', async (req, res) => {
   const quizzesPorSlug = new Map();
 
   if (req.usuario.turma_id) {
-    const quizzes = await admin
+    const quizzes = await comOuSemDescricao(com => admin
       .from('quizzes_professores')
-      .select('id, titulo, descricao, cenarios, tempo_limite_segundos')
-      .eq('turma_id', req.usuario.turma_id);
+      .select('id, titulo, ' + (com ? 'descricao, ' : '') + 'cenarios, tempo_limite_segundos')
+      .eq('turma_id', req.usuario.turma_id));
 
     const idsQuiz = (quizzes.data || []).map(q => q.id);
 
@@ -461,7 +479,7 @@ rotas.get('/meu-progresso', async (req, res) => {
     .select('nome, ordem, meta')
     .order('ordem');
 
-  if (error) return res.status(500).json({ message: 'Não foi possível carregar seu progresso.' });
+  if (error) return falhou(res, 500, 'Não foi possível carregar seu progresso.', error, 'GET /meu-progresso');
 
   const progresso = await admin
     .from('progresso_areas')

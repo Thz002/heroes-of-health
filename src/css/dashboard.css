@@ -1050,3 +1050,443 @@ body {
 
     .rank__barra { display: none; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   HISTÓRICO DE QUIZES (quizzes.html)
+
+   Barras horizontais: foto do lugar | nome e etiquetas | números.
+   A grade é declarada uma vez só, no .quiz-linha — as três colunas
+   nascem dela.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.lista-quizzes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.quiz-linha {
+    display: grid;
+    grid-template-columns: 52px 1fr auto auto;
+    align-items: center;
+    gap: 14px;
+
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-left: 3px solid var(--cor, var(--primary));
+    border-radius: 12px;
+
+    transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    animation: card-entra .38s ease-out backwards;
+    animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.quiz-linha:hover {
+    transform: translateX(3px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    border-left-color: var(--cor, var(--primary));
+}
+
+.quiz-linha.saindo {
+    animation: card-sai .28s ease-in forwards;
+}
+
+/* ── A foto do lugar, igual à do mapa ─────────────────────────────── */
+.quiz-linha__icone {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.quiz-linha__icone img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* ── Nome, lugar e turma ──────────────────────────────────────────── */
+.quiz-linha__meio { min-width: 0; }
+
+.quiz-linha__titulo {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 7px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.25;
+}
+
+.quiz-linha__lugar {
+    font-weight: 600;
+    font-size: 13.5px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.quiz-linha__turma {
+    font-weight: 600;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--cor, #14b8a6) 70%, white);
+}
+
+/* ── As etiquetas de área ─────────────────────────────────────────── */
+.quiz-linha__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.quiz-tag {
+    padding: 3px 9px;
+    border-radius: 99px;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--tag-cor, #6bdfb8) 72%, white);
+    background: color-mix(in srgb, var(--tag-cor, #6bdfb8) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tag-cor, #6bdfb8) 32%, transparent);
+}
+
+.quiz-tag--vazia {
+    color: rgba(255, 255, 255, 0.3);
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.12);
+    font-style: italic;
+}
+
+/* ── Os números da direita ────────────────────────────────────────── */
+.quiz-linha__numeros {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    text-align: right;
+}
+
+.quiz-linha__perguntas {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+}
+
+/* Sorteou menos do que o professor pediu: avisa sem gritar. */
+.quiz-linha__perguntas--menos {
+    color: var(--gold);
+    cursor: help;
+}
+
+.quiz-linha__tempo {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.quiz-linha__tempo::before {
+    content: '⏱ ';
+    opacity: 0.7;
+}
+
+/* ── Apagar ───────────────────────────────────────────────────────── */
+.quiz-linha__apagar {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.22);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color .16s, background .16s;
+}
+
+.quiz-linha:hover .quiz-linha__apagar { color: rgba(255, 255, 255, 0.45); }
+
+.quiz-linha__apagar:hover {
+    color: #fecaca;
+    background: rgba(220, 38, 38, 0.18);
+}
+
+/* ── Telas estreitas: os números descem para baixo do nome ────────── */
+@media (max-width: 640px) {
+    .quiz-linha {
+        grid-template-columns: 44px 1fr auto;
+        row-gap: 10px;
+    }
+
+    .quiz-linha__icone { width: 44px; height: 44px; }
+
+    .quiz-linha__numeros {
+        grid-column: 2 / 4;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+    }
+}
+
+/* ── O link da página em que já se está ───────────────────────────── */
+.navbar__ativo {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   O RELÓGIO DA PERGUNTA (missao.html, só em tarefa da professora)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.dado--tempo .dado__num {
+    font-variant-numeric: tabular-nums;   /* o número para de "pular" */
+}
+
+/* Últimos 5 segundos. */
+.dado--acabando {
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(220, 38, 38, 0.12);
+}
+
+.dado--acabando .dado__num {
+    color: #fca5a5;
+    animation: pulsar-tempo 1s ease-in-out infinite;
+}
+
+@keyframes pulsar-tempo {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.12); }
+}
+
+/* A barra que encolhe junto com o tempo. */
+.quiz-tempo {
+    height: 5px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+
+.quiz-tempo[hidden] { display: none; }
+
+.quiz-tempo i {
+    display: block;
+    height: 100%;
+    width: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    /* Acompanha o passo do relógio: um segundo por vez, sem solavanco. */
+    transition: width 1s linear, background .3s ease;
+}
+
+.quiz-tempo--acabando i {
+    background: linear-gradient(90deg, #b91c1c, #f87171);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dado--acabando .dado__num { animation: none; }
+    .quiz-tempo i { transition: none; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   RANKING DAS TURMAS (ranking.html)
+
+   Mesma barra horizontal do histórico de quizes, com a foto do lugar
+   trocada pela colocação: medalha nas três primeiras, número nas outras.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.lista-ranking {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ranking-linha {
+    display: grid;
+    grid-template-columns: 52px 1fr auto;
+    align-items: center;
+    gap: 16px;
+
+    padding: 13px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-left: 3px solid var(--cor, var(--primary));
+    border-radius: 12px;
+
+    transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    animation: card-entra .38s ease-out backwards;
+    animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.ranking-linha:hover {
+    transform: translateX(3px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    border-left-color: var(--cor, var(--primary));
+}
+
+/* ── A colocação ──────────────────────────────────────────────────── */
+/* O número mora num disco do mesmo tamanho da foto do histórico de
+   quizes, para as duas telas ficarem alinhadas lado a lado. */
+
+.ranking-pos {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ranking-pos__num {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.4);
+    line-height: 1;
+}
+
+/* As três medalhas. O anel de fora é o "cordão" da medalha. */
+.ranking-linha--ouro .ranking-pos,
+.ranking-linha--prata .ranking-pos,
+.ranking-linha--bronze .ranking-pos {
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.25), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.ranking-linha--ouro .ranking-pos {
+    background: linear-gradient(145deg, #fde68a, #f9c74f 45%, #b45309);
+    border-color: #fde68a;
+}
+
+.ranking-linha--prata .ranking-pos {
+    background: linear-gradient(145deg, #f1f5f9, #cbd5e1 45%, #64748b);
+    border-color: #f1f5f9;
+}
+
+.ranking-linha--bronze .ranking-pos {
+    background: linear-gradient(145deg, #fcd9b6, #d99a6c 45%, #7c4a1e);
+    border-color: #fcd9b6;
+}
+
+.ranking-linha--ouro .ranking-pos__num,
+.ranking-linha--prata .ranking-pos__num,
+.ranking-linha--bronze .ranking-pos__num {
+    color: #2b1a05;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Só a primeira brilha — se todas brilhassem, nenhuma se destacaria. */
+.ranking-linha--ouro {
+    background: rgba(249, 199, 79, 0.07);
+    border-color: rgba(249, 199, 79, 0.28);
+}
+
+/* ── Nome e contagem ──────────────────────────────────────────────── */
+.ranking-linha__meio { min-width: 0; }
+
+.ranking-linha__nome {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ranking-linha__respondidas {
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.42);
+    margin: 3px 0 0;
+}
+
+.ranking-linha__barra {
+    display: block;
+    height: 6px;
+    margin-top: 9px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.ranking-linha__barra[hidden] { display: none; }
+
+.ranking-linha__barra i {
+    display: block;
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--cor, var(--primary)), var(--accent));
+    animation: encher .7s ease-out backwards;
+}
+
+/* ── A taxa, à direita ────────────────────────────────────────────── */
+.ranking-linha__numeros {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: right;
+    min-width: 76px;
+}
+
+.ranking-linha__taxa {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+    color: #fff;
+    cursor: help;
+}
+
+.ranking-linha--ouro .ranking-linha__taxa { color: var(--gold); }
+
+.ranking-linha__taxa--vazia {
+    color: rgba(255, 255, 255, 0.25);
+    cursor: default;
+}
+
+.ranking-linha__rot {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── A explicação da ordem ────────────────────────────────────────── */
+.ranking-nota {
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.34);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    margin: 18px 0 0;
+    padding-top: 14px;
+}
+
+.ranking-nota[hidden] { display: none; }
+
+@media (max-width: 560px) {
+    .ranking-linha {
+        grid-template-columns: 44px 1fr auto;
+        gap: 12px;
+        padding: 11px 13px;
+    }
+
+    .ranking-pos { width: 44px; height: 44px; }
+    .ranking-pos__num { font-size: 16px; }
+    .ranking-linha__taxa { font-size: 18px; }
+}

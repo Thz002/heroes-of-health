@@ -304,20 +304,29 @@ create table if not exists quizzes_professores (
 -- foram sorteadas e congeladas em quiz_questoes na hora da criação. Ficam
 -- aqui para o professor lembrar o que pediu e conseguir repetir depois.
 --
+-- descricao é a frase que o aluno lê no card da missão, escrita pelo
+-- professor. Sem ela o card mostraria só o título, e "Doenças" sozinho
+-- não diz o que a pessoa vai encontrar ali dentro.
+--
 -- nivel_etario NÃO é escolhido pelo professor: sai do ano escolar da
 -- turma (uma turma de 9º ano puxa questões de 11 a 14). Fica gravado
 -- porque o ano da turma pode mudar depois, e aí o quiz antigo mentiria
 -- sobre o próprio conteúdo.
--- A frase que o aluno lê no card da missão, escrita pelo professor.
--- Sem ela o card mostraria só o título, e "Doenças" sozinho não diz o
--- que a pessoa vai encontrar ali dentro.
+--
+-- As cinco ficam JUNTAS de propósito. O SQL Editor do Supabase roda só o
+-- texto selecionado, e enquanto "descricao" estava separada das outras
+-- por uma linha em branco ela foi deixada de fora da seleção — o banco
+-- ficou com quatro das cinco, e criar quiz passou a falhar.
 alter table quizzes_professores add column if not exists descricao varchar(200);
-
 alter table quizzes_professores add column if not exists nivel_etario int
   check (nivel_etario between 1 and 3);
 alter table quizzes_professores add column if not exists cenarios text[];
 alter table quizzes_professores add column if not exists areas text[];
 alter table quizzes_professores add column if not exists qtd_pedida int;
+
+-- O PostgREST guarda em cache o desenho das tabelas. Sem este aviso a
+-- coluna existe no banco e a API continua dizendo que não.
+notify pgrst, 'reload schema';
 
 
 -- As questões que caíram naquele quiz, congeladas na criação.

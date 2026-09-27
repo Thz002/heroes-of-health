@@ -230,6 +230,23 @@ const API = (() => {
 
   const getQuizzesDaTurma = (turmaId) => get(`/professor/quizzes?turma_id=${turmaId}`);
 
+  /**
+   * O histórico inteiro: todos os quizzes que este professor já criou,
+   * de todas as turmas, do mais novo para o mais velho. Cada item traz o
+   * nome e a cor da turma junto, para a lista não virar um monte de id.
+   */
+  const getQuizzesCriados = () => get('/professor/quizzes');
+
+  /**
+   * As turmas do professor ordenadas por desempenho, da melhor para a
+   * pior. Cada item traz respostas, acertos e a taxa em porcentagem.
+   *
+   * A ORDEM não é a taxa crua: o servidor equilibra turmas que
+   * responderam pouco, senão três respostas certas viram 100% e passam
+   * na frente de quem respondeu quatrocentas.
+   */
+  const getRankingDasTurmas = () => get('/professor/ranking');
+
   const excluirQuiz = (quizId) => del(`/professor/quizzes/${quizId}`);
   const criarTurma      = ({ nome, cor, ano_escolar }) =>
     post('/professor/turmas', { nome, cor, ano_escolar });
@@ -273,6 +290,8 @@ const API = (() => {
     criarTurma,
     criarQuiz,
     getQuizzesDaTurma,
+    getQuizzesCriados,
+    getRankingDasTurmas,
     excluirQuiz,
     editarTurma,
     getAlunosDaTurma,

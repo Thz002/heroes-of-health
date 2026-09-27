@@ -32,41 +32,18 @@
 
   const btnSair = document.getElementById('logout-btn');
 
+  // O relógio da tarefa da professora
+  const cronometroBox = document.getElementById('missao-cronometro');
+  const tempoEl = document.getElementById('missao-tempo');
+  const barraTempo = document.getElementById('quiz-tempo-barra');
+
   const LETRAS = ['A', 'B', 'C', 'D'];
 
-  // Foto de dentro de cada lugar — as mesmas de src/imgs/Interiores que o
-  // modal do mapa mostra (CENARIOS[tipo].interior em mapa.js). Mudou lá,
-  // muda aqui.
-  const INTERIORES = {
-    parque: 'Parque.png',
-    escola: 'Escola.jpg',
-    farmacia: 'Farmacia.jpeg',
-    upa: 'UPA.jpg',
-    ubs: 'UBS.jpg',
-    banca: 'Banca.jpg',
-    praca: 'Praca.jpg',
-    mercado: 'Mercado.jpg',
-    creche: 'Creche.jpg',
-    igreja: 'Igreja.jpg',
-    quadra: 'Quadra.jpg',
-    'terreno-baldio': 'Baldio.jpg',
-    corrego: 'Corrego.png',
-    rio: 'Rio.png',
-    ruas: 'Ruas.jpg',
-    casa: 'Casa.jpeg',
-  };
-
-  // Cada casa tem o seu interior, pelo número que o mapa manda em
-  // ?casa= (o campo `casa` dos HOTSPOTS em mapa.js). O mesmo número
-  // escolhe a família: casa 3 -> familia03.png.
-  const INTERIORES_CASAS = {
-    1: 'Casa.jpeg', 2: 'Casa02.jpeg', 3: 'Casa03.jpg', 4: 'Casa04.jpg',
-    5: 'Casa05.jpg', 6: 'Casa06.jpg', 7: 'Casa07.jpg', 8: 'Casa08.jpg',
-    9: 'Casa09.jpg', 10: 'Casa10.jpg', 11: 'Casa11.jpg', 12: 'Casa12.jpg',
-    13: 'Casa13.jpg', 14: 'Casa14.jpg', 15: 'Casa15.jpg', 16: 'Casa16.jpg',
-    17: 'CasaLateral01.jpg', 18: 'CasaLateral02.jpg',
-    19: 'CasaLateral03.jpg', 20: 'CasaLateral04.jpg',
-  };
+  // Segundos por pergunta, escolhidos pela professora ao criar o quiz.
+  // 0 = sem limite, que é o caso da exploração livre pelo mapa.
+  let tempoLimite = 0;
+  let sobrandoSeg = 0;
+  let relogio = null;   // o setInterval em andamento
 
   let missao = null;
   let quizAtual = null;   // null = exploração livre pelo mapa
@@ -133,8 +110,11 @@
     const r = await API.getQuestoesDoQuiz(id);
 
     quizAtual = { id: r.id, titulo: r.titulo, descricao: r.descricao };
-    // Um quiz pode cobrir vários lugares; a foto é a do primeiro.
-    if (r.cenarios && r.cenarios.length) mostrarFoto(r.cenarios[0], 0);
+
+    // O tempo vem do quiz, não da tela: foi a professora que escolheu, e
+    // vale igual para a turma inteira.
+    tempoLimite = Number(r.tempo_limite_segundos) || 0;
+
     rodada = r.questoes || [];
     sobrando = r.restantes || 0;
     indice = 0;
@@ -159,6 +139,9 @@
 
   async function carregarRodada() {
     const r = await API.getQuestoes(missao.id);
+
+    // Exploração livre: sem professora, sem relógio.
+    tempoLimite = 0;
 
     rodada = r.questoes || [];
     sobrando = r.restantes || 0;
@@ -192,6 +175,7 @@
     escolhida = null;
     atualizarConfirmar();
     quiz.hidden = false;
+    btnContinuar.hidden = false;   // a resposta errada esconde; aqui volta
 
     opcoes.innerHTML = '';
     LETRAS.forEach((letra) => {
@@ -206,6 +190,89 @@
       b.addEventListener('click', () => escolher(b, letra));
       opcoes.appendChild(b);
     });
+
+    comecarRelogio();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     O RELÓGIO DA PERGUNTA
+
+     Só existe em tarefa da professora. O tempo é o mesmo para todas as
+     perguntas do quiz — foi escolhido uma vez, na criação, e vale para a
+     turma inteira.
+
+     Quando acaba, a pergunta NÃO conta como erro: ela simplesmente fica
+     sem resposta e volta numa próxima rodada. Marcar erro por demora
+     puniria quem leu devagar, e o jogo não é sobre isso.
+     ═══════════════════════════════════════════════════════════════════ */
+
+  function comecarRelogio() {
+    pararRelogio();
+
+    if (!tempoLimite) {
+      if (cronometroBox) cronometroBox.hidden = true;
+      if (barraTempo) barraTempo.hidden = true;
+      return;
+    }
+
+    sobrandoSeg = tempoLimite;
+
+    if (cronometroBox) cronometroBox.hidden = false;
+    if (barraTempo) barraTempo.hidden = false;
+
+    pintarRelogio();
+
+    relogio = setInterval(() => {
+      sobrandoSeg--;
+      pintarRelogio();
+
+      if (sobrandoSeg <= 0) esgotou();
+    }, 1000);
+  }
+
+  function pararRelogio() {
+    if (relogio) clearInterval(relogio);
+    relogio = null;
+  }
+
+  /** Continua de onde parou, sem reiniciar a contagem. */
+  function retomarRelogio() {
+    if (!tempoLimite || relogio || sobrandoSeg <= 0) return;
+
+    relogio = setInterval(() => {
+      sobrandoSeg--;
+      pintarRelogio();
+
+      if (sobrandoSeg <= 0) esgotou();
+    }, 1000);
+  }
+
+  function pintarRelogio() {
+    if (tempoEl) tempoEl.textContent = `${Math.max(0, sobrandoSeg)}s`;
+
+    if (barraTempo) {
+      const fatia = Math.max(0, sobrandoSeg) / tempoLimite;
+      barraTempo.querySelector('i').style.width = `${fatia * 100}%`;
+      // Os últimos 5 segundos ficam vermelhos: é o aviso de que acabou.
+      barraTempo.classList.toggle('quiz-tempo--acabando', sobrandoSeg <= 5);
+    }
+
+    if (cronometroBox) {
+      cronometroBox.classList.toggle('dado--acabando', sobrandoSeg <= 5);
+    }
+  }
+
+  function esgotou() {
+    pararRelogio();
+    travarOpcoes(true);
+
+    explicacao.textContent =
+      'Sem problema: esta pergunta volta numa próxima rodada, e nada foi descontado.';
+    pontosEl.textContent = 'O tempo desta pergunta acabou.';
+
+    btnContinuar.hidden = false;
+    btnContinuar.textContent = indice + 1 < rodada.length ? 'Próxima questão' : 'Ver resultado';
+    retorno.hidden = false;
   }
 
   // Clicar numa alternativa só a marca; quem responde é o "Confirmar".
@@ -232,6 +299,7 @@
   });
 
   async function responder(botao, questao, letra) {
+    pararRelogio();          // respondeu: o relógio desta pergunta morre aqui
     travarOpcoes(true);
 
     try {
@@ -262,8 +330,11 @@
         btnContinuar.hidden = true;
 
         travarOpcoes(false);
-        botao.disabled = true;   
-        atualizarConfirmar();
+        botao.disabled = true;
+
+        // Errou mas pode tentar outra alternativa — o relógio volta a
+        // correr de onde parou. O tempo é da pergunta, não da tentativa.
+        retomarRelogio();
       }
 
     } catch (err) {
@@ -319,6 +390,7 @@
   });
 
   function mostrarFim() {
+    pararRelogio();
     quiz.hidden = true;
     topo.hidden = true;
     fim.hidden = false;
@@ -349,6 +421,7 @@
   });
 
   function mostrarAviso(tit, txt) {
+    pararRelogio();
     topo.hidden = true;
     quiz.hidden = true;
     fim.hidden = true;
