@@ -39,6 +39,40 @@
 
   const LETRAS = ['A', 'B', 'C', 'D'];
 
+  // Foto de dentro de cada lugar — as mesmas de src/imgs/Interiores que o
+  // modal do mapa mostra (CENARIOS[tipo].interior em mapa.js). Mudou lá,
+  // muda aqui.
+  const INTERIORES = {
+    parque: 'Parque.png',
+    escola: 'Escola.jpg',
+    farmacia: 'Farmacia.jpeg',
+    upa: 'UPA.jpg',
+    ubs: 'UBS.jpg',
+    banca: 'Banca.jpg',
+    praca: 'Praca.jpg',
+    mercado: 'Mercado.jpg',
+    creche: 'Creche.jpg',
+    igreja: 'Igreja.jpg',
+    quadra: 'Quadra.jpg',
+    'terreno-baldio': 'Baldio.jpg',
+    corrego: 'Corrego.png',
+    rio: 'Rio.png',
+    ruas: 'Ruas.jpg',
+    casa: 'Casa.jpeg',
+  };
+
+  // Cada casa tem o seu interior, pelo número que o mapa manda em
+  // ?casa= (o campo `casa` dos HOTSPOTS em mapa.js). O mesmo número
+  // escolhe a família: casa 3 -> familia03.png.
+  const INTERIORES_CASAS = {
+    1: 'Casa.jpeg', 2: 'Casa02.jpeg', 3: 'Casa03.jpg', 4: 'Casa04.jpg',
+    5: 'Casa05.jpg', 6: 'Casa06.jpg', 7: 'Casa07.jpg', 8: 'Casa08.jpg',
+    9: 'Casa09.jpg', 10: 'Casa10.jpg', 11: 'Casa11.jpg', 12: 'Casa12.jpg',
+    13: 'Casa13.jpg', 14: 'Casa14.jpg', 15: 'Casa15.jpg', 16: 'Casa16.jpg',
+    17: 'CasaLateral01.jpg', 18: 'CasaLateral02.jpg',
+    19: 'CasaLateral03.jpg', 20: 'CasaLateral04.jpg',
+  };
+
   // Segundos por pergunta, escolhidos pela professora ao criar o quiz.
   // 0 = sem limite, que é o caso da exploração livre pelo mapa.
   let tempoLimite = 0;
@@ -51,7 +85,7 @@
   let indice = 0;         
   let sobrando = 0;       
   let acertos = 0;
-  let ganhos = {};      
+  let ganhos = {};
   let escolhida = null;   // { botao, letra } — marcada, ainda não confirmada
 
   iniciar();
@@ -110,6 +144,8 @@
     const r = await API.getQuestoesDoQuiz(id);
 
     quizAtual = { id: r.id, titulo: r.titulo, descricao: r.descricao };
+    // Um quiz pode cobrir vários lugares; a foto é a do primeiro.
+    if (r.cenarios && r.cenarios.length) mostrarFoto(r.cenarios[0], 0);
 
     // O tempo vem do quiz, não da tela: foi a professora que escolheu, e
     // vale igual para a turma inteira.
@@ -266,6 +302,13 @@
     pararRelogio();
     travarOpcoes(true);
 
+    // A marcada e não confirmada não vale: o tempo acabou antes.
+    opcoes.querySelectorAll('.quiz-option--selecionada')
+      .forEach(b => b.classList.remove('quiz-option--selecionada'));
+    escolhida = null;
+    btnConfirmar.disabled = true;
+    btnConfirmar.textContent = 'Tempo esgotado';
+
     explicacao.textContent =
       'Sem problema: esta pergunta volta numa próxima rodada, e nada foi descontado.';
     pontosEl.textContent = 'O tempo desta pergunta acabou.';
@@ -331,6 +374,7 @@
 
         travarOpcoes(false);
         botao.disabled = true;
+        atualizarConfirmar();
 
         // Errou mas pode tentar outra alternativa — o relógio volta a
         // correr de onde parou. O tempo é da pergunta, não da tentativa.
@@ -340,6 +384,7 @@
     } catch (err) {
       travarOpcoes(false);
       atualizarConfirmar();
+      retomarRelogio();
       pontosEl.textContent = err.message;
       retorno.hidden = false;
       btnContinuar.hidden = true;
