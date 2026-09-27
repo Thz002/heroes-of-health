@@ -150,27 +150,30 @@
     // Cada casa aponta para o seu interior: o recorte da fachada e a foto
     // de dentro são a mesma casa (Casa03.png -> Casa03.jpg). Hoje todas
     // têm a sua; uma casa nova sem foto cai no padrão de CENARIOS.casa.
-    { tipo: "casa", imagem: "Casa.png", x: 253, y: 230, w: 125, h: 126, interior: "Casa.jpeg" },
-    { tipo: "casa", imagem: "Casa03.png", x:465, y: 387, w: 85, h: 110, interior: "Casa03.jpg" },
-    { tipo: "casa", imagem: "Casa013.png", x: 372, y: 390, w: 85, h: 105, interior: "Casa13.jpg" },
-    { tipo: "casa", imagem: "Casa06.png", x: 930, y: 25, w: 98, h: 93, tooltipPos: "bottom", interior: "Casa06.jpg" },
-    { tipo: "casa", imagem: "Casa07.png", x: 1039, y: 20, w: 110, h: 80, tooltipPos: "bottom", interior: "Casa07.jpg" },
-    { tipo: "casa", imagem: "Casa014.png", x: 480, y: 512, w: 75, h: 100, interior: "Casa14.jpg" },
-    { tipo: "casa", imagem: "Casa09.png", x: 385, y: 10, w: 90, h: 100, tooltipPos: "bottom", interior: "Casa09.jpg" },
-    { tipo: "casa", imagem: "Casa010.png", x: 350, y: 514, w: 125, h: 100, interior: "Casa10.jpg" },
-    { tipo: "casa", imagem: "Casa011.png", x: 253, y: 387, w: 110, h: 115, interior: "Casa11.jpg" },
-    { tipo: "casa", imagem: "Casa08.png", x: 548, y: 500, w: 110, h: 115, interior: "Casa08.jpg" },
-    { tipo: "casa", imagem: "Casa012.png", x: 880, y: 502, w: 110, h: 110, interior: "Casa12.jpg" },
-    { tipo: "casa", imagem: "Casa02.png", x: 253, y: 139, w: 127, h: 107, interior: "Casa02.jpeg" },
-    { tipo: "casa", imagem: "Casa015.png", x: 238, y: 20, w: 145, h: 100, tooltipPos: "bottom", interior: "Casa15.jpg" },
-    { tipo: "casa", imagem: "Casa05.png", x: 80, y: 20, w: 80, h: 90, interior: "Casa05.jpg" },
-    { tipo: "casa", imagem: "Casa04.png", x: 1041, y: 515, w: 85, h: 105, tooltipPos: "bottom", interior: "Casa04.jpg" },
-    { tipo: "casa", imagem: "Casa016.png", x: 1182, y: 8, w: 150, h: 100, tooltipPos: "bottom", interior: "Casa16.jpg" },
+    // `casa` é o número da casa, que vai na URL da missão e escolhe a
+    // família mostrada lá (familia03.png). As laterais continuam a
+    // contagem depois da Casa16: CasaLateral01 = 17 ... CasaLateral04 = 20.
+    { tipo: "casa", casa: 1, imagem: "Casa.png", x: 253, y: 230, w: 125, h: 126, interior: "Casa.jpeg" },
+    { tipo: "casa", casa: 3, imagem: "Casa03.png", x:465, y: 387, w: 85, h: 110, interior: "Casa03.jpg" },
+    { tipo: "casa", casa: 13, imagem: "Casa013.png", x: 372, y: 390, w: 85, h: 105, interior: "Casa13.jpg" },
+    { tipo: "casa", casa: 6, imagem: "Casa06.png", x: 930, y: 25, w: 98, h: 93, tooltipPos: "bottom", interior: "Casa06.jpg" },
+    { tipo: "casa", casa: 7, imagem: "Casa07.png", x: 1039, y: 20, w: 110, h: 80, tooltipPos: "bottom", interior: "Casa07.jpg" },
+    { tipo: "casa", casa: 14, imagem: "Casa014.png", x: 480, y: 512, w: 75, h: 100, interior: "Casa14.jpg" },
+    { tipo: "casa", casa: 9, imagem: "Casa09.png", x: 385, y: 10, w: 90, h: 100, tooltipPos: "bottom", interior: "Casa09.jpg" },
+    { tipo: "casa", casa: 10, imagem: "Casa010.png", x: 350, y: 514, w: 125, h: 100, interior: "Casa10.jpg" },
+    { tipo: "casa", casa: 11, imagem: "Casa011.png", x: 253, y: 387, w: 110, h: 115, interior: "Casa11.jpg" },
+    { tipo: "casa", casa: 8, imagem: "Casa08.png", x: 548, y: 500, w: 110, h: 115, interior: "Casa08.jpg" },
+    { tipo: "casa", casa: 12, imagem: "Casa012.png", x: 880, y: 502, w: 110, h: 110, interior: "Casa12.jpg" },
+    { tipo: "casa", casa: 2, imagem: "Casa02.png", x: 253, y: 139, w: 127, h: 107, interior: "Casa02.jpeg" },
+    { tipo: "casa", casa: 15, imagem: "Casa015.png", x: 238, y: 20, w: 145, h: 100, tooltipPos: "bottom", interior: "Casa15.jpg" },
+    { tipo: "casa", casa: 5, imagem: "Casa05.png", x: 80, y: 20, w: 80, h: 90, interior: "Casa05.jpg" },
+    { tipo: "casa", casa: 4, imagem: "Casa04.png", x: 1041, y: 515, w: 85, h: 105, tooltipPos: "bottom", interior: "Casa04.jpg" },
+    { tipo: "casa", casa: 16, imagem: "Casa016.png", x: 1182, y: 8, w: 150, h: 100, tooltipPos: "bottom", interior: "Casa16.jpg" },
 
-    { tipo: "casa", imagem: "CasaLateral03.png", x: 15, y: 200, w: 68, h: 112, interior: "CasaLateral03.jpg" },
-    { tipo: "casa", imagem: "CasaLateral01.png", x: 15, y: 442, w: 80, h: 105, interior: "CasaLateral01.jpg" },
-    { tipo: "casa", imagem: "CasaLateral02.png", x: 1335, y: 200, w: 70, h: 112, interior: "CasaLateral02.jpg" },
-    { tipo: "casa", imagem: "CasaLateral04.png", x: 1335, y: 430, w: 73, h: 113, interior: "CasaLateral04.jpg" },
+    { tipo: "casa", casa: 19, imagem: "CasaLateral03.png", x: 15, y: 200, w: 68, h: 112, interior: "CasaLateral03.jpg" },
+    { tipo: "casa", casa: 17, imagem: "CasaLateral01.png", x: 15, y: 442, w: 80, h: 105, interior: "CasaLateral01.jpg" },
+    { tipo: "casa", casa: 18, imagem: "CasaLateral02.png", x: 1335, y: 200, w: 70, h: 112, interior: "CasaLateral02.jpg" },
+    { tipo: "casa", casa: 20, imagem: "CasaLateral04.png", x: 1335, y: 430, w: 73, h: 113, interior: "CasaLateral04.jpg" },
   ];
 
 
@@ -373,6 +376,10 @@
         ? "Carregando missões…"
         : "Sem missões disponíveis";
     modalPlay.dataset.cenario = h.tipo;
+    // Qual casa foi clicada: a tela da missão usa o número para mostrar o
+    // interior daquela casa e a família que mora nela.
+    if (h.casa) modalPlay.dataset.casa = h.casa;
+    else delete modalPlay.dataset.casa;
   }
 
   function abrirModal(h) {
@@ -430,7 +437,9 @@
   modalPlay?.addEventListener("click", () => {
     const tipo = modalPlay.dataset.cenario;
     if (!tipo || modalPlay.disabled) return;
-    window.location.href = `missao.html?cenario=${encodeURIComponent(tipo)}`;
+    const casa = modalPlay.dataset.casa;
+    window.location.href = `missao.html?cenario=${encodeURIComponent(tipo)}`
+      + (casa ? `&casa=${encodeURIComponent(casa)}` : "");
   });
 
   function montarHotspots() {

@@ -1,0 +1,128 @@
+/* missao.css — tela de perguntas (src/pages/missao.html)
+   Uma moldura só, na cor da barra de navegação, como a caixa de diálogo
+   de um jogo: dentro dela, as perguntas à esquerda e a foto do lugar com
+   as ações à direita, os dois num tom mais claro. As alternativas
+   mantêm o estilo do style.css. */
+
+.missao-jogo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 14px;
+  align-items: stretch;
+  margin: 0;
+  padding: 14px;
+  background: #07373e;
+  border: 3px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card), inset 0 0 0 3px rgba(0, 0, 0, 0.25);
+}
+
+/* O display:grid acima venceria o atributo hidden. */
+.missao-jogo[hidden] {
+  display: none;
+}
+
+/* O `img { display: block }` do style.css vence o [hidden] do navegador:
+   sem isto a imagem da família, vazia fora das casas, era desenhada como
+   um retângulo claro por cima da foto. */
+.missao-lateral__foto img[hidden] {
+  display: none;
+}
+
+/* Os dois painéis de dentro: mesmo tom, mais claro que a moldura. */
+.quiz-card.missao-perguntas,
+.missao-lateral {
+  background: #0d5c63;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.quiz-card.missao-perguntas {
+  max-width: none;
+  margin: 0;
+}
+
+.missao-lateral {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Quadrada: a foto do interior é cortada para caber, sem distorcer. */
+.missao-lateral__foto {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  margin-bottom: 6px;
+}
+
+.missao-lateral__interior {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Nas casas o interior vira fundo desfocado e a família fica na frente.
+   O scale esconde a borda clara que o blur cria nas beiradas. */
+.missao-lateral__foto--casa .missao-lateral__interior {
+  filter: blur(2.5px) brightness(0.9);
+  transform: scale(1.04);
+}
+
+.missao-lateral__familia {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
+}
+
+.missao-lateral__btn {
+  width: 100%;
+  padding: 12px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+}
+
+/* Todas as alternativas do mesmo tamanho, seja qual for o texto: a
+   grade dá a cada linha a altura da maior, e o min-height segura as
+   curtas. O texto fica centralizado na vertical. */
+.missao-perguntas .quiz-options {
+  display: grid;
+  grid-auto-rows: 1fr;
+  gap: 12px;
+}
+
+.missao-perguntas .quiz-option {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+/* Alternativa escolhida, esperando o "Confirmar resposta". */
+.quiz-option--selecionada {
+  border-color: var(--accent);
+  background: rgba(107, 223, 184, 0.14);
+}
+
+@media (max-width: 860px) {
+  .missao-jogo {
+    grid-template-columns: 1fr;
+  }
+
+  .missao-lateral__foto {
+    max-width: 320px;
+    margin: 0 auto 6px;
+  }
+}

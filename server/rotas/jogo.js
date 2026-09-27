@@ -280,7 +280,7 @@ rotas.get('/quizzes/:id/questoes', async (req, res) => {
 
   const quiz = await admin
     .from('quizzes_professores')
-    .select('id, titulo, turma_id, professor_id, tempo_limite_segundos')
+    .select('id, titulo, turma_id, professor_id, tempo_limite_segundos, cenarios')
     .eq('id', quizId).maybeSingle();
 
   if (!quiz.data) return res.status(404).json({ message: 'Esse quiz não existe.' });

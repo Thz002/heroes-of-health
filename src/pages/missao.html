@@ -7,6 +7,7 @@
   <title>Missão - Heróis da Saúde</title>
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/missao.css">
   <script src="/vendor/supabase.js"></script>
   <script src="../js/supabase.js" defer></script>
   <script src="../js/api.js" defer></script>
@@ -33,9 +34,6 @@
           </div>
 
           <div style="display:flex;align-items:center;gap:20px;">
-            <ul class="navbar__links">
-              <li><a href="mapa.html">&#8592; Voltar ao mapa</a></li>
-            </ul>
             <button id="logout-btn" class="btn-logout">Sair</button>
           </div>
         </div>
@@ -46,8 +44,6 @@
 
       <!-- Cabeçalho da missão: nome do lugar, título e o quanto falta -->
       <div class="turma-topo" id="missao-topo" hidden>
-        <a class="turma-topo__voltar" href="mapa.html">&#8592; Mapa do bairro</a>
-
         <div class="turma-topo__linha">
           <div>
             <h2 class="turma-topo__nome" id="missao-titulo">—</h2>
@@ -78,19 +74,33 @@
         </div>
       </section>
 
-      <!-- A questão da vez -->
-      <section class="quiz-card" id="quiz" hidden>
-        <p class="quiz-question" id="quiz-enunciado"></p>
+      <!-- A questão da vez, com o lugar e as ações ao lado -->
+      <div class="missao-jogo" id="quiz" hidden>
+        <section class="quiz-card missao-perguntas">
+          <p class="quiz-question" id="quiz-enunciado"></p>
 
-        <div class="quiz-options" id="quiz-opcoes"></div>
+          <div class="quiz-options" id="quiz-opcoes"></div>
 
-        <!-- Fica visível depois de responder -->
-        <div id="quiz-retorno" hidden style="margin-top:20px;">
-          <p id="quiz-explicacao" style="font-size:14.5px;line-height:1.6;"></p>
-          <p id="quiz-pontos" style="margin-top:10px;font-size:14px;"></p>
-          <button class="btn-primary" id="quiz-continuar" style="margin-top:16px;">Continuar</button>
-        </div>
-      </section>
+          <!-- Fica visível depois de confirmar -->
+          <div id="quiz-retorno" hidden style="margin-top:20px;">
+            <p id="quiz-explicacao" style="font-size:14.5px;line-height:1.6;"></p>
+            <p id="quiz-pontos" style="margin-top:10px;font-size:14px;"></p>
+            <button class="btn-primary" id="quiz-continuar" style="margin-top:16px;">Continuar</button>
+          </div>
+        </section>
+
+        <aside class="missao-lateral">
+          <div class="missao-lateral__foto" id="missao-foto">
+            <img class="missao-lateral__interior" id="missao-interior" alt="" hidden>
+            <img class="missao-lateral__familia" id="missao-familia" alt="" hidden>
+          </div>
+
+          <a class="btn-ghost missao-lateral__btn" href="mapa.html">Voltar ao mapa</a>
+          <button class="btn-primary missao-lateral__btn" id="quiz-confirmar" type="button" disabled>
+            Escolha uma alternativa
+          </button>
+        </aside>
+      </div>
 
       <!-- Fim da rodada -->
       <section class="painel" id="fim" hidden>
