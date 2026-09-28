@@ -391,4 +391,280 @@ rotas.get('/meu-progresso', async (req, res) => {
   })));
 });
 
+/* ═══════════════════════════════════════════════════════════════════
+   O RESUMO DO ALUNO  —  GET /meu-resumo
+
+   Tudo o que a tela "Meu progresso" mostra acima das barras: a turma em
+   que a pessoa está, a posição dela entre os colegas, e os quatro
+   números do topo.
+
+   Por que numa rota só e não em quatro: os quatro números saem TODOS da
+   mesma leitura de respostas_alunos. Buscar a mesma tabela quatro vezes
+   para contar coisas diferentes dela seria quatro viagens ao banco para
+   responder uma pergunta só — "como eu estou indo?".
+
+   XP aqui é 10 por QUESTÃO distinta acertada, e não a soma das barras.
+   As barras são ponderadas (uma questão de vacinação vale mais em
+   Vacinação do que em Felicidade), então somá-las daria um número que
+   cresce diferente para cada pessoa conforme o que ela jogou. O aluno
+   precisa de uma régua só, igual para todo mundo: acertou uma pergunta
+   nova, ganhou 10.
+   ═══════════════════════════════════════════════════════════════════ */
+
+const XP_POR_QUESTAO = 10;
+
+// O dia "de verdade" é o do aluno, não o do servidor. Sem fixar o fuso,
+// quem joga às 22h no Brasil já conta como o dia seguinte em UTC e a
+// sequência dele quebraria sozinha durante a noite.
+const FUSO = 'America/Sao_Paulo';
+const UM_DIA = 24 * 60 * 60 * 1000;
+
+/** '2026-09-28' no fuso de quem joga. 'en-CA' é o formato ano-mês-dia. */
+function diaLocal(quando) {
+  return new Date(quando).toLocaleDateString('en-CA', { timeZone: FUSO });
+}
+
+/**
+ * Há quantos dias seguidos a pessoa aparece.
+ *
+ * A sequência continua viva se o último dia jogado for hoje OU ontem —
+ * quem jogou ontem à noite e abre o jogo hoje de manhã não pode ver a
+ * sequência zerada por ainda não ter respondido nada hoje.
+ */
+function contarDias(linhas) {
+  const dias = [...new Set(linhas.map(l => diaLocal(l.data_resposta)))].sort().reverse();
+
+  const hoje  = diaLocal(Date.now());
+  const ontem = diaLocal(Date.now() - UM_DIA);
+
+  let seguidos = 0;
+
+  if (dias[0] === hoje || dias[0] === ontem) {
+    seguidos = 1;
+
+    for (let i = 1; i < dias.length; i++) {
+      // O meio-dia evita a armadilha do horário de verão: somar ou tirar
+      // 24h de uma meia-noite pode cair no dia errado, do meio-dia nunca.
+      const esperado = new Date(dias[i - 1] + 'T12:00:00Z');
+      esperado.setUTCDate(esperado.getUTCDate() - 1);
+
+      if (esperado.toISOString().slice(0, 10) !== dias[i]) break;
+      seguidos++;
+    }
+  }
+
+  return { dias_jogados: dias.length, streak_dias: seguidos, jogou_hoje: dias[0] === hoje };
+}
+
+/** usuario_id -> quantas questões DISTINTAS ele já acertou. */
+function acertosUnicosPorAluno(linhas) {
+  const porAluno = new Map();
+
+  for (const l of linhas) {
+    if (!porAluno.has(l.usuario_id)) porAluno.set(l.usuario_id, new Set());
+    porAluno.get(l.usuario_id).add(l.questao_id);
+  }
+
+  return porAluno;
+}
+
+/**
+ * A turma do aluno, quem mais está nela e em que lugar ele fica.
+ *
+ * Serve as duas rotas: /meu-resumo usa só a turma e a posição, e
+ * /minha-turma usa a lista inteira. Ficava duplicado, e duplicado é
+ * onde as duas telas começam a discordar sobre quem está em primeiro.
+ *
+ * Devolve { erro } quando o banco falhar, { turma: null } quando a
+ * turma sumiu — são coisas diferentes e a rota trata cada uma.
+ */
+async function turmaComColegas(eu, turmaId) {
+  const turma = await admin
+    .from('turmas')
+    .select('id, nome, cor, ano_escolar, escola_id, professor_id')
+    .eq('id', turmaId)
+    .maybeSingle();
+
+  if (turma.error) return { erro: turma.error };
+  if (!turma.data) return { turma: null, colegas: [], posicao: null };
+
+  const [escola, professor, matriculados] = await Promise.all([
+    admin.from('escolas').select('nome').eq('id', turma.data.escola_id).maybeSingle(),
+    admin.from('usuarios').select('nome').eq('id', turma.data.professor_id).maybeSingle(),
+    admin.from('usuarios').select('id, nome').eq('turma_id', turmaId).eq('tipo', 'ALUNO')
+  ]);
+
+  if (matriculados.error) return { erro: matriculados.error };
+
+  const alunos = matriculados.data || [];
+
+  const dados = {
+    id: turma.data.id,
+    nome: turma.data.nome,
+    cor: turma.data.cor || null,
+    ano_escolar: turma.data.ano_escolar || null,
+    escola: escola.data?.nome || null,
+    professor: professor.data?.nome || null,
+    total_alunos: alunos.length
+  };
+
+  if (!alunos.length) return { turma: dados, colegas: [], posicao: null };
+
+  const respostas = await lerTudo(() => admin
+    .from('respostas_alunos')
+    .select('usuario_id, questao_id')
+    .eq('acertou', true)
+    .in('usuario_id', alunos.map(a => a.id))
+    .order('usuario_id').order('questao_id'));
+
+  if (respostas.error) return { erro: respostas.error };
+
+  const porAluno = acertosUnicosPorAluno(respostas.data);
+
+  // O XP é a MESMA régua da tela de progresso: 10 por questão distinta
+  // acertada. Se cada tela calculasse do seu jeito, o aluno veria dois
+  // números diferentes para a mesma coisa e não confiaria em nenhum.
+  const colegas = alunos.map(a => ({
+    nome: a.nome,
+    xp: (porAluno.get(a.id)?.size || 0) * XP_POR_QUESTAO,
+    eu: a.id === eu
+  })).sort((a, b) => b.xp - a.xp || a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  // Empate é a MESMA posição: dois alunos com o mesmo XP são os dois
+  // segundos. Contar quantos estão à frente dá isso de graça.
+  const meuXp = (porAluno.get(eu)?.size || 0) * XP_POR_QUESTAO;
+  const naFrente = colegas.filter(c => !c.eu && c.xp > meuXp).length;
+
+  return { turma: dados, colegas, posicao: { lugar: naFrente + 1, total: alunos.length } };
+}
+
+rotas.get('/meu-resumo', async (req, res) => {
+  const eu = req.usuario.id;
+  const turmaId = req.usuario.turma_id;
+
+  // ── Os quatro números ──────────────────────────────────────────────
+  const minhas = await lerTudo(() => admin
+    .from('respostas_alunos')
+    .select('questao_id, acertou, data_resposta, quiz_id')
+    .eq('usuario_id', eu)
+    .order('id'));
+
+  if (minhas.error) {
+    return falhou(res, 500, 'Não foi possível carregar seu resumo.', minhas.error, 'GET /meu-resumo');
+  }
+
+  const respostas = minhas.data.length;
+  const certas = minhas.data.filter(r => r.acertou);
+  const distintas = new Set(certas.map(r => r.questao_id));
+
+  const estatisticas = {
+    respostas,
+    acertos: certas.length,
+    // null e não zero: "ainda não respondi nada" não é "fui mal".
+    taxa: respostas ? Math.round((certas.length / respostas) * 100) : null,
+    acertos_unicos: distintas.size,
+    xp: distintas.size * XP_POR_QUESTAO,
+    missoes_concluidas: 0,
+    missoes_totais: 0,
+    ...contarDias(minhas.data)
+  };
+
+  // Sem turma o aluno ainda joga, mas não tem colegas nem missões.
+  if (!turmaId) {
+    return res.json({ turma: null, posicao: null, estatisticas });
+  }
+
+  // ── Missões concluídas ─────────────────────────────────────────────
+  const quizzes = await admin
+    .from('quizzes_professores')
+    .select('id')
+    .eq('turma_id', turmaId);
+
+  if (quizzes.error) {
+    return falhou(res, 500, 'Não foi possível carregar suas missões.', quizzes.error, 'GET /meu-resumo');
+  }
+
+  const idsQuiz = quizzes.data.map(q => q.id);
+
+  if (idsQuiz.length) {
+    const vinculos = await lerTudo(() => admin
+      .from('quiz_questoes')
+      .select('quiz_id, questao_id')
+      .in('quiz_id', idsQuiz)
+      .order('quiz_id').order('questao_id'));
+
+    if (vinculos.error) {
+      return falhou(res, 500, 'Não foi possível carregar suas missões.', vinculos.error, 'GET /meu-resumo');
+    }
+
+    const total = new Map();
+    for (const v of vinculos.data) total.set(v.quiz_id, (total.get(v.quiz_id) || 0) + 1);
+
+    // Mesma conta do mapa: questões distintas acertadas dentro daquele
+    // quiz. Acertar de novo numa segunda rodada não conta duas vezes.
+    const prontas = new Map();
+    for (const r of certas) {
+      if (!r.quiz_id) continue;
+      if (!prontas.has(r.quiz_id)) prontas.set(r.quiz_id, new Set());
+      prontas.get(r.quiz_id).add(r.questao_id);
+    }
+
+    // Um quiz sem questão nenhuma não é missão: não entra nem como
+    // pendente nem como concluída.
+    const valem = idsQuiz.filter(id => (total.get(id) || 0) > 0);
+
+    estatisticas.missoes_totais = valem.length;
+    estatisticas.missoes_concluidas = valem
+      .filter(id => (prontas.get(id) || new Set()).size >= total.get(id)).length;
+  }
+
+  // ── A turma e a posição ────────────────────────────────────────────
+  const daTurma = await turmaComColegas(eu, turmaId);
+
+  if (daTurma.erro) {
+    return falhou(res, 500, 'Não foi possível carregar sua turma.', daTurma.erro, 'GET /meu-resumo');
+  }
+
+  // Repare que os COLEGAS ficam de fora daqui. Esta rota responde "como
+  // eu estou indo?", e para isso "3º de 24" basta — quem são os outros
+  // dois da frente é assunto da tela da turma, não desta.
+  res.json({
+    turma: daTurma.turma,
+    posicao: daTurma.posicao,
+    estatisticas
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   A TURMA DO ALUNO  —  GET /minha-turma
+
+   O que o aluno vê sobre a turma dele: nome, ano, escola, professor, e
+   quem mais está lá dentro.
+
+   Por que não dá para reaproveitar turma.html (a tela do professor):
+   aquela página pede `?id=` na URL e chama rotas de /professor, que
+   recusam quem não é dono da turma. O aluno também não deve escolher
+   turma por parâmetro de URL — a dele sai da conta, e só ela.
+
+   O QUE ESTA ROTA NÃO DEVOLVE: taxa de acerto de colega. A lista sai
+   por XP, que é um número que só sobe — dá para ficar em último e ainda
+   assim ter "40 XP", que é algo que a pessoa conquistou. Uma coluna de
+   "45% de acerto" ao lado do nome de uma criança de 8 anos, exposta
+   para a turma toda, é outra coisa.
+   ═══════════════════════════════════════════════════════════════════ */
+
+rotas.get('/minha-turma', async (req, res) => {
+  if (!req.usuario.turma_id) {
+    return res.json({ turma: null, colegas: [], posicao: null });
+  }
+
+  const daTurma = await turmaComColegas(req.usuario.id, req.usuario.turma_id);
+
+  if (daTurma.erro) {
+    return falhou(res, 500, 'Não foi possível carregar sua turma.', daTurma.erro, 'GET /minha-turma');
+  }
+
+  res.json(daTurma);
+});
+
 module.exports = rotas;

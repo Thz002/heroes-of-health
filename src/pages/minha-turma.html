@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minha turma - Heróis da Saúde</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/progresso.css">
+  <script src="/vendor/supabase.js"></script>
+  <script src="../js/supabase.js" defer></script>
+  <script src="../js/api.js" defer></script>
+  <script src="../js/navbar.js" defer></script>
+  <script src="../js/minha-turma.js" defer></script>
+</head>
+
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="fundo-vivo" aria-hidden="true">
+    <span style="--x:10%; --tam:13px; --dur:24s; --atraso:0s"></span>
+    <span style="--x:38%; --tam:8px;  --dur:28s; --atraso:5s"></span>
+    <span style="--x:67%; --tam:16px; --dur:20s; --atraso:2s"></span>
+    <span style="--x:89%; --tam:10px; --dur:26s; --atraso:9s"></span>
+  </div>
+
+  <div class="page-wrap">
+
+    <!-- A barra inteira é desenhada pelo navbar.js: links, selo de XP e o
+         botão Sair. Para mudar o menu, é a lista no topo daquele arquivo. -->
+    <nav class="nav_bar" data-navbar></nav>
+
+    <main class="main-content">
+
+      <div class="welcome-bar">
+        <div class="welcome-text">
+          <h2>Minha turma</h2>
+          <p id="turma-subtitulo">A turma em que você está e quem joga com você.</p>
+        </div>
+        <a href="mapa.html" class="btn btn--sm">Voltar ao mapa</a>
+      </div>
+
+      <p class="turmas-erro" id="turma-erro" hidden></p>
+
+      <div class="dashboard-grid">
+        <div class="col-full">
+
+          <!-- ── A turma ───────────────────────────────────────────── -->
+          <section class="turma-faixa" id="bloco-turma" hidden>
+            <div class="turma-faixa__id">
+              <span class="turma-faixa__ponto" id="turma-cor"></span>
+              <div>
+                <h3 class="turma-faixa__nome" id="turma-nome"></h3>
+                <p class="turma-faixa__onde" id="turma-onde"></p>
+              </div>
+            </div>
+
+            <div class="turma-faixa__posicao" id="turma-posicao" hidden>
+              <span class="turma-faixa__lugar" id="posicao-lugar"></span>
+              <span class="turma-faixa__rot" id="posicao-rot"></span>
+            </div>
+          </section>
+
+          <!-- Aluno sem turma. Acontece de verdade: turma_id fica nulo
+               quando o professor apaga a turma. -->
+          <section class="turma-faixa turma-faixa--vazia" id="bloco-sem-turma" hidden>
+            <p>
+              Você ainda não está em nenhuma turma. Peça o código ao seu professor —
+              é por ele que as missões da sala chegam até você. Enquanto isso, o mapa
+              continua aberto para explorar.
+            </p>
+          </section>
+
+          <!-- ── Quem mais está na turma ───────────────────────────── -->
+          <section class="dashboard-section" id="titulo-colegas" hidden>
+            <h3>Quem está jogando</h3>
+          </section>
+
+          <section class="painel" id="bloco-colegas" hidden>
+            <p class="temas-intro">
+              Todo mundo da turma, pelo XP que já juntou. O XP só sobe — ele conta o que
+              você descobriu, nunca o que faltou.
+            </p>
+
+            <ol class="colegas" id="lista-colegas"></ol>
+          </section>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>

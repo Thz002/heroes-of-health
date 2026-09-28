@@ -28,35 +28,9 @@
 
   <div class="page-wrap">
 
-    <nav class="nav_bar">
-      <div class="topLine">
-        <div class="navbar__inner">
-          <div class="navbar__logo">
-            <div class="navbar__logo-dot">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
-                <path
-                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-            </div>
-            HERÓIS DA SAÚDE
-          </div>
-
-          <div style="display:flex;align-items:center;gap:20px;">
-            <!-- data-perfil diz para quem cada link existe. Quem cumpre a
-                 regra é o navbar.js, que roda em todas as páginas. -->
-            <ul class="navbar__links">
-              <li data-perfil="PROFESSOR"><a href="dashboard.html">Turmas</a></li>
-              <li data-perfil="PROFESSOR"><a href="quizzes.html" class="navbar__ativo">Quizes</a></li>
-              <li data-perfil="ALUNO"><a href="mapa.html">Mapa</a></li>
-              <li data-perfil="ALUNO"><a href="missao.html">Missões</a></li>
-              <li data-perfil="PROFESSOR ALUNO"><a href="ranking.html">Ranking</a></li>
-            </ul>
-
-            <button id="logout-btn" class="btn-logout">Sair</button>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <!-- A barra inteira é desenhada pelo navbar.js: links, selo de XP e o
+         botão Sair. Para mudar o menu, é a lista no topo daquele arquivo. -->
+    <nav class="nav_bar" data-navbar></nav>
 
     <main class="main-content">
 

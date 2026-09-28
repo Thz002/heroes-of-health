@@ -1,0 +1,366 @@
+/* ═══════════════════════════════════════════════════════════════════
+   progresso.css — a tela "Meu progresso" (progresso.html)
+
+   Três blocos empilhados: os quatro números, a faixa da turma e as 8
+   barras por tema.
+
+   As cores saem todas dos tokens do style.css (--accent, --gold,
+   --glass-bg…). A única exceção é a bolinha da turma, que recebe a cor
+   escolhida pelo professor por style inline.
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+/* ── BLOCO 1 — os quatro números ──────────────────────────────────── */
+
+/* auto-fit + minmax é o que dispensa media query aqui: os cartões ficam
+   lado a lado enquanto couberem 190px cada, e quebram sozinhos no
+   celular — vira 2x2 e depois uma coluna, sem ninguém mandar. */
+.progresso-numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.numero-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 20px 22px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.numero-card__valor {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--white);
+}
+
+/* O rótulo é o que o número quer dizer, então ele vem logo embaixo e
+   com o mesmo peso visual de um subtítulo — não é legenda de rodapé. */
+.numero-card__rot {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.numero-card__nota {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* O XP é o número que o jogo inteiro alimenta: ganha o dourado. */
+.numero-card--xp .numero-card__valor { color: var(--gold); }
+
+
+/* ── BLOCO 2 — a faixa da turma ───────────────────────────────────── */
+
+.turma-faixa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 22px;
+  margin-bottom: 26px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.turma-faixa__id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.turma-faixa__ponto {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+.turma-faixa__nome {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--white);
+  margin: 0;
+}
+
+.turma-faixa__onde {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.turma-faixa__posicao {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(107, 223, 184, 0.22);
+  border-radius: 99px;
+}
+
+.turma-faixa__lugar {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.turma-faixa__rot {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.turma-faixa--vazia p {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+
+/* ── BLOCO 3 — as barras por tema ─────────────────────────────────── */
+
+.temas-intro {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 18px;
+}
+
+.temas {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Três colunas: nome | barra | rótulo. O nome tem largura fixa para as
+   oito barras começarem todas no mesmo x — desalinhadas, elas viram
+   oito gráficos soltos em vez de uma leitura só. */
+.tema {
+  display: grid;
+  grid-template-columns: 132px 1fr 104px;
+  align-items: center;
+  gap: 16px;
+
+  animation: tema-entra 0.4s ease both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+@keyframes tema-entra {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.tema__nome {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.tema__barra {
+  position: relative;
+  display: block;
+  height: 10px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.tema__barra i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: var(--cor-tema, var(--primary));
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* O rótulo à direita é o que a pessoa lê primeiro, então ele não pode
+   ser mais fraco que a barra: mesmo tamanho do nome do tema. */
+.tema__rotulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cor-tema, var(--accent));
+  text-align: right;
+}
+
+/* As faixas.
+
+   A escala NÃO vai de vermelho a verde. Vermelho é a cor de erro em
+   qualquer interface, e uma barra baixa aqui não é erro nenhum — é
+   assunto que a pessoa ainda não jogou. Então o que muda do começo ao
+   fim é a intensidade, não o significado: começa num azul calmo e vai
+   esquentando até o dourado. Nenhum degrau desta escala é ruim. */
+.tema--zero   { --cor-tema: rgba(255, 255, 255, 0.45); }
+.tema--inicio { --cor-tema: #7fb8d8; }
+.tema--meio   { --cor-tema: var(--primary); }
+.tema--bom    { --cor-tema: var(--accent); }
+.tema--topo   { --cor-tema: var(--gold); }
+
+/* Área que ainda não tem pergunta nenhuma no jogo. Fica apagada de
+   propósito: é a única linha que não fala sobre o aluno. */
+.tema--vazio {
+  opacity: 0.45;
+}
+
+.tema--vazio .tema__rotulo {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   A LISTA DA TURMA (minha-turma.html)
+
+   Mora aqui, e não num arquivo próprio, porque as duas telas do aluno
+   dividem a faixa da turma lá de cima. Separar em dois arquivos era
+   duplicar .turma-faixa e esperar que as cópias não se afastassem.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.colegas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: none;
+}
+
+.colega {
+  display: grid;
+  grid-template-columns: 28px 30px minmax(72px, 1fr) minmax(60px, 2fr) 74px;
+  align-items: center;
+  gap: 12px;
+
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+
+  animation: tema-entra 0.4s ease both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.colega__pos {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.colega__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--white);
+}
+
+.colega__nome {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.colega__barra {
+  display: block;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.colega__barra i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: var(--cor-colega, var(--primary));
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.colega__xp {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--cor-colega, var(--accent));
+  text-align: right;
+}
+
+/* O pódio. Só as três primeiras mudam de cor — a quarta em diante não
+   ganha uma cor "pior", ganha a cor padrão. Uma escala que fosse
+   piorando linha a linha transformaria a lista num boletim. */
+.colega--ouro   { --cor-colega: var(--gold); }
+.colega--prata  { --cor-colega: #cfd8dc; }
+.colega--bronze { --cor-colega: #d8a06a; }
+
+.colega--ouro .colega__pos,
+.colega--prata .colega__pos,
+.colega--bronze .colega__pos {
+  color: var(--cor-colega);
+}
+
+/* A linha de quem está olhando. É a única informação que a pessoa
+   procura de verdade ao abrir a lista, então ela precisa saltar. */
+.colega--eu {
+  background: var(--accent-soft);
+  border-color: rgba(107, 223, 184, 0.28);
+}
+
+.colega--eu .colega__nome {
+  color: var(--white);
+  font-weight: 700;
+}
+
+
+/* ── Celular ──────────────────────────────────────────────────────── */
+
+@media (max-width: 560px) {
+  /* A barra sai: com a tela estreita ela viraria um traço de 30px, que
+     não compara nada. Sobram posição, nome e XP, que é o essencial. */
+  .colega {
+    grid-template-columns: 24px 30px 1fr auto;
+    gap: 10px;
+  }
+
+  .colega__barra { display: none; }
+
+  /* A barra passa para baixo do nome: com 132px de rótulo sobrariam uns
+     80px de barra, curtos demais para mostrar diferença entre 20% e 60%. */
+  .tema {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "nome rotulo"
+      "barra barra";
+    gap: 6px 12px;
+  }
+
+  .tema__nome   { grid-area: nome; }
+  .tema__rotulo { grid-area: rotulo; }
+  .tema__barra  { grid-area: barra; }
+
+  .numero-card__valor { font-size: 26px; }
+}

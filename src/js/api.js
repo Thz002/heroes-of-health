@@ -211,6 +211,29 @@ const API = (() => {
   /** As 8 barras do aluno, sempre as 8, mesmo as zeradas */
   const getMeuProgresso = () => get('/meu-progresso');
 
+  /**
+   * O cabeçalho da tela "Meu progresso": a turma do aluno, a posição
+   * dele entre os colegas e os quatro números do topo (missões, XP,
+   * sequência de dias e taxa de acerto).
+   *
+   * Devolve { turma, posicao, estatisticas }. `turma` e `posicao` vêm
+   * nulos para quem ainda não entrou em nenhuma turma — a tela mostra o
+   * resto normalmente.
+   */
+  const getMeuResumo = () => get('/meu-resumo');
+
+  /**
+   * A turma do aluno e quem mais está nela.
+   *
+   * Devolve { turma, colegas, posicao }. `colegas` sai ordenado por XP,
+   * e o próprio aluno vem marcado com `eu: true` — é assim que a tela
+   * destaca a linha dele sem ter de comparar nome com nome.
+   *
+   * Não confundir com getMinhasTurmas(), que é do PROFESSOR e devolve
+   * as turmas que ele criou.
+   */
+  const getMinhaTurma = () => get('/minha-turma');
+
   // ── Professor ──────────────────────────────
   const getMinhasTurmas = () => get('/professor/turmas');
   const criarQuiz = ({ turma_id, titulo, descricao, cenarios, areas, qtd_questoes, tempo_limite_segundos }) =>
@@ -267,6 +290,8 @@ const API = (() => {
     getCenarios,
     responder,
     getMeuProgresso,
+    getMeuResumo,
+    getMinhaTurma,
     getMeuMapa,
     getMeusQuizzes,
     getQuestoesDoQuiz,
