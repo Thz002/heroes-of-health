@@ -410,12 +410,229 @@ img { max-width: 100%; display: block; }
   list-style: none;
 }
 
-/* O lado direito da barra: links, selo de XP e o botão Sair. Era um
+/* O lado direito da barra: links, selo de XP e o canto do perfil. Era um
    style="display:flex" repetido dentro de cada HTML. */
 .navbar__acoes {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   O CANTO DO PERFIL
+
+   Ocupou o lugar do botão "Sair". O Sair continua ali dentro — sair da
+   conta é a ação mais destrutiva da barra, e não devia ser a mais fácil
+   de acertar sem querer com o dedo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.perfil {
+  position: relative;
+}
+
+.perfil__botao {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.perfil__botao:hover,
+.perfil__botao[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--glass-border);
+}
+
+.perfil__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+
+  /* O mesmo verde dos botões primários: o avatar é a pessoa, e a pessoa
+     é o elemento mais "dela" da barra. */
+  background: linear-gradient(145deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--white);
+}
+
+/* Quando existir foto de verdade, ela preenche o círculo inteiro. */
+.perfil__avatar--foto { background: rgba(255, 255, 255, 0.1); }
+.perfil__avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.perfil__seta {
+  width: 14px;
+  height: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: transform 0.25s ease;
+}
+
+.perfil__botao[aria-expanded="true"] .perfil__seta { transform: rotate(180deg); }
+
+
+/* ── O painel que desce ───────────────────────────────────────────────
+   O verde é o --bg-light da paleta, clareado: precisa destacar-se da
+   barra (que é quase preta) sem virar uma cor nova no projeto. */
+.perfil__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 200;
+  min-width: 232px;
+
+  background: linear-gradient(160deg, #13867e 0%, #0e6b6c 100%);
+  border: 1px solid rgba(107, 223, 184, 0.28);
+  border-radius: var(--radius-md);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+
+  padding: 6px;
+  animation: perfil-abre 0.18s ease both;
+}
+
+@keyframes perfil-abre {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.perfil__cabeca {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 10px 12px 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.perfil__nome {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perfil__tipo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* A perspectiva mora AQUI, no pai. Sem ela o translateZ não tem de onde
+   ser visto e o item não se mexe um milímetro — é o erro clássico de
+   quem tenta 3D em CSS pela primeira vez. */
+.perfil__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  perspective: 620px;
+  transform-style: preserve-3d;
+}
+
+.perfil__item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  text-align: left;
+  cursor: pointer;
+
+  /* O salto para a frente. O eixo Z aproxima o item de quem olha, como
+     se ele levantasse da superfície — a curva de saída é rápida e a de
+     volta é macia, que é o que faz parecer peso e não pisca-pisca. */
+  transform: translateZ(0);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+              background 0.2s, color 0.2s, box-shadow 0.22s;
+}
+
+.perfil__item:hover,
+.perfil__item:focus-visible {
+  transform: translateZ(26px);
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--white);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  outline: none;
+}
+
+.perfil__item:active { transform: translateZ(10px); }
+
+.perfil__icone {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  color: var(--accent);
+  transition: color 0.2s;
+}
+
+.perfil__item--sair { color: rgba(255, 255, 255, 0.75); }
+.perfil__item--sair .perfil__icone { color: rgba(255, 255, 255, 0.5); }
+
+/* Sair não fica vermelho no hover: numa tela de criança, vermelho é
+   susto. Fica só mais aceso, como os outros. */
+.perfil__item--sair:hover .perfil__icone { color: var(--white); }
+
+/* "Minhas conquistas" ainda não tem para onde ir. Fica visível, porque
+   some o que existe é pior do que mostrar o que vem — mas não salta e
+   não responde ao clique. */
+.perfil__item--breve {
+  cursor: default;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.perfil__item--breve:hover {
+  transform: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  box-shadow: none;
+}
+
+.perfil__item--breve .perfil__icone { color: rgba(255, 255, 255, 0.3); }
+
+.perfil__breve {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Quem pediu menos movimento no sistema recebe menos movimento. */
+@media (prefers-reduced-motion: reduce) {
+  .perfil__item,
+  .perfil__item:hover,
+  .perfil__item:focus-visible { transform: none; }
+  .perfil__menu { animation: none; }
 }
 
 .navbar__links a {

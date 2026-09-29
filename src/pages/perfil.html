@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu perfil - Heróis da Saúde</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/progresso.css">
+  <script src="/vendor/supabase.js"></script>
+  <script src="../js/supabase.js" defer></script>
+  <script src="../js/api.js" defer></script>
+  <script src="../js/navbar.js" defer></script>
+  <script src="../js/perfil.js" defer></script>
+</head>
+
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="page-wrap">
+
+    <!-- A barra inteira é desenhada pelo navbar.js: links, selo de XP e o
+         canto do perfil. Para mudar o menu, é a lista no topo daquele arquivo. -->
+    <nav class="nav_bar" data-navbar></nav>
+
+    <main class="main-content">
+
+      <div class="welcome-bar">
+        <div class="welcome-text">
+          <h2>Meu perfil</h2>
+          <p id="perfil-subtitulo">Seus dados no jogo.</p>
+        </div>
+      </div>
+
+      <p class="turmas-erro" id="perfil-erro" hidden></p>
+
+      <div class="dashboard-grid">
+        <div class="col-full">
+
+          <!-- ── Quem é ─────────────────────────────────────────────── -->
+          <section class="cartao-perfil">
+            <div class="cartao-perfil__avatar" id="avatar-grande"></div>
+
+            <div class="cartao-perfil__dados">
+              <h3 class="cartao-perfil__nome" id="dado-nome">…</h3>
+              <span class="cartao-perfil__cargo" id="dado-tipo"></span>
+
+              <dl class="cartao-perfil__lista" id="dado-lista"></dl>
+            </div>
+          </section>
+
+          <!-- ── Os números (só para aluno) ─────────────────────────── -->
+          <section class="progresso-numeros" id="bloco-numeros" hidden>
+            <article class="numero-card numero-card--xp">
+              <span class="numero-card__valor" id="num-xp">—</span>
+              <span class="numero-card__rot">XP acumulado</span>
+              <span class="numero-card__nota" id="num-xp-nota"></span>
+            </article>
+
+            <article class="numero-card">
+              <span class="numero-card__valor" id="num-missoes">—</span>
+              <span class="numero-card__rot">missões concluídas</span>
+              <span class="numero-card__nota" id="num-missoes-nota"></span>
+            </article>
+
+            <article class="numero-card">
+              <span class="numero-card__valor" id="num-streak">—</span>
+              <span class="numero-card__rot">de sequência</span>
+              <span class="numero-card__nota" id="num-streak-nota"></span>
+            </article>
+
+            <article class="numero-card">
+              <span class="numero-card__valor" id="num-taxa">—</span>
+              <span class="numero-card__rot">de acerto</span>
+              <span class="numero-card__nota" id="num-taxa-nota"></span>
+            </article>
+          </section>
+
+          <p class="perfil-atalhos" id="atalhos" hidden>
+            Para ver as barras por tema, vá em <a href="progresso.html">Meu progresso</a>.
+          </p>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>

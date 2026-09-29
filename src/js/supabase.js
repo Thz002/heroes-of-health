@@ -151,6 +151,13 @@ const AUTH = (() => {
     const conta = await contaAtual();
     if (!conta) return null;
 
+    // ATENÇÃO ao acrescentar a foto: o navbar.js já sabe desenhar
+    // `avatar_url` (e cai nas iniciais quando não houver), mas ele só
+    // recebe as colunas listadas AQUI. Depois de rodar
+    //   alter table usuarios add column if not exists avatar_url text;
+    // é preciso incluir avatar_url nesta linha — senão a coluna existe,
+    // a foto é salva, e o avatar continua mostrando as iniciais sem
+    // ninguém entender por quê.
     const r = await SUPA
       .from('usuarios')
       .select('id, nome, tipo, idade, escola_id, turma_id')

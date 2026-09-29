@@ -47,6 +47,67 @@
       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
     </svg>`;
 
+  /* ── O CANTO DO PERFIL ───────────────────────────────────────────────
+     Substituiu o botão "Sair" solto. O Sair continua existindo, mas
+     dentro do menu — tirar a conta é a ação mais destrutiva da barra e
+     não devia ser a mais fácil de acertar com o dedo.
+
+     O avatar começa com as INICIAIS. A tabela usuarios ainda não tem
+     coluna de foto, então a foto de verdade não existe em lugar nenhum
+     do sistema; a marcação já espera por ela (`avatar_url`) e troca
+     sozinha no dia em que a coluna aparecer.
+     ────────────────────────────────────────────────────────────────── */
+  const ROTULO_TIPO = { ALUNO: 'Aluno', PROFESSOR: 'Professor', ADMIN: 'Equipe' };
+
+  const ICONES = {
+    perfil: '<path d="M12 12a4 4 0 100-8 4 4 0 000 8z"/><path d="M4 20c0-3.3 3.6-5.5 8-5.5s8 2.2 8 5.5"/>',
+    troferu: '<path d="M8 4h8v5a4 4 0 01-8 0V4z"/><path d="M8 6H5v1a3 3 0 003 3M16 6h3v1a3 3 0 01-3 3"/><path d="M10 17h4M12 13v4M9 20h6"/>',
+    sair: '<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>'
+  };
+
+  const icone = (nome) =>
+    `<svg class="perfil__icone" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
+       aria-hidden="true">${ICONES[nome]}</svg>`;
+
+  const PERFIL = `
+    <div class="perfil">
+      <button type="button" class="perfil__botao" id="perfil-botao"
+              aria-haspopup="true" aria-expanded="false" aria-label="Sua conta">
+        <span class="perfil__avatar" id="perfil-avatar"></span>
+        <svg class="perfil__seta" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </button>
+
+      <div class="perfil__menu" id="perfil-menu" hidden>
+        <div class="perfil__cabeca">
+          <span class="perfil__nome" id="perfil-nome">…</span>
+          <span class="perfil__tipo" id="perfil-tipo"></span>
+        </div>
+
+        <ul class="perfil__lista">
+          <li>
+            <a href="perfil.html" class="perfil__item">
+              ${icone('perfil')}<span>Meu perfil</span>
+            </a>
+          </li>
+          <li>
+            <span class="perfil__item perfil__item--breve" aria-disabled="true">
+              ${icone('troferu')}<span>Minhas conquistas</span>
+              <em class="perfil__breve">em breve</em>
+            </span>
+          </li>
+          <li>
+            <button type="button" class="perfil__item perfil__item--sair" id="logout-btn">
+              ${icone('sair')}<span>Sair</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>`;
+
   iniciar();
 
   async function iniciar() {
@@ -67,11 +128,94 @@
       // antigo o botão veio do HTML e o script da própria página já
       // cuidou dele — ligar de novo aqui faria o clique sair duas vezes.
       ligarSair();
+      ligarMenuDoPerfil();
+      preencherPerfil();
     } else if (tipo) {
       filtrarOAntigo(antigos, tipo);
     }
 
     if (tipo === 'ALUNO') mostrarXp();
+  }
+
+  /**
+   * Abrir, fechar e fechar direito.
+   *
+   * Um menu que só abre e fecha no próprio botão vira armadilha: a
+   * pessoa clica fora esperando que suma, ele não some, e ela clica de
+   * novo em cima de algo que não queria. Por isso três saídas — o botão,
+   * um clique em qualquer outro lugar, e Esc.
+   */
+  function ligarMenuDoPerfil() {
+    const botao = document.getElementById('perfil-botao');
+    const menu = document.getElementById('perfil-menu');
+    if (!botao || !menu) return;
+
+    const fechar = () => {
+      menu.hidden = true;
+      botao.setAttribute('aria-expanded', 'false');
+    };
+
+    botao.addEventListener('click', (ev) => {
+      ev.stopPropagation();          // senão o clique que abre já fecha
+      const abrindo = menu.hidden;
+      menu.hidden = !abrindo;
+      botao.setAttribute('aria-expanded', String(abrindo));
+    });
+
+    // Clique dentro do menu não fecha — a pessoa pode estar só mirando.
+    menu.addEventListener('click', (ev) => ev.stopPropagation());
+
+    document.addEventListener('click', fechar);
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Escape' || menu.hidden) return;
+      fechar();
+      botao.focus();                 // o foco volta para onde estava
+    });
+  }
+
+  /**
+   * O nome e as iniciais de quem está logado.
+   *
+   * Roda depois da barra já estar desenhada: os links aparecem na hora,
+   * pelo tipo lembrado, e só o avatar espera o banco. O contrário — a
+   * barra inteira esperando — era meio segundo de tela vazia em toda
+   * navegação.
+   */
+  async function preencherPerfil() {
+    const avatar = document.getElementById('perfil-avatar');
+    if (!avatar) return;
+
+    let perfil = null;
+    try { perfil = await AUTH.perfilAtual(); } catch (_) { /* segue com o genérico */ }
+    if (!perfil) return;
+
+    // No dia em que usuarios ganhar uma coluna de foto, ela entra aqui e
+    // as iniciais viram o plano B de quem não subiu nenhuma.
+    if (perfil.avatar_url) {
+      const img = document.createElement('img');
+      img.src = perfil.avatar_url;
+      img.alt = '';
+      avatar.innerHTML = '';
+      avatar.appendChild(img);
+      avatar.classList.add('perfil__avatar--foto');
+    } else {
+      avatar.textContent = iniciais(perfil.nome);
+    }
+
+    const nome = document.getElementById('perfil-nome');
+    const tipo = document.getElementById('perfil-tipo');
+
+    // textContent: nome é texto escrito por pessoa, nunca código.
+    if (nome) nome.textContent = perfil.nome || 'Minha conta';
+    if (tipo) tipo.textContent = ROTULO_TIPO[perfil.tipo] || '';
+  }
+
+  /** "Ana Clara Souza" -> "AS". Uma letra só quando não há sobrenome. */
+  function iniciais(nome) {
+    const partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
+    if (!partes.length) return '?';
+    if (partes.length === 1) return partes[0].charAt(0).toUpperCase();
+    return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
   }
 
   /** ADMIN vê tudo; sem tipo conhecido, também — melhor demais que de menos. */
@@ -103,7 +247,7 @@
           <div class="navbar__acoes">
             <ul class="navbar__links">${links}</ul>
             <div class="xp-badge" id="nav-xp" hidden></div>
-            <button type="button" id="logout-btn" class="btn-logout">Sair</button>
+            ${PERFIL}
           </div>
         </div>
       </div>`;

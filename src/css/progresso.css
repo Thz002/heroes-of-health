@@ -223,6 +223,98 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════
+   O CARTÃO DO PERFIL (perfil.html)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.cartao-perfil {
+  display: flex;
+  align-items: flex-start;
+  gap: 22px;
+  flex-wrap: wrap;
+
+  padding: 26px;
+  margin-bottom: 20px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.cartao-perfil__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+  border-radius: 50%;
+
+  background: linear-gradient(145deg, var(--primary), var(--primary-dark));
+  box-shadow: var(--shadow-primary);
+
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 27px;
+  letter-spacing: 1px;
+  color: var(--white);
+}
+
+.cartao-perfil__dados { flex: 1 1 260px; }
+
+.cartao-perfil__nome {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 22px;
+  color: var(--white);
+  margin: 0;
+}
+
+.cartao-perfil__cargo {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Duas colunas: rótulo à esquerda, valor à direita. O rótulo tem largura
+   fixa para os valores alinharem — soltos, viram um parágrafo picado. */
+.cartao-perfil__lista {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 8px 16px;
+  margin: 18px 0 0;
+}
+
+.cartao-perfil__lista dt {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.cartao-perfil__lista dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.perfil-atalhos {
+  margin: 18px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 560px) {
+  .cartao-perfil__lista {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .cartao-perfil__lista dd { margin-bottom: 10px; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
    A LISTA DA TURMA (minha-turma.html)
 
    Mora aqui, e não num arquivo próprio, porque as duas telas do aluno
