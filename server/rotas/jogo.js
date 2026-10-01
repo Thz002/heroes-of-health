@@ -12,6 +12,9 @@ const { admin } = require('../supabase');
 const { autenticar } = require('../middleware/autenticar');
 const { falhou } = require('../erros');
 const { lerTudo } = require('../lerTudo');
+const PROG = require('../progressao');
+
+const { XP_POR_QUESTAO, acertosUnicosPorAluno } = PROG;
 
 const rotas = express.Router();
 rotas.use(autenticar);
@@ -403,70 +406,10 @@ rotas.get('/meu-progresso', async (req, res) => {
    para contar coisas diferentes dela seria quatro viagens ao banco para
    responder uma pergunta só — "como eu estou indo?".
 
-   XP aqui é 10 por QUESTÃO distinta acertada, e não a soma das barras.
-   As barras são ponderadas (uma questão de vacinação vale mais em
-   Vacinação do que em Felicidade), então somá-las daria um número que
-   cresce diferente para cada pessoa conforme o que ela jogou. O aluno
-   precisa de uma régua só, igual para todo mundo: acertou uma pergunta
-   nova, ganhou 10.
+   O XP e o nível NÃO são calculados aqui: vêm de server/progressao.js,
+   que é o único lugar do projeto que sabe quanto cada coisa vale. Esta
+   rota só pergunta e repassa.
    ═══════════════════════════════════════════════════════════════════ */
-
-const XP_POR_QUESTAO = 10;
-
-// O dia "de verdade" é o do aluno, não o do servidor. Sem fixar o fuso,
-// quem joga às 22h no Brasil já conta como o dia seguinte em UTC e a
-// sequência dele quebraria sozinha durante a noite.
-const FUSO = 'America/Sao_Paulo';
-const UM_DIA = 24 * 60 * 60 * 1000;
-
-/** '2026-09-28' no fuso de quem joga. 'en-CA' é o formato ano-mês-dia. */
-function diaLocal(quando) {
-  return new Date(quando).toLocaleDateString('en-CA', { timeZone: FUSO });
-}
-
-/**
- * Há quantos dias seguidos a pessoa aparece.
- *
- * A sequência continua viva se o último dia jogado for hoje OU ontem —
- * quem jogou ontem à noite e abre o jogo hoje de manhã não pode ver a
- * sequência zerada por ainda não ter respondido nada hoje.
- */
-function contarDias(linhas) {
-  const dias = [...new Set(linhas.map(l => diaLocal(l.data_resposta)))].sort().reverse();
-
-  const hoje  = diaLocal(Date.now());
-  const ontem = diaLocal(Date.now() - UM_DIA);
-
-  let seguidos = 0;
-
-  if (dias[0] === hoje || dias[0] === ontem) {
-    seguidos = 1;
-
-    for (let i = 1; i < dias.length; i++) {
-      // O meio-dia evita a armadilha do horário de verão: somar ou tirar
-      // 24h de uma meia-noite pode cair no dia errado, do meio-dia nunca.
-      const esperado = new Date(dias[i - 1] + 'T12:00:00Z');
-      esperado.setUTCDate(esperado.getUTCDate() - 1);
-
-      if (esperado.toISOString().slice(0, 10) !== dias[i]) break;
-      seguidos++;
-    }
-  }
-
-  return { dias_jogados: dias.length, streak_dias: seguidos, jogou_hoje: dias[0] === hoje };
-}
-
-/** usuario_id -> quantas questões DISTINTAS ele já acertou. */
-function acertosUnicosPorAluno(linhas) {
-  const porAluno = new Map();
-
-  for (const l of linhas) {
-    if (!porAluno.has(l.usuario_id)) porAluno.set(l.usuario_id, new Set());
-    porAluno.get(l.usuario_id).add(l.questao_id);
-  }
-
-  return porAluno;
-}
 
 /**
  * A turma do aluno, quem mais está nela e em que lugar ele fica.
@@ -557,16 +500,45 @@ rotas.get('/meu-resumo', async (req, res) => {
   const certas = minhas.data.filter(r => r.acertou);
   const distintas = new Set(certas.map(r => r.questao_id));
 
+  // O professor também passa por aqui (a tela de perfil é a mesma), e o
+  // XP dele NÃO sai de respostas_alunos — ele não responde pergunta
+  // nenhuma. Sem este desvio, esta rota devolvia 0 XP para um professor
+  // que a barra, pela /presenca, mostrava com 156: dois números para a
+  // mesma coisa, que é o jeito mais rápido de ninguém confiar em nenhum.
+  //
+  // As respostas já estão lidas: passar a lista evita que o módulo de
+  // progressão vá buscar a mesma coisa de novo.
+  const retrato = req.usuario.tipo === 'PROFESSOR'
+    ? await PROG.xpDoProfessor(eu)
+    : await PROG.xpDoAluno(eu, minhas.data);
+
+  if (retrato.erro) {
+    return falhou(res, 500, 'Não foi possível carregar seu resumo.', retrato.erro, 'GET /meu-resumo');
+  }
+
   const estatisticas = {
     respostas,
     acertos: certas.length,
     // null e não zero: "ainda não respondi nada" não é "fui mal".
     taxa: respostas ? Math.round((certas.length / respostas) * 100) : null,
     acertos_unicos: distintas.size,
-    xp: distintas.size * XP_POR_QUESTAO,
+
+    // O XP agora soma três fontes: questões, dias de presença e
+    // insígnias. `de_questoes`/`de_dias`/`de_insignias` vão junto para a
+    // tela poder explicar de onde veio, em vez de mostrar um total que
+    // a pessoa não sabe como cresceu.
+    xp: retrato.total,
+    xp_de_questoes: retrato.de_questoes,
+    xp_de_dias: retrato.de_dias,
+    xp_de_insignias: retrato.de_insignias,
+    nivel: retrato.nivel,
+
     missoes_concluidas: 0,
     missoes_totais: 0,
-    ...contarDias(minhas.data)
+
+    dias_jogados: retrato.dias_jogados,
+    streak_dias: retrato.streak_dias,
+    jogou_hoje: retrato.jogou_hoje
   };
 
   // Sem turma o aluno ainda joga, mas não tem colegas nem missões.
@@ -665,6 +637,252 @@ rotas.get('/minha-turma', async (req, res) => {
   }
 
   res.json(daTurma);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   A PRESENÇA DO DIA  —  POST /presenca
+
+   O prêmio diário precisava de um gatilho, e o login não serve: quem
+   faz o login é o Supabase, direto do navegador, sem passar por aqui.
+   Além disso quem fica dias com a aba aberta nunca "loga" de novo.
+
+   Então o gatilho é a primeira vez que a pessoa aparece no servidor em
+   cada sessão do navegador. O banco é que decide se vale prêmio: a
+   chave (usuario_id, dia) recusa o segundo do mesmo dia. Chamar demais
+   é inofensivo — e é por isso que o navegador pode chamar sem medo.
+
+   É POST e não GET porque esta rota ESCREVE. Um GET que grava é a
+   receita para o navegador repetir a chamada sozinho ao recarregar.
+   ═══════════════════════════════════════════════════════════════════ */
+
+rotas.post('/presenca', async (req, res) => {
+  const eu = req.usuario.id;
+  const sou = req.usuario.tipo;
+
+  const presenca = await PROG.marcarPresenca(eu);
+
+  if (presenca.erro) {
+    return falhou(res, 500, 'Não foi possível registrar sua entrada.', presenca.erro, 'POST /presenca');
+  }
+
+  // Depois de marcar, e não antes: o dia de hoje já tem de estar contado
+  // quando a sequência for medida, senão a insígnia de 7 dias só sairia
+  // na visita seguinte.
+  const retrato = sou === 'PROFESSOR'
+    ? await PROG.xpDoProfessor(eu)
+    : await PROG.xpDoAluno(eu);
+
+  if (retrato.erro) {
+    return falhou(res, 500, 'Não foi possível calcular seu progresso.', retrato.erro, 'POST /presenca');
+  }
+
+  const medidas = sou === 'PROFESSOR'
+    ? retrato.medidas
+    : await PROG.medirAluno(eu, req.usuario.turma_id, retrato);
+
+  const novas = await PROG.conquistar(eu, sou === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO', medidas);
+
+  // Uma insígnia dá XP, então o total mudou depois de conquistá-la. Sem
+  // recontar, a tela comemoraria a insígnia e mostraria o XP de antes.
+  const xp = retrato.total + novas.reduce((s, i) => s + (i.xp || 0), 0);
+
+  res.json({
+    ganhou_hoje: presenca.ganhou,
+    pontos_do_dia: presenca.pontos,
+    dia: presenca.dia,
+    xp,
+    nivel: PROG.nivelDoXp(xp),
+    streak_dias: retrato.streak_dias,
+    dias_jogados: retrato.dias_jogados,
+    insignias_novas: novas.map(i => ({
+      codigo: i.codigo, nome: i.nome, descricao: i.descricao, xp: i.xp, imagem: i.imagem
+    }))
+  });
+});
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   A ESTANTE  —  GET /minha-estante
+
+   Devolve o catálogo INTEIRO, não só o que a pessoa já tem. É o que
+   transforma a prateleira vazia em objetivo: o aluno vê a silhueta da
+   próxima insígnia e sabe que faltam 12 acertos para ela.
+
+   O professor recebe a estante dele, que hoje está vazia porque as
+   regras ainda não foram combinadas. A tela trata isso como estado
+   normal — a estante existe, as peças é que não.
+   ═══════════════════════════════════════════════════════════════════ */
+
+rotas.get('/minha-estante', async (req, res) => {
+  const eu = req.usuario.id;
+  const sou = req.usuario.tipo === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO';
+
+  // ouVazio: num banco que ainda não rodou o setup.sql novo, a estante
+  // volta vazia em vez de dar erro. A tela já sabe desenhar prateleira
+  // sem peça — é o estado do professor hoje.
+  const [bruto1, bruto2] = await Promise.all([
+    admin.from('insignias')
+      .select('codigo, nome, descricao, regra, alvo, xp, imagem, ordem')
+      .eq('publico', sou).order('ordem'),
+    admin.from('insignias_usuarios')
+      .select('insignia_codigo, conquistada_em').eq('usuario_id', eu)
+  ]);
+
+  const catalogo = PROG.ouVazio(bruto1);
+  const minhas = PROG.ouVazio(bruto2);
+
+  if (catalogo.error) {
+    return falhou(res, 500, 'Não foi possível abrir sua estante.', catalogo.error, 'GET /minha-estante');
+  }
+  if (minhas.error) {
+    return falhou(res, 500, 'Não foi possível abrir sua estante.', minhas.error, 'GET /minha-estante');
+  }
+
+  const quando = new Map((minhas.data || []).map(i => [i.insignia_codigo, i.conquistada_em]));
+
+  const retrato = sou === 'PROFESSOR'
+    ? await PROG.xpDoProfessor(eu)
+    : await PROG.xpDoAluno(eu);
+
+  if (retrato.erro) {
+    return falhou(res, 500, 'Não foi possível abrir sua estante.', retrato.erro, 'GET /minha-estante');
+  }
+
+  const medidas = sou === 'PROFESSOR'
+    ? retrato.medidas
+    : await PROG.medirAluno(eu, req.usuario.turma_id, retrato);
+
+  const insignias = (catalogo.data || []).map(i => {
+    const tenho = quando.has(i.codigo);
+    const agora = medidas[i.regra] ?? 0;
+
+    return {
+      codigo: i.codigo,
+      nome: i.nome,
+      descricao: i.descricao,
+      xp: i.xp,
+      imagem: i.imagem || null,
+      regra: i.regra,
+      alvo: i.alvo,
+      conquistada: tenho,
+      conquistada_em: quando.get(i.codigo) || null,
+      // Quanto falta, para a insígnia bloqueada virar objetivo e não
+      // enigma. Nunca passa do alvo: "62 de 50" não faz sentido.
+      progresso: Math.min(agora, i.alvo),
+      porcentagem: Math.min(100, Math.round((agora / i.alvo) * 100))
+    };
+  });
+
+  res.json({
+    publico: sou,
+    conquistadas: insignias.filter(i => i.conquistada).length,
+    total: insignias.length,
+    xp: retrato.total,
+    nivel: retrato.nivel,
+    insignias
+  });
+});
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   EDITAR O PRÓPRIO PERFIL  —  PATCH /meu-perfil
+
+   Só nome e foto. `tipo`, `idade` e `turma_id` ficam de fora de
+   propósito: os três decidem o que a pessoa VÊ e PODE no jogo — a idade
+   escolhe as questões, o tipo abre o painel do professor, a turma traz
+   as tarefas. Deixá-los editáveis aqui seria entregar as três chaves
+   para quem está do lado de fora.
+   ═══════════════════════════════════════════════════════════════════ */
+
+const NOME_MAX = 100;
+
+/* A foto chega de dois jeitos, e os dois são aceitos:
+
+     https://...              um endereço que a pessoa colou
+     data:image/jpeg;base64,  a imagem inteira, escolhida do computador
+
+   O segundo existe para não depender de o aluno ter a foto publicada em
+   algum lugar da internet — e para não precisar de bucket no Supabase
+   Storage, que é infraestrutura a mais para um círculo de 34 pixels.
+
+   O limite de 120 KB não é chute: a tela reduz a imagem para 192×192
+   antes de enviar, o que dá uns 15 KB em base64. 120 KB aceita uma foto
+   bem mais pesada que isso e ainda assim impede que alguém grave um
+   arquivo de megabytes numa coluna lida em toda navegação. */
+const URL_MAX = 500;
+const FOTO_MAX = 120 * 1024;
+const FOTO_EMBUTIDA = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
+
+rotas.patch('/meu-perfil', async (req, res) => {
+  const mudancas = {};
+
+  if (req.body?.nome !== undefined) {
+    const nome = String(req.body.nome).trim().replace(/\s+/g, ' ');
+
+    if (nome.length < 2 || nome.length > NOME_MAX) {
+      return res.status(400).json({ message: `O nome precisa ter de 2 a ${NOME_MAX} letras.` });
+    }
+    mudancas.nome = nome;
+  }
+
+  if (req.body?.avatar_url !== undefined) {
+    const foto = String(req.body.avatar_url || '').trim();
+
+    if (!foto) {
+      mudancas.avatar_url = null;          // tirar a foto é uma escolha válida
+
+    } else if (foto.startsWith('data:')) {
+      // Imagem escolhida do computador, já reduzida pelo navegador.
+      //
+      // A expressão confere o tipo E o alfabeto do base64. Isso importa:
+      // "data:image/svg+xml" é tecnicamente uma imagem e pode conter
+      // <script> — fora da lista de propósito. Os três formatos aceitos
+      // são todos de pixel, sem código dentro.
+      if (foto.length > FOTO_MAX) {
+        return res.status(400).json({ message: 'Essa imagem é pesada demais. Tente outra.' });
+      }
+      if (!FOTO_EMBUTIDA.test(foto)) {
+        return res.status(400).json({ message: 'Esse arquivo não parece uma imagem JPEG, PNG ou WEBP.' });
+      }
+      mudancas.avatar_url = foto;
+
+    } else if (foto.length > URL_MAX) {
+      return res.status(400).json({ message: 'O endereço da imagem é longo demais.' });
+
+    } else if (!/^https:\/\//i.test(foto)) {
+      // Só https: um endereço http numa página https não carrega, e
+      // javascript: dentro de um src é porta de entrada para script de
+      // terceiro na tela de todo mundo que vir o avatar.
+      return res.status(400).json({ message: 'O endereço da imagem precisa começar com https://' });
+
+    } else {
+      mudancas.avatar_url = foto;
+    }
+  }
+
+  if (!Object.keys(mudancas).length) {
+    return res.status(400).json({ message: 'Nada para mudar.' });
+  }
+
+  const r = await admin
+    .from('usuarios')
+    .update(mudancas)
+    .eq('id', req.usuario.id)
+    .select('id, nome, tipo, idade, avatar_url')
+    .single();
+
+  if (r.error) {
+    // A coluna da foto pode não existir ainda no banco de quem não rodou
+    // o setup.sql mais novo. Dizer isso é melhor do que "erro interno".
+    if (/avatar_url/.test(r.error.message || '')) {
+      console.warn('  ⚠ usuarios.avatar_url não existe neste banco.\n' +
+                   '    Rode: alter table usuarios add column if not exists avatar_url text;');
+      return falhou(res, 500, 'A foto de perfil ainda não está disponível neste banco.', r.error, 'PATCH /meu-perfil');
+    }
+    return falhou(res, 500, 'Não foi possível salvar seu perfil.', r.error, 'PATCH /meu-perfil');
+  }
+
+  res.json(r.data);
 });
 
 module.exports = rotas;

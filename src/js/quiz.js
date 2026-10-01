@@ -30,7 +30,6 @@
   const fimBarras = document.getElementById('fim-barras');
   const btnMais = document.getElementById('fim-continuar');
 
-  const btnSair = document.getElementById('logout-btn');
 
   // O relógio da tarefa da professora
   const cronometroBox = document.getElementById('missao-cronometro');
@@ -428,8 +427,7 @@
     avisoAcoes.hidden = false;
   }
 
-  btnSair?.addEventListener('click', async () => {
-    await AUTH.logout();
-    window.location.href = 'index.html';
-  });
+  // O botão Sair agora é desenhado pelo navbar.js, que também o liga.
+  // O listener que existia aqui virou código morto quando esta página
+  // passou a usar <nav data-navbar>.
 })();

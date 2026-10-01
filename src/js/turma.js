@@ -8,7 +8,6 @@
     const turmaCodigo = document.getElementById('turma-codigo');
     const lista = document.getElementById('lista-rank');
     const vazio = document.getElementById('empty-rank');
-    const btnSair = document.getElementById('logout-btn');
 
     const LIMITE_PADRAO = 10;
     const COR_PADRAO = '#14b8a6';
@@ -119,8 +118,7 @@ function montarLinha(aluno, posicao) {
     if (vazio) vazio.hidden = true;
 }
 
-btnSair?.addEventListener('click', async () => {
-    await AUTH.logout();
-    window.location.href = 'index.html';
-  });
+  // O botão Sair agora é desenhado pelo navbar.js, que também o liga.
+  // O listener que existia aqui virou código morto quando esta página
+  // passou a usar <nav data-navbar>.
 })();

@@ -223,6 +223,244 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════
+   A FAIXA DE NÍVEL (conquistas.html)
+
+   Nível à esquerda, título e barra no meio, XP à direita. A barra é do
+   TRECHO entre dois níveis, não do total — do zero ao nível 10 ela mal
+   se moveria no começo, que é justamente quando a pessoa mais precisa
+   ver que andou.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.nivel-faixa {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+
+  padding: 22px 26px;
+  margin-bottom: 22px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.nivel-faixa__selo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
+  border-radius: 50%;
+
+  background: linear-gradient(145deg, var(--gold), #e0a82e);
+  box-shadow: 0 6px 20px rgba(249, 199, 79, 0.35);
+  color: #4a3609;
+}
+
+.nivel-faixa__num {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.nivel-faixa__selo .nivel-faixa__rot {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.nivel-faixa__meio { flex: 1 1 240px; }
+
+.nivel-faixa__titulo {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 19px;
+  color: var(--white);
+  margin: 0 0 9px;
+}
+
+.nivel-faixa__barra {
+  display: block;
+  height: 10px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.nivel-faixa__barra i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--primary), var(--gold));
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nivel-faixa__nota {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.nivel-faixa__xp {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.nivel-faixa__xpnum {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 23px;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.nivel-faixa__xp .nivel-faixa__rot {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   A ESTANTE DE INSÍGNIAS (conquistas.html)
+
+   Uma peça por lugar, conquistada ou não. O lugar vazio é parte do
+   desenho: é ele que mostra o que vem a seguir.
+
+   A MESMA ARTE serve aos dois estados — a bloqueada é a imagem em
+   silhueta, por filtro. Isso poupa o outro desenvolvedor de desenhar
+   tudo duas vezes.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.estante {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 26px 16px;
+}
+
+.insignia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 9px;
+
+  animation: tema-entra 0.4s ease both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+/* O disco é o "lugar na estante". Ele existe mesmo sem arte, e é por
+   isso que a prateleira nunca parece quebrada. */
+.insignia__disco {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s;
+}
+
+.insignia:hover .insignia__disco { transform: translateY(-4px) scale(1.04); }
+
+.insignia__arte {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.insignia__arte img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Sem arquivo de arte ainda: a inicial do nome segura o lugar. */
+.insignia__arte--letra {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 30px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Conquistada ──────────────────────────────────────────────────── */
+
+.insignia--feita .insignia__disco {
+  background: radial-gradient(circle at 50% 35%, rgba(249, 199, 79, 0.22), rgba(255, 255, 255, 0.05));
+  border-color: rgba(249, 199, 79, 0.55);
+  box-shadow: 0 0 22px rgba(249, 199, 79, 0.25);
+}
+
+.insignia--feita .insignia__arte--letra { color: var(--gold); }
+
+/* ── Bloqueada ────────────────────────────────────────────────────── */
+
+/* A silhueta. O desenho continua reconhecível pela FORMA, e é por isso
+   que a arte precisa funcionar sem depender só de cor. */
+.insignia--presa .insignia__arte img {
+  filter: grayscale(1) brightness(0.4);
+  opacity: 0.85;
+}
+
+/* O anel de progresso, desenhado por cima da borda do disco.
+   conic-gradient vai de 0 a --pct do círculo: nenhuma imagem, nenhum
+   SVG, nenhum JavaScript desenhando arco. */
+.insignia--presa .insignia__disco::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(var(--primary) calc(var(--pct, 0) * 1%), transparent 0);
+
+  /* Só o anel: o miolo é recortado fora, senão o gradiente cobriria a
+     insígnia inteira. */
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  opacity: 0.9;
+}
+
+.insignia__nome {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.insignia--presa .insignia__nome { color: rgba(255, 255, 255, 0.5); }
+
+.insignia__dica {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+
+.insignia--feita .insignia__dica { color: rgba(249, 199, 79, 0.75); }
+
+@media (prefers-reduced-motion: reduce) {
+  .insignia { animation: none; }
+  .insignia:hover .insignia__disco { transform: none; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
    O CARTÃO DO PERFIL (perfil.html)
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -299,10 +537,140 @@
   color: rgba(255, 255, 255, 0.88);
 }
 
+.cartao-perfil__avatar--foto { background: rgba(255, 255, 255, 0.1); }
+
+.cartao-perfil__avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .perfil-atalhos {
   margin: 18px 0 0;
   font-size: 13px;
   color: var(--text-muted);
+}
+
+
+/* ── O formulário de edição ───────────────────────────────────────── */
+
+.editor {
+  padding: 24px 26px;
+  margin-bottom: 20px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.editor__titulo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--white);
+  margin: 0 0 18px;
+}
+
+.editor__linha { margin-bottom: 16px; }
+
+.editor__rot {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.editor__campo {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--white);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.editor__campo:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.editor__ajuda {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.editor__ajuda code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 11.5px;
+}
+
+/* A prévia fica ao LADO do botão de escolher, e não depois do
+   formulário: é ela que evita o "salvei e não era essa foto" — a pessoa
+   vê o recorte circular antes de gravar, no mesmo olhar do botão. */
+.editor__foto {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.editor__foto-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 240px;
+}
+
+.editor__foto-acoes .editor__ajuda { flex-basis: 100%; margin-top: 2px; }
+
+/* O endereço da internet vira o caminho secundário: ainda funciona, mas
+   não é a primeira coisa que a pessoa vê. */
+.editor__avancado {
+  margin: 20px 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.editor__avancado summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.editor__avancado summary:hover { opacity: 0.85; }
+
+.cartao-perfil__avatar--previa {
+  width: 56px;
+  height: 56px;
+  font-size: 19px;
+  box-shadow: none;
+}
+
+.editor__aviso {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-size: 13px;
+  color: #fecaca;
+}
+
+.editor__botoes {
+  display: flex;
+  gap: 10px;
 }
 
 @media (max-width: 560px) {

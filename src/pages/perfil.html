@@ -50,6 +50,67 @@
 
               <dl class="cartao-perfil__lista" id="dado-lista"></dl>
             </div>
+
+            <button type="button" class="btn btn--sm btn--ghost" id="btn-editar">Editar</button>
+          </section>
+
+          <!-- ── Editar ─────────────────────────────────────────────── -->
+          <!-- Só nome e foto. Idade, tipo e turma decidem o que a pessoa
+               VÊ no jogo, e por isso não se mexem por aqui. -->
+          <section class="editor" id="editor" hidden>
+            <h3 class="editor__titulo">Editar perfil</h3>
+
+            <form id="form-perfil" novalidate>
+              <div class="editor__linha">
+                <label class="editor__rot" for="campo-nome">Seu nome</label>
+                <input class="editor__campo" id="campo-nome" type="text"
+                       maxlength="100" autocomplete="name" required>
+              </div>
+
+              <div class="editor__linha">
+                <span class="editor__rot">Sua foto</span>
+
+                <div class="editor__foto">
+                  <div class="cartao-perfil__avatar cartao-perfil__avatar--previa" id="previa"></div>
+
+                  <div class="editor__foto-acoes">
+                    <!-- O input de arquivo fica escondido e o botão o aciona:
+                         o controle nativo não aceita estilo, e ele apareceria
+                         como um botão cinza de sistema no meio da tela. -->
+                    <input type="file" id="campo-arquivo" accept="image/png,image/jpeg,image/webp" hidden>
+
+                    <button type="button" class="btn btn--sm" id="btn-escolher">
+                      Escolher do computador
+                    </button>
+                    <button type="button" class="btn btn--sm btn--ghost" id="btn-tirar" hidden>
+                      Remover foto
+                    </button>
+
+                    <p class="editor__ajuda" id="foto-estado">
+                      JPEG, PNG ou WEBP. A imagem é reduzida para 192&nbsp;×&nbsp;192 antes
+                      de ser salva, então arquivo grande não é problema.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <details class="editor__avancado">
+                <summary>Ou usar o endereço de uma imagem da internet</summary>
+                <input class="editor__campo" id="campo-foto" type="url"
+                       maxlength="500" placeholder="https://..." autocomplete="off">
+                <p class="editor__ajuda">
+                  Precisa começar com <code>https://</code>. Escolher um arquivo acima
+                  substitui o que estiver aqui.
+                </p>
+              </details>
+
+              <p class="editor__aviso" id="editor-aviso" hidden></p>
+
+              <div class="editor__botoes">
+                <button type="submit" class="btn btn--sm" id="btn-salvar">Salvar</button>
+                <button type="button" class="btn btn--sm btn--ghost" id="btn-cancelar">Cancelar</button>
+              </div>
+            </form>
           </section>
 
           <!-- ── Os números (só para aluno) ─────────────────────────── -->

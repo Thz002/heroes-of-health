@@ -94,10 +94,9 @@
             </a>
           </li>
           <li>
-            <span class="perfil__item perfil__item--breve" aria-disabled="true">
+            <a href="conquistas.html" class="perfil__item">
               ${icone('troferu')}<span>Minhas conquistas</span>
-              <em class="perfil__breve">em breve</em>
-            </span>
+            </a>
           </li>
           <li>
             <button type="button" class="perfil__item perfil__item--sair" id="logout-btn">
@@ -134,7 +133,9 @@
       filtrarOAntigo(antigos, tipo);
     }
 
-    if (tipo === 'ALUNO') mostrarXp();
+    // O professor também tem XP agora — o dele sobe com os quizzes que
+    // passa e com os acertos da turma. Só quem não tem conta fica fora.
+    if (tipo) mostrarProgresso();
   }
 
   /**
@@ -282,23 +283,88 @@
   }
 
   /**
-   * O XP que aparece na barra. Antes era "480 XP" escrito à mão dentro
-   * do mapa.html — um número que não era de ninguém.
+   * Marca a presença do dia e mostra nível e XP na barra.
+   *
+   * Uma chamada só faz as duas coisas, e é de propósito: o prêmio
+   * diário precisa de um gatilho, e o único momento em que a pessoa
+   * com certeza aparece é quando abre uma página. Login não serve — quem
+   * faz login é o Supabase, sem passar pelo servidor, e quem deixa a aba
+   * aberta a semana toda nunca loga de novo.
+   *
+   * Chamar em toda visita é seguro: quem decide se vale prêmio é a
+   * chave (usuario_id, dia) do banco, não este código.
    *
    * Falhou? O selo continua escondido. A barra de navegação não é lugar
-   * de mensagem de erro: a tela de progresso é que vai dizer o que houve.
+   * de mensagem de erro — a tela de progresso é que vai dizer o que houve.
    */
-  async function mostrarXp() {
+  async function mostrarProgresso() {
     const selo = document.getElementById('nav-xp');
-    if (!selo || !window.API || !API.getMeuResumo) return;
+    if (!window.API || !API.marcarPresenca) return;
 
     try {
-      const { estatisticas } = await API.getMeuResumo();
-      const xp = estatisticas?.xp ?? 0;
+      const r = await API.marcarPresenca();
 
-      selo.textContent = `⭐ ${xp.toLocaleString('pt-BR')} XP`;
-      selo.hidden = false;
-    } catch (_) { /* sem XP na barra; a tela de progresso explica */ }
+      if (selo) {
+        const xp = (r.xp ?? 0).toLocaleString('pt-BR');
+        selo.textContent = `Nv ${r.nivel?.nivel ?? 1} · ${xp} XP`;
+        selo.title = r.nivel?.maximo
+          ? `${r.nivel.titulo} — nível máximo`
+          : `${r.nivel?.titulo || ''} · faltam ${r.nivel?.faltam ?? 0} XP para o nível ${(r.nivel?.nivel ?? 1) + 1}`;
+        selo.hidden = false;
+      }
+
+      comemorar(r);
+    } catch (_) { /* sem selo na barra; a tela de progresso explica */ }
+  }
+
+  /**
+   * O momento da recompensa.
+   *
+   * Isto existe porque o jogo tinha um buraco: o aluno ganhava XP e
+   * insígnia sem NUNCA ver acontecer. O número só aparecia depois,
+   * parado, numa tela que ele podia nem abrir. Prêmio que ninguém vê
+   * chegar não premia.
+   *
+   * O aviso some sozinho. Nada aqui pede clique: é comemoração, não
+   * tarefa.
+   */
+  function comemorar(r) {
+    const avisos = [];
+
+    if (r.ganhou_hoje) {
+      const dias = r.streak_dias > 1 ? ` · ${r.streak_dias} dias seguidos` : '';
+      avisos.push({ emoji: '☀️', titulo: `+${r.pontos_do_dia} XP por hoje`, texto: `Bom te ver de novo${dias}.` });
+    }
+
+    for (const i of r.insignias_novas || []) {
+      avisos.push({ emoji: '🏅', titulo: i.nome, texto: i.xp ? `${i.descricao} +${i.xp} XP` : i.descricao });
+    }
+
+    if (!avisos.length) return;
+
+    const caixa = document.createElement('div');
+    caixa.className = 'brindes';
+
+    for (const a of avisos) {
+      const cartao = document.createElement('div');
+      cartao.className = 'brinde';
+      cartao.innerHTML = `
+        <span class="brinde__emoji" aria-hidden="true"></span>
+        <span class="brinde__texto">
+          <strong class="brinde__titulo"></strong>
+          <span class="brinde__sub"></span>
+        </span>`;
+      cartao.querySelector('.brinde__emoji').textContent = a.emoji;
+      cartao.querySelector('.brinde__titulo').textContent = a.titulo;
+      cartao.querySelector('.brinde__sub').textContent = a.texto;
+      caixa.appendChild(cartao);
+    }
+
+    document.body.appendChild(caixa);
+
+    // Tempo de ler, não de esperar: 5s por aviso, com teto para quem
+    // conquistou várias de uma vez não ficar com a tela ocupada.
+    setTimeout(() => caixa.remove(), Math.min(5000 + avisos.length * 1500, 11000));
   }
 
   /**

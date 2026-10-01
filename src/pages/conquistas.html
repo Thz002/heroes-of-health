@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minhas conquistas - Heróis da Saúde</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/progresso.css">
+  <script src="/vendor/supabase.js"></script>
+  <script src="../js/supabase.js" defer></script>
+  <script src="../js/api.js" defer></script>
+  <script src="../js/navbar.js" defer></script>
+  <script src="../js/conquistas.js" defer></script>
+</head>
+
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="page-wrap">
+
+    <!-- A barra inteira é desenhada pelo navbar.js: links, selo de nível e
+         o canto da conta. Para mudar o menu, é a lista no topo dele. -->
+    <nav class="nav_bar" data-navbar></nav>
+
+    <main class="main-content">
+
+      <div class="welcome-bar">
+        <div class="welcome-text">
+          <h2>Minhas conquistas</h2>
+          <p id="estante-subtitulo">Sua estante de insígnias.</p>
+        </div>
+      </div>
+
+      <p class="turmas-erro" id="estante-erro" hidden></p>
+
+      <div class="dashboard-grid">
+        <div class="col-full">
+
+          <!-- ── O nível ───────────────────────────────────────────── -->
+          <section class="nivel-faixa" id="bloco-nivel" hidden>
+            <div class="nivel-faixa__selo">
+              <span class="nivel-faixa__num" id="nivel-num">—</span>
+              <span class="nivel-faixa__rot">nível</span>
+            </div>
+
+            <div class="nivel-faixa__meio">
+              <h3 class="nivel-faixa__titulo" id="nivel-titulo"></h3>
+              <span class="nivel-faixa__barra"><i id="nivel-barra"></i></span>
+              <p class="nivel-faixa__nota" id="nivel-nota"></p>
+            </div>
+
+            <div class="nivel-faixa__xp">
+              <span class="nivel-faixa__xpnum" id="nivel-xp">—</span>
+              <span class="nivel-faixa__rot">XP total</span>
+            </div>
+          </section>
+
+          <!-- ── A estante ─────────────────────────────────────────── -->
+          <section class="dashboard-section">
+            <h3>Estante</h3>
+          </section>
+
+          <section class="painel">
+            <p class="temas-intro" id="estante-contagem"></p>
+
+            <div class="estante" id="estante"></div>
+
+            <!-- Estante sem nenhuma insígnia cadastrada. É o caso do
+                 professor hoje: as regras dele ainda não foram definidas. -->
+            <div class="empty-state" id="estante-vazia" hidden>
+              <div class="empty-state__icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 4h8v5a4 4 0 01-8 0V4z" />
+                  <path d="M8 6H5v1a3 3 0 003 3M16 6h3v1a3 3 0 01-3 3" />
+                  <path d="M10 17h4M12 13v4M9 20h6" />
+                </svg>
+              </div>
+              <p class="empty-state__title">A estante ainda está sendo montada</p>
+              <p class="empty-state__hint" id="estante-vazia-dica">
+                As insígnias chegam em breve.
+              </p>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>

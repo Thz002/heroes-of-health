@@ -361,6 +361,141 @@ alter table respostas_alunos add column if not exists quiz_id bigint
 create index if not exists respostas_por_quiz on respostas_alunos (quiz_id);
 
 
+-- ── A foto de perfil ─────────────────────────────────────────────────
+--
+-- `text` e não `varchar(n)` porque a foto pode chegar de dois jeitos: um
+-- endereço https:// curto, ou a imagem inteira embutida (data:image/...)
+-- quando a pessoa escolhe um arquivo do próprio computador. O segundo
+-- caso tem alguns milhares de caracteres.
+--
+-- Fica colado no bloco de progressão abaixo DE PROPÓSITO, sem linha em
+-- branco no meio: o SQL Editor do Supabase roda só o texto selecionado,
+-- e um alter sozinho entre comentários é exatamente o que ficou de fora
+-- quando a coluna `descricao` sumiu três vezes.
+alter table usuarios add column if not exists avatar_url text;
+-- ── O XP que não vem de acertar pergunta ─────────────────────────────
+--
+-- Acerto de questão NÃO entra aqui: ele já está em respostas_alunos, e
+-- o XP sai de lá por conta (10 por questão distinta). Duplicar daria
+-- duas versões do mesmo número, e um dia elas discordariam.
+--
+-- O prêmio diário é o contrário: não deixa rastro em lugar nenhum. Se
+-- não for gravado, não existe. Por isso esta tabela.
+--
+-- A CHAVE É A REGRA: unique (usuario_id, dia) é o que garante "uma vez
+-- por dia" — não um if no servidor. Dois cliques no mesmo segundo, duas
+-- abas abertas, a pessoa recarregando a página: o banco recusa o
+-- segundo, sempre, sem depender de o código lembrar de conferir.
+--
+-- `dia` é date e não timestamp de propósito: o prêmio é por DIA do
+-- calendário de quem joga, não por 24 horas corridas.
+create table if not exists xp_diario (
+  usuario_id uuid not null references usuarios(id) on delete cascade,
+  dia date not null,
+  pontos int not null default 50 check (pontos > 0),
+  created_at timestamptz not null default now(),
+  primary key (usuario_id, dia)
+);
+
+
+-- ── As insígnias ─────────────────────────────────────────────────────
+--
+-- A ESTANTE É DIRIGIDA POR DADO, não por código. Cada insígnia é uma
+-- LINHA: para criar uma nova, ninguém abre o servidor — insere aqui.
+-- É o que permite o outro desenvolvedor desenhar as artes e ligá-las
+-- sem tocar em JavaScript nenhum.
+--
+-- POR QUE NÃO HÁ REGRA DE PORCENTAGEM: a quantidade de quizzes muda o
+-- tempo todo, porque o professor cria e apaga. "Acertou 80% do que foi
+-- passado" mudaria de significado toda semana, e uma insígnia já
+-- conquistada poderia deixar de valer. Toda regra aqui é de CONTAGEM
+-- ABSOLUTA — 50 acertos são 50 acertos para sempre.
+--
+--   ACERTOS       questões distintas que a pessoa acertou
+--   DIAS          dias de sequência (o prêmio diário)
+--   MISSOES       quizzes concluídos
+--   QUIZZES       quizzes criados          (professor)
+--   ACERTOS_TURMA acertos dos alunos dele  (professor)
+create table if not exists insignias (
+  codigo varchar(40) primary key,
+  nome varchar(60) not null,
+  descricao varchar(160) not null,
+
+  publico varchar(10) not null check (publico in ('ALUNO', 'PROFESSOR')),
+
+  regra varchar(20) not null
+        check (regra in ('ACERTOS', 'DIAS', 'MISSOES', 'QUIZZES', 'ACERTOS_TURMA')),
+  alvo int not null check (alvo > 0),
+
+  xp int not null default 0 check (xp >= 0),
+  ordem int not null,
+
+  -- O nome do arquivo da arte, dentro de src/img/insignias/.
+  -- Nulo = ainda sem arte: a estante desenha o lugar vazio dela.
+  imagem varchar(120)
+);
+
+
+-- ── O que cada pessoa já conquistou ──────────────────────────────────
+--
+-- CONQUISTA NÃO SE PERDE. Esta tabela é o único lugar do jogo onde o
+-- dado é gravado justamente para NÃO ser recalculado: se amanhã a
+-- equipe de Medicina apagar 30 questões, quem já tinha a insígnia de
+-- 100 acertos continua com ela. Recalcular tiraria da pessoa algo que
+-- ela fez, por causa de uma mudança que não foi dela.
+create table if not exists insignias_usuarios (
+  usuario_id uuid not null references usuarios(id) on delete cascade,
+  insignia_codigo varchar(40) not null references insignias(codigo) on delete cascade,
+  conquistada_em timestamptz not null default now(),
+  primary key (usuario_id, insignia_codigo)
+);
+
+create index if not exists insignias_por_usuario
+  on insignias_usuarios (usuario_id, conquistada_em desc);
+
+
+-- ── A estante de hoje ────────────────────────────────────────────────
+--
+-- `do update` e não `do nothing`: ajustar o alvo de uma insígnia é algo
+-- que vai acontecer (os números abaixo são um primeiro chute e vão ser
+-- calibrados quando houver turma jogando de verdade). Quem já conquistou
+-- não perde — a conquista mora na outra tabela e não é recalculada.
+--
+-- `imagem` fica de fora do update DE PROPÓSITO: quando o outro
+-- desenvolvedor preencher o nome do arquivo da arte, rodar este setup
+-- de novo não pode apagar o trabalho dele.
+--
+-- OS NÚMEROS: 225 questões existem hoje, então "Enciclopédia" (200) é
+-- quase tudo o que há. As duas do meio — 50 e 100 — são as que foram
+-- combinadas; o resto é a escada que dá sentido a elas, porque uma
+-- primeira insígnia a 50 acertos deixa a estante vazia tempo demais.
+insert into insignias (codigo, nome, descricao, publico, regra, alvo, xp, ordem) values
+  ('primeiros-passos', 'Primeiros Passos', 'Acertou as 10 primeiras perguntas do bairro.',        'ALUNO', 'ACERTOS',  10,  50, 1),
+  ('pe-na-estrada',    'Pé na Estrada',     'Vinte e cinco perguntas certas. O bairro já conhece você.', 'ALUNO', 'ACERTOS',  25, 100, 2),
+  ('meio-caminho',     'Meio Caminho',      'Cinquenta perguntas certas.',                          'ALUNO', 'ACERTOS',  50, 200, 3),
+  ('centuriao',        'Centurião',         'Cem perguntas certas. Pouca gente chega aqui.',        'ALUNO', 'ACERTOS', 100, 400, 4),
+  ('enciclopedia',     'Enciclopédia',      'Duzentas perguntas certas.',                           'ALUNO', 'ACERTOS', 200, 800, 5),
+
+  ('de-volta',         'De Volta',          'Jogou três dias seguidos.',                            'ALUNO', 'DIAS',      3,  50, 6),
+  ('semana-cheia',     'Semana Cheia',      'Sete dias seguidos cuidando do bairro.',               'ALUNO', 'DIAS',      7, 150, 7),
+  ('presenca-de-ouro', 'Presença de Ouro',  'Trinta dias seguidos.',                                'ALUNO', 'DIAS',     30, 600, 8),
+
+  ('primeira-missao',  'Primeira Missão',   'Concluiu a primeira tarefa do professor.',             'ALUNO', 'MISSOES',   1,  50, 9),
+  ('missao-cumprida',  'Missão Cumprida',   'Concluiu dez tarefas do professor.',                   'ALUNO', 'MISSOES',  10, 300, 10)
+on conflict (codigo) do update set
+  nome      = excluded.nome,
+  descricao = excluded.descricao,
+  publico   = excluded.publico,
+  regra     = excluded.regra,
+  alvo      = excluded.alvo,
+  xp        = excluded.xp,
+  ordem     = excluded.ordem;
+
+-- A estante do PROFESSOR existe e está vazia, de propósito. As regras
+-- dele (QUIZZES e ACERTOS_TURMA) já são aceitas pela tabela; faltam as
+-- linhas, que serão combinadas depois. A tela trata estante vazia como
+-- estado normal, não como erro.
+
 
 -- #####################################################################
 --  2. FUNÇÕES AUXILIARES
@@ -883,6 +1018,44 @@ create policy "aluno le as questoes do quiz da turma dele"
   );
 
 
+-- ── XP diário e insígnias ────────────────────────────────────────────
+--
+-- Repare no que NÃO existe aqui: nenhuma policy de insert ou update.
+-- É deliberado, e é a mesma regra de progresso_areas — quem escreve
+-- pontuação é o servidor, com a chave secreta. Com um insert liberado,
+-- qualquer aluno abriria o console e se daria 50 XP cinquenta vezes,
+-- ou se concederia a insígnia de 225 acertos sem responder nada.
+--
+-- A pessoa LÊ o próprio XP e as próprias insígnias. Só isso.
+alter table xp_diario          enable row level security;
+alter table insignias          enable row level security;
+alter table insignias_usuarios enable row level security;
+
+drop policy if exists "le o proprio xp diario" on xp_diario;
+
+create policy "le o proprio xp diario"
+  on xp_diario for select to authenticated using (auth.uid() = usuario_id);
+
+-- O catálogo é conteúdo do jogo, como cenarios e areas: todo mundo vê a
+-- estante inteira, inclusive as que ainda não conquistou. É isso que
+-- transforma a prateleira vazia em objetivo em vez de mistério.
+drop policy if exists "todos leem o catalogo de insignias" on insignias;
+
+create policy "todos leem o catalogo de insignias"
+  on insignias for select to authenticated using (true);
+
+drop policy if exists "le as proprias insignias"            on insignias_usuarios;
+drop policy if exists "professor le as insignias dos alunos" on insignias_usuarios;
+
+create policy "le as proprias insignias"
+  on insignias_usuarios for select to authenticated using (auth.uid() = usuario_id);
+
+-- O professor acompanha a turma: ver quem conquistou o quê é o mesmo
+-- direito que ele já tem sobre as respostas dos alunos dele.
+create policy "professor le as insignias dos alunos"
+  on insignias_usuarios for select to authenticated using (public.eh_meu_aluno(usuario_id));
+
+
 -- #####################################################################
 --  5. PERMISSÃO POR COLUNA
 --
@@ -980,3 +1153,18 @@ revoke execute on function public.recalcular_metas() from anon, authenticated;
 --     executar. O que se espera aqui é um proacl preenchido e SEM a
 --     entrada "=X/" (grantee vazio antes do "=" é justamente o PUBLIC).
 -- select proname, proacl from pg_proc where proname = 'somar_pontos';
+
+
+-- #####################################################################
+--  7. AVISAR A API QUE O DESENHO MUDOU
+--
+--  O Supabase guarda em cache o desenho das tabelas. Sem este aviso, a
+--  tabela existe no banco e a API continua respondendo
+--  "Could not find the table ... in the schema cache" — o cenário mais
+--  confuso de depurar que existe aqui, porque o SQL rodou sem erro.
+--
+--  Fica no FIM do arquivo de propósito: assim vale para tudo o que foi
+--  criado acima, e não só para o último bloco.
+-- #####################################################################
+
+notify pgrst, 'reload schema';

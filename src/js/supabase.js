@@ -151,18 +151,29 @@ const AUTH = (() => {
     const conta = await contaAtual();
     if (!conta) return null;
 
-    // ATENÇÃO ao acrescentar a foto: o navbar.js já sabe desenhar
-    // `avatar_url` (e cai nas iniciais quando não houver), mas ele só
-    // recebe as colunas listadas AQUI. Depois de rodar
+    // A foto é pedida à parte do resto por um motivo: `avatar_url` é
+    // coluna nova, e num banco que ainda não rodou o setup.sql mais
+    // recente o PostgREST recusa a consulta INTEIRA por causa dela. Sem
+    // esta ponte, uma coluna faltando derrubaria o login de todas as
+    // telas de uma vez.
+    //
+    // É temporário. Some quando todos os bancos tiverem rodado:
     //   alter table usuarios add column if not exists avatar_url text;
-    // é preciso incluir avatar_url nesta linha — senão a coluna existe,
-    // a foto é salva, e o avatar continua mostrando as iniciais sem
-    // ninguém entender por quê.
-    const r = await SUPA
+    const COLUNAS = 'id, nome, tipo, idade, escola_id, turma_id';
+
+    let r = await SUPA
       .from('usuarios')
-      .select('id, nome, tipo, idade, escola_id, turma_id')
+      .select(COLUNAS + ', avatar_url')
       .eq('id', conta.id)
       .maybeSingle();
+
+    if (r.error && /avatar_url/.test(r.error.message || '')) {
+      r = await SUPA
+        .from('usuarios')
+        .select(COLUNAS)
+        .eq('id', conta.id)
+        .maybeSingle();
+    }
 
     if (r.error) return null;
     return r.data;

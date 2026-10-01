@@ -15,7 +15,6 @@
   const vazio = document.getElementById('empty-quizzes');
   const total = document.getElementById('quizzes-total');
   const subtitulo = document.getElementById('quizzes-subtitulo');
-  const btnSair = document.getElementById('logout-btn');
 
   const modalApagar = document.getElementById('modal-apagar');
   const apagarTexto = document.getElementById('apagar-texto');
@@ -264,8 +263,7 @@
     }
   });
 
-  btnSair?.addEventListener('click', async () => {
-    await AUTH.logout();
-    window.location.href = 'index.html';
-  });
+  // O botão Sair agora é desenhado pelo navbar.js, que também o liga.
+  // O listener que existia aqui virou código morto quando esta página
+  // passou a usar <nav data-navbar>.
 })();

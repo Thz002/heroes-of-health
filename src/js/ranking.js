@@ -20,7 +20,6 @@
   const nota = document.getElementById('ranking-nota');
   const media = document.getElementById('ranking-media');
   const subtitulo = document.getElementById('ranking-subtitulo');
-  const btnSair = document.getElementById('logout-btn');
 
   const COR_PADRAO = '#14b8a6';
   const MEDALHAS = ['ouro', 'prata', 'bronze'];
@@ -147,8 +146,7 @@
     return partes.join(' · ');
   }
 
-  btnSair?.addEventListener('click', async () => {
-    await AUTH.logout();
-    window.location.href = 'index.html';
-  });
+  // O botão Sair agora é desenhado pelo navbar.js, que também o liga.
+  // O listener que existia aqui virou código morto quando esta página
+  // passou a usar <nav data-navbar>.
 })();

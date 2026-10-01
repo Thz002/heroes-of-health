@@ -234,6 +234,31 @@ const API = (() => {
    */
   const getMinhaTurma = () => get('/minha-turma');
 
+  /**
+   * Marca que a pessoa apareceu hoje e devolve o que isso rendeu.
+   *
+   * Pode ser chamada à vontade: quem decide se vale prêmio é a chave
+   * (usuario_id, dia) do banco, não o navegador. Devolve
+   * { ganhou_hoje, pontos_do_dia, xp, nivel, streak_dias, insignias_novas }.
+   */
+  const marcarPresenca = () => post('/presenca');
+
+  /** A estante inteira — o que já foi conquistado e o que falta */
+  const getMinhaEstante = () => get('/minha-estante');
+
+  /**
+   * Muda o nome e a foto de quem está logado.
+   *
+   * Só esses dois. Idade, tipo e turma decidem o que a pessoa vê e pode
+   * no jogo, e por isso não são editáveis por ela.
+   */
+  const salvarMeuPerfil = ({ nome, avatar_url }) => {
+    const mudancas = {};
+    if (nome !== undefined) mudancas.nome = nome;
+    if (avatar_url !== undefined) mudancas.avatar_url = avatar_url;
+    return patch('/meu-perfil', mudancas);
+  };
+
   // ── Professor ──────────────────────────────
   const getMinhasTurmas = () => get('/professor/turmas');
   const criarQuiz = ({ turma_id, titulo, descricao, cenarios, areas, qtd_questoes, tempo_limite_segundos }) =>
@@ -292,6 +317,9 @@ const API = (() => {
     getMeuProgresso,
     getMeuResumo,
     getMinhaTurma,
+    marcarPresenca,
+    getMinhaEstante,
+    salvarMeuPerfil,
     getMeuMapa,
     getMeusQuizzes,
     getQuestoesDoQuiz,
