@@ -399,7 +399,27 @@
     }
   });
 
-  function mostrarFim() {
+  /* As cores das oito áreas.
+   *
+   * A tabela `areas` não guarda cor, e inventar uma no servidor seria
+   * decisão de banco para um assunto de tela. Ficam aqui, perto de quem
+   * desenha. Nenhuma é vermelha de propósito: barra baixa neste jogo
+   * não é erro, é assunto que a pessoa ainda não jogou. */
+  const CORES = {
+    'Saúde':       '#2ec4a9',
+    'Educação':    '#5b9bd5',
+    'Vacinação':   '#9b8ad4',
+    'Vetores':     '#e8914a',
+    'Limpeza':     '#4fc3d9',
+    'Alimentação': '#7cc451',
+    'Exercícios':  '#e2715f',
+    'Felicidade':  '#f9c74f'
+  };
+
+  // Menor pedaço que ainda se enxerga numa barra, em % dela.
+  const PISO = 3;
+
+  async function mostrarFim() {
     pararRelogio();
     quiz.hidden = true;
     topo.hidden = true;
@@ -410,16 +430,80 @@
 
     const linhas = Object.entries(ganhos);
     fimBarras.innerHTML = '';
-    if (linhas.length) {
-      linhas.forEach(([area, pts]) => {
-        const p = document.createElement('p');
-        p.style.fontSize = '14.5px';
-        p.textContent = `+${pts} pontos em ${area}`;
-        fimBarras.appendChild(p);
-      });
-    }
 
     btnMais.hidden = sobrando <= 0;
+    if (!linhas.length) return;
+
+    // O progresso DEPOIS da rodada. O "antes" se descobre tirando o que
+    // acabou de ser ganho — assim a barra mostra de onde a pessoa saiu e
+    // até onde chegou, em vez de só o número final.
+    let areas = [];
+    try { areas = await API.getMeuProgresso(); } catch (_) { /* cai no modo simples */ }
+
+    const porNome = new Map(areas.map(a => [a.area, a]));
+
+    for (const [area, pts] of linhas.sort((a, b) => b[1] - a[1])) {
+      fimBarras.appendChild(montarGanho(area, pts, porNome.get(area)));
+    }
+
+    // Um quadro depois, para o navegador desenhar as barras no tamanho
+    // antigo primeiro. Sem esta espera a largura final já entraria
+    // pronta e não haveria crescimento para ver.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fimBarras.querySelectorAll('.ganho__novo').forEach(el => {
+        el.style.width = el.dataset.largura;
+      });
+    }));
+  }
+
+  function montarGanho(area, pontos, dados) {
+    const bloco = document.createElement('div');
+    bloco.className = 'ganho';
+    bloco.style.setProperty('--cor', CORES[area] || 'var(--primary)');
+
+    bloco.innerHTML = `
+      <div class="ganho__topo">
+        <span class="ganho__area"></span>
+        <span class="ganho__pts"></span>
+      </div>
+      <span class="ganho__barra"><i class="ganho__antes"></i><i class="ganho__novo"></i></span>
+      <span class="ganho__nota"></span>`;
+
+    bloco.querySelector('.ganho__area').textContent = area;
+    bloco.querySelector('.ganho__pts').textContent = `+${pontos}`;
+
+    // `pontos_possiveis` é a régua: tudo o que ESTE aluno pode somar na
+    // área com as missões dele. Não confundir com a meta global da
+    // tabela `areas`, que é o conteúdo do jogo inteiro — a régua do
+    // aluno é a que faz a barra dele significar alguma coisa.
+    const alvo = dados?.pontos_possiveis || 0;
+    const agora = dados?.pontos ?? pontos;
+
+    // Sem régua (área sem missão para este aluno) não há barra honesta a
+    // desenhar: mostra só os pontos ganhos.
+    if (!alvo) {
+      bloco.querySelector('.ganho__barra').hidden = true;
+      bloco.querySelector('.ganho__nota').textContent = `${agora} pontos`;
+      return bloco;
+    }
+
+    const antes = Math.max(0, agora - pontos);
+    const pctAntes = Math.min(100, (antes / alvo) * 100);
+    const pctNovo = Math.min(100 - pctAntes, (pontos / alvo) * 100);
+
+    bloco.querySelector('.ganho__antes').style.width = `${pctAntes}%`;
+
+    // O pedaço novo nasce com largura zero e cresce — é ele o feedback.
+    // O piso existe porque um ganho de 0,4% seria meio pixel: a pessoa
+    // acertou e não veria nada se mexer.
+    const novo = bloco.querySelector('.ganho__novo');
+    novo.dataset.largura = `${pontos > 0 ? Math.max(PISO, pctNovo) : 0}%`;
+    novo.style.width = '0%';
+
+    bloco.querySelector('.ganho__nota').textContent =
+      `${agora.toLocaleString('pt-BR')} de ${alvo.toLocaleString('pt-BR')} pontos`;
+
+    return bloco;
   }
 
   btnMais.addEventListener('click', async () => {

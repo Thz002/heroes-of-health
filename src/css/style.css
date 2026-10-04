@@ -516,12 +516,23 @@ img { max-width: 100%; display: block; }
 
 .perfil__cabeca {
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  align-items: center;
+  gap: 11px;
   padding: 10px 12px 12px;
   margin-bottom: 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
 }
+
+/* min-width:0 para o nome longo poder cortar com reticências em vez de
+   empurrar o menu inteiro para fora da tela. */
+.perfil__cabeca-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.perfil__avatar--menu { width: 38px; height: 38px; font-size: 14px; }
 
 .perfil__nome {
   font-family: var(--font-display);
@@ -539,7 +550,14 @@ img { max-width: 100%; display: block; }
   letter-spacing: 0.4px;
   text-transform: uppercase;
   color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+/* A patente vem depois do papel, em dourado: "ALUNO · Pequeno Aprendiz".
+   Mesma cor do XP e das insígnias no resto do jogo. */
+.perfil__patente { color: var(--gold); }
 
 /* A perspectiva mora AQUI, no pai. Sem ela o translateZ não tem de onde
    ser visto e o item não se mexe um milímetro — é o erro clássico de
@@ -777,7 +795,27 @@ img { max-width: 100%; display: block; }
   to   { opacity: 1; transform: none; }
 }
 
-.brinde__emoji { font-size: 25px; line-height: 1; }
+/* A marca do aviso. Era emoji; virou traçado desenhado, que fica igual
+   em qualquer sistema e combina com os ícones do menu de perfil. */
+.brinde__marca {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--accent);
+}
+
+.brinde__marca svg { width: 19px; height: 19px; }
+
+/* Cada tipo de ganho tem a sua cor, e a cor é a informação: verde
+   terminou, dourado conquistou, claro apareceu. */
+.brinde--certo .brinde__marca    { background: rgba(107, 223, 184, 0.2);  color: var(--accent); }
+.brinde--insignia .brinde__marca { background: rgba(249, 199, 79, 0.2);   color: var(--gold); }
+.brinde--dia .brinde__marca      { background: rgba(255, 255, 255, 0.14); color: rgba(255,255,255,0.8); }
 
 .brinde__texto {
   display: flex;

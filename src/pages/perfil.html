@@ -22,8 +22,6 @@
 
   <div class="page-wrap">
 
-    <!-- A barra inteira é desenhada pelo navbar.js: links, selo de XP e o
-         canto do perfil. Para mudar o menu, é a lista no topo daquele arquivo. -->
     <nav class="nav_bar" data-navbar></nav>
 
     <main class="main-content">
@@ -40,29 +38,33 @@
       <div class="dashboard-grid">
         <div class="col-full">
 
-          <!-- ── Quem é ─────────────────────────────────────────────── -->
           <section class="cartao-perfil">
             <div class="cartao-perfil__avatar" id="avatar-grande"></div>
 
             <div class="cartao-perfil__dados">
               <h3 class="cartao-perfil__nome" id="dado-nome">…</h3>
-              <span class="cartao-perfil__cargo" id="dado-tipo"></span>
+
+              <div class="cartao-perfil__faixa">
+                <span class="cartao-perfil__cargo" id="dado-tipo"></span>
+                <span class="cartao-perfil__patente" id="dado-patente" hidden>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="9" r="6" />
+                    <path d="M8.5 14.5L7 22l5-2.5L17 22l-1.5-7.5" />
+                  </svg>
+                  <span id="dado-patente-txt"></span>
+                </span>
+              </div>
 
               <dl class="cartao-perfil__lista" id="dado-lista"></dl>
             </div>
 
-            <!-- A barra de nível fica ao LADO de quem a pessoa é: nível é
-                 identidade no jogo, não estatística avulsa. Preenchida
-                 pelo navbar.js, como em qualquer <div data-nivel>. -->
             <div class="cartao-perfil__lado">
               <div data-nivel></div>
               <button type="button" class="btn btn--sm btn--ghost" id="btn-editar">Editar perfil</button>
             </div>
           </section>
 
-          <!-- ── Editar ─────────────────────────────────────────────── -->
-          <!-- Só nome e foto. Idade, tipo e turma decidem o que a pessoa
-               VÊ no jogo, e por isso não se mexem por aqui. -->
           <section class="editor" id="editor" hidden>
             <h3 class="editor__titulo">Editar perfil</h3>
 
@@ -80,9 +82,6 @@
                   <div class="cartao-perfil__avatar cartao-perfil__avatar--previa" id="previa"></div>
 
                   <div class="editor__foto-acoes">
-                    <!-- O input de arquivo fica escondido e o botão o aciona:
-                         o controle nativo não aceita estilo, e ele apareceria
-                         como um botão cinza de sistema no meio da tela. -->
                     <input type="file" id="campo-arquivo" accept="image/png,image/jpeg,image/webp" hidden>
 
                     <button type="button" class="btn btn--sm" id="btn-escolher">
@@ -119,17 +118,12 @@
             </form>
           </section>
 
-          <!-- ── Os números ────────────────────────────────────────── -->
-          <!-- Montados pelo perfil.js, porque o aluno e o professor
-               medem coisas diferentes: um tem missões e acertos, o outro
-               tem turmas e o quanto elas chegam sabendo. -->
           <section class="dashboard-section" id="titulo-numeros" hidden>
             <h3 id="numeros-titulo">Seus números</h3>
           </section>
 
           <section class="progresso-numeros" id="bloco-numeros" hidden></section>
 
-          <!-- ── A estante, resumida ───────────────────────────────── -->
           <section class="dashboard-section" id="titulo-estante" hidden>
             <h3>Insígnias</h3>
           </section>

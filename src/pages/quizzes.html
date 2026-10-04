@@ -30,8 +30,6 @@
 
   <div class="page-wrap">
 
-    <!-- A barra inteira é desenhada pelo navbar.js: links, selo de XP e o
-         botão Sair. Para mudar o menu, é a lista no topo daquele arquivo. -->
     <nav class="nav_bar" data-navbar></nav>
 
     <main class="main-content">
@@ -56,8 +54,6 @@
       <div class="dashboard-grid">
         <div class="col-full">
 
-          <!-- Duas vistas na mesma página. A aba ativa vai para o endereço
-               (#perguntas), então recarregar não volta para a outra. -->
           <section class="dashboard-section dashboard-section--abas">
             <div class="abas abas--pagina" role="tablist" id="abas-pagina">
               <button type="button" class="aba aba--ativa" data-vista="quizzes" role="tab" aria-selected="true">Meus quizzes</button>
@@ -108,7 +104,6 @@
     </main>
   </div>
 
-  <!-- Confirmação antes de apagar um quiz — é ação sem volta. -->
   <div class="modal" id="modal-apagar" hidden>
     <div class="modal__caixa modal__caixa--estreita" role="dialog" aria-labelledby="apagar-titulo">
       <div class="modal-header">

@@ -126,3 +126,94 @@
     margin: 0 auto 6px;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   O QUE VOCÊ GANHOU NESTA RODADA (missao.html)
+
+   Antes era uma lista de frases: "+56 pontos em Saúde". O número existia
+   mas não tinha tamanho — o aluno não sabia se 56 era muito ou pouco,
+   nem de onde tinha saído.
+
+   Agora cada área vira a SUA barra, com o que já havia numa cor e o que
+   acabou de entrar noutra, mais clara. O pedaço novo cresce na tela
+   depois que a barra já está desenhada: é ele o prêmio.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ganhos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 22px;
+  text-align: left;
+}
+
+.ganho {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ganho__topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ganho__area {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* O número do ganho usa a cor da área: é ele que a pessoa procura. */
+.ganho__pts {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--cor, var(--primary));
+}
+
+/* flex para os dois pedaços ficarem lado a lado sem cálculo de posição:
+   o antigo empurra o novo, que é exatamente o que deve acontecer. */
+.ganho__barra {
+  display: flex;
+  height: 11px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.ganho__antes,
+.ganho__novo {
+  display: block;
+  height: 100%;
+}
+
+.ganho__antes {
+  background: var(--cor, var(--primary));
+  opacity: 0.55;
+}
+
+/* O pedaço novo: cor cheia e um brilho, para separar do que já existia.
+   A transição é lenta de propósito — 1,1s é o tempo de a pessoa olhar e
+   entender que aquilo cresceu agora. */
+.ganho__novo {
+  width: 0;
+  background: var(--cor, var(--primary));
+  box-shadow: 0 0 10px var(--cor, var(--primary));
+  border-radius: 0 99px 99px 0;
+  transition: width 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ganho__nota {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ganho__novo { transition: none; }
+}

@@ -86,12 +86,47 @@
       ? 'Você é o primeiro da turma por aqui.'
       : `Você e mais ${quantos - 1} ${plural(quantos - 1, 'colega', 'colegas')} nesta turma.`;
 
+    mostrarProfessor(turma.professor_perfil);
+
     // Posição só faz sentido com colega: "1º de 1" não é conquista.
     if (!posicao || posicao.total < 2) return;
 
     document.getElementById('turma-posicao').hidden = false;
     escrever('posicao-lugar', `${posicao.lugar}º`);
     escrever('posicao-rot', `de ${posicao.total} na turma`);
+  }
+
+  /**
+   * O perfil do professor, visto pelo aluno.
+   *
+   * O jogo é sobre uma dupla: o aluno aprende, o professor ensina, e o
+   * XP do professor vem inteiro do avanço da turma. Mostrar o nível
+   * dele aqui é o que torna isso visível — o aluno descobre que, quando
+   * ele avança, o professor avança junto.
+   */
+  function mostrarProfessor(prof) {
+    const bloco = document.getElementById('bloco-professor');
+    if (!bloco || !prof) return;
+
+    bloco.hidden = false;
+
+    if (window.AVATAR) {
+      window.AVATAR.desenhar(document.getElementById('prof-avatar'), prof.nome, prof.avatar_url);
+    }
+
+    escrever('prof-nome', prof.nome || 'Professor');
+    escrever('prof-patente', prof.nivel ? `Nv ${prof.nivel.nivel} · ${prof.nivel.patente}` : '');
+    escrever('prof-xp', `${(prof.xp || 0).toLocaleString('pt-BR')} XP`);
+
+    const barra = document.getElementById('prof-barra');
+    if (barra && prof.nivel) barra.style.width = `${prof.nivel.porcentagem}%`;
+
+    // A frase que liga as duas progressões. Sem ela o cartão é só mais
+    // um número na tela; com ela, vira o motivo de o aluno jogar.
+    escrever('prof-nota', prof.conclusoes
+      ? `${prof.conclusoes} ${plural(prof.conclusoes, 'tarefa concluída', 'tarefas concluídas')} pela turma` +
+        (prof.taxa_media !== null && prof.taxa_media !== undefined ? ` · ${prof.taxa_media}% de acerto na primeira tentativa` : '')
+      : 'O nível do seu professor sobe quando a turma conclui as tarefas dele.');
   }
 
   function mostrarColegas(colegas) {
@@ -118,20 +153,35 @@
     if (colega.eu) li.classList.add('colega--eu');
 
     li.innerHTML = `
-      <span class="colega__pos"></span>
       <span class="colega__avatar"></span>
-      <span class="colega__nome"></span>
+      <span class="colega__pos"></span>
+      <span class="colega__meio">
+        <span class="colega__nome"></span>
+        <span class="colega__patente"></span>
+      </span>
       <span class="colega__barra"><i></i></span>
       <span class="colega__xp"></span>
     `;
 
-    li.querySelector('.colega__pos').textContent = ordem + 1;
-    li.querySelector('.colega__avatar').textContent = inicial(colega.nome);
+    // A foto do colega, com as iniciais de plano B. Mesma função que
+    // desenha o avatar da barra de cima — uma regra só para o círculo.
+    const avatar = li.querySelector('.colega__avatar');
+    if (window.AVATAR) window.AVATAR.desenhar(avatar, colega.nome, colega.avatar_url);
+    else avatar.textContent = inicial(colega.nome);
+
+    li.querySelector('.colega__pos').textContent = `${ordem + 1}º`;
 
     // Só o primeiro nome. A lista fica legível no celular, e o sobrenome
     // de uma criança não precisa ficar exposto para a turma inteira.
     li.querySelector('.colega__nome').textContent =
       colega.eu ? `${primeiroNome(colega.nome)} (você)` : primeiroNome(colega.nome);
+
+    // Nível e patente ao lado do nome: é a mesma régua do perfil, então
+    // o aluno reconhece o próprio número quando se vê na lista.
+    const patente = li.querySelector('.colega__patente');
+    patente.textContent = colega.nivel
+      ? `Nv ${colega.nivel.nivel} · ${colega.nivel.patente}`
+      : '';
 
     li.querySelector('.colega__barra i').style.width = `${Math.round((colega.xp / teto) * 100)}%`;
     li.querySelector('.colega__xp').textContent = `${colega.xp.toLocaleString('pt-BR')} XP`;

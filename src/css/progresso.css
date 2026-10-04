@@ -528,15 +528,43 @@
   margin: 0;
 }
 
+/* ALUNO · Pequeno Aprendiz — as duas coisas que a pessoa É, lado a lado
+   e logo abaixo do nome. Quebra em duas linhas quando não couber. */
+.cartao-perfil__faixa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+
 .cartao-perfil__cargo {
-  display: inline-block;
-  margin-top: 2px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--accent);
 }
+
+/* A patente ganha a pílula dourada: é conquista, e a cor é a mesma do
+   XP e das insígnias no resto do jogo. */
+.cartao-perfil__patente {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 11px 3px 8px;
+  border-radius: 99px;
+
+  background: rgba(249, 199, 79, 0.14);
+  border: 1px solid rgba(249, 199, 79, 0.32);
+
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--gold);
+}
+
+.cartao-perfil__patente svg { width: 14px; height: 14px; }
 
 /* Duas colunas: rótulo à esquerda, valor à direita. O rótulo tem largura
    fixa para os valores alinharem — soltos, viram um parágrafo picado. */
@@ -722,9 +750,11 @@
   counter-reset: none;
 }
 
+/* FOTO · POSIÇÃO · NOME+PATENTE · BARRA · XP.
+   A foto vem primeiro porque é o que a pessoa reconhece antes de ler. */
 .colega {
   display: grid;
-  grid-template-columns: 28px 30px minmax(72px, 1fr) minmax(60px, 2fr) 74px;
+  grid-template-columns: 38px 30px minmax(96px, 1.2fr) minmax(60px, 1.6fr) 74px;
   align-items: center;
   gap: 12px;
 
@@ -748,23 +778,119 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  background: linear-gradient(145deg, var(--primary), var(--primary-dark));
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 13px;
   color: var(--white);
 }
 
+.colega__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.colega__avatar.perfil__avatar--foto { background: rgba(255, 255, 255, 0.1); }
+
+.colega__meio { min-width: 0; }
+
 .colega__nome {
+  display: block;
   font-size: 14px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.colega__patente {
+  display: block;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* ── O cartão do professor, na tela do aluno ──────────────────────── */
+
+.prof-cartao {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+
+  padding: 18px 22px;
+  margin-bottom: 22px;
+  background: var(--glass-bg);
+  border: 1px solid rgba(249, 199, 79, 0.28);
+  border-radius: var(--radius-md);
+}
+
+.prof-cartao__avatar { width: 52px; height: 52px; font-size: 17px; flex-shrink: 0; }
+
+.prof-cartao__meio { flex: 1 1 200px; min-width: 0; }
+
+.prof-cartao__rot {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.prof-cartao__nome {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--white);
+  margin: 1px 0 3px;
+}
+
+.prof-cartao__nota {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.prof-cartao__nivel {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 170px;
+  flex-shrink: 0;
+}
+
+.prof-cartao__patente {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.prof-cartao__barra {
+  display: block;
+  height: 7px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.prof-cartao__barra i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--primary), var(--gold));
+  transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.prof-cartao__xp { font-size: 11px; color: var(--text-muted); }
+
+@media (max-width: 560px) {
+  .prof-cartao__nivel { width: 100%; }
 }
 
 .colega__barra {
@@ -822,12 +948,13 @@
 
 @media (max-width: 560px) {
   /* A barra sai: com a tela estreita ela viraria um traço de 30px, que
-     não compara nada. Sobram posição, nome e XP, que é o essencial. */
+     não compara nada. Sobram foto, posição, nome e XP. */
   .colega {
-    grid-template-columns: 24px 30px 1fr auto;
+    grid-template-columns: 34px 24px 1fr auto;
     gap: 10px;
   }
 
+  .colega__avatar { width: 34px; height: 34px; }
   .colega__barra { display: none; }
 
   /* A barra passa para baixo do nome: com 132px de rótulo sobrariam uns

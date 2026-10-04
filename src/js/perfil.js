@@ -83,6 +83,31 @@
    * números diferentes sem duplicar a tela — eles medem coisas que não
    * se parecem.
    */
+  /**
+   * A patente ao lado de ALUNO / PROFESSOR, e a barra de nível.
+   *
+   * A patente é IDENTIDADE, não estatística: "Pequeno Aprendiz" é o que
+   * a pessoa é dentro do jogo, do mesmo jeito que "Aluno" é. Por isso
+   * fica junto do nome, e não perdida entre os números lá embaixo.
+   *
+   * A barra também é preenchida aqui, com o nível que esta tela já
+   * buscou. O navbar.js preenche toda <div data-nivel> quando a
+   * presença do dia volta, mas depender só disso deixava a barra vazia
+   * se aquela chamada demorasse ou falhasse — e é a tela de perfil,
+   * justamente onde a pessoa vai procurar o próprio nível.
+   */
+  function mostrarPatente(nivel, xp) {
+    if (!nivel) return;
+
+    const selo = document.getElementById('dado-patente');
+    if (selo) {
+      escrever('dado-patente-txt', `${nivel.patente} · Nível ${nivel.nivel}`);
+      selo.hidden = false;
+    }
+
+    if (window.NIVEL) window.NIVEL.atualizar(nivel, xp);
+  }
+
   function mostrarNumeros(cartoes, titulo) {
     const bloco = document.getElementById('bloco-numeros');
     bloco.innerHTML = '';
@@ -90,13 +115,16 @@
     for (const c of cartoes) {
       const art = document.createElement('article');
       art.className = 'numero-card' + (c.destaque ? ' numero-card--xp' : '');
+      // A terceira linha só existe quando há algo a dizer. Um cartão com
+      // uma frase apagada embaixo pesa a tela sem informar nada.
       art.innerHTML = `
         <span class="numero-card__valor"></span>
-        <span class="numero-card__rot"></span>
-        <span class="numero-card__nota"></span>`;
+        <span class="numero-card__rot"></span>` +
+        (c.nota ? '<span class="numero-card__nota"></span>' : '');
+
       art.querySelector('.numero-card__valor').textContent = c.valor;
       art.querySelector('.numero-card__rot').textContent = c.rotulo;
-      art.querySelector('.numero-card__nota').textContent = c.nota || '';
+      if (c.nota) art.querySelector('.numero-card__nota').textContent = c.nota;
       bloco.appendChild(art);
     }
 
@@ -164,17 +192,23 @@
       if (faixa) linha('Faixa do conteúdo', `Nível ${faixa.nivel} — missões de ${faixa.texto}`);
     }
 
-    const { turma, estatisticas } = await API.getMeuResumo();
+    const { turma, posicao, estatisticas } = await API.getMeuResumo();
 
     if (turma) {
       linha('Turma', turma.ano_escolar ? `${turma.nome} · ${turma.ano_escolar}` : turma.nome);
       if (turma.escola) linha('Escola', turma.escola);
       if (turma.professor) linha('Professor', turma.professor);
+
+      // Posição só faz sentido com colega: "1º de 1" não é conquista.
+      if (posicao && posicao.total > 1) {
+        linha('Na turma', `${posicao.lugar}º de ${posicao.total}`);
+      }
     } else {
       linha('Turma', 'ainda não entrou em nenhuma');
     }
 
     const e = estatisticas || {};
+    mostrarPatente(e.nivel, e.xp);
 
     mostrarNumeros([
       { valor: (e.xp || 0).toLocaleString('pt-BR'), rotulo: 'XP acumulado', destaque: true,
@@ -223,21 +257,19 @@
       e = r.estatisticas || {};
     } catch (_) { /* segue com o que já há em tela */ }
 
+    mostrarPatente(e.nivel, e.xp);
+
+    // Um fato por cartão, sem a linha apagada embaixo. O que era dito no
+    // sussurro ("em 4 quizzes criados", "entre 4 alunos") virou cartão
+    // próprio: se o número importa, ele merece um rótulo.
     mostrarNumeros([
-      { valor: (e.xp || 0).toLocaleString('pt-BR'), rotulo: 'XP acumulado', destaque: true,
-        nota: 'tudo vem do avanço das suas turmas' },
-
-      { valor: e.conclusoes ?? 0, rotulo: 'tarefas concluídas',
-        nota: e.quizzes_criados ? `em ${e.quizzes_criados} ${plural(e.quizzes_criados, 'quiz criado', 'quizzes criados')}` : 'nenhum quiz criado ainda' },
-
+      { valor: (e.xp || 0).toLocaleString('pt-BR'), rotulo: 'XP acumulado', destaque: true },
+      { valor: e.quizzes_criados ?? 0, rotulo: plural(e.quizzes_criados ?? 0, 'quiz criado', 'quizzes criados') },
+      { valor: e.conclusoes ?? 0, rotulo: plural(e.conclusoes ?? 0, 'tarefa concluída', 'tarefas concluídas') },
       { valor: e.taxa_media === null || e.taxa_media === undefined ? '—' : `${e.taxa_media}%`,
-        rotulo: 'a turma chega sabendo',
-        nota: e.taxa_media === null || e.taxa_media === undefined
-          ? 'aparece na primeira tarefa concluída'
-          : 'acertos na primeira tentativa' },
-
-      { valor: e.acertos_da_turma ?? 0, rotulo: 'acertos dos alunos',
-        nota: alunos ? `entre ${alunos} ${plural(alunos, 'aluno', 'alunos')}` : 'quando entrarem na turma' }
+        rotulo: 'a turma acerta de primeira' },
+      { valor: e.acertos_da_turma ?? 0, rotulo: 'acertos dos alunos' },
+      { valor: alunos, rotulo: plural(alunos, 'aluno na turma', 'alunos nas turmas') }
     ], 'Suas turmas');
 
     await mostrarEstante();

@@ -947,8 +947,33 @@ rotas.get('/ranking', async (req, res) => {
     l.nota = (l.acertos + PESO_INICIAL * mediaGeral) / (l.respostas + PESO_INICIAL);
   }
 
-  // Desempate: quem respondeu mais vem primeiro — fez mais para chegar lá.
-  linhas.sort((a, b) => (b.nota - a.nota) || (b.respostas - a.respostas));
+  /* A ordem sai em DOIS GRUPOS, e isso conserta um bug sutil.
+
+     A fórmula acima puxa toda turma para a média geral — é o que impede
+     três acertos em três respostas de passarem na frente de quem
+     respondeu quatrocentas. Só que uma turma com ZERO respostas cai
+     exatamente SOBRE a média, e a média ganha de quem ficou um pouco
+     abaixo dela:
+
+         turma vazia  (0 de 0)   -> (0 + 10×0,828) / (0 + 10)  = 0,8280
+         turma ativa  (24 de 29) -> (24 + 8,28)   / (29 + 10)  = 0,8277
+
+     O resultado era o painel mostrando duas turmas que nunca jogaram em
+     1º e 2º, e a única que estava jogando em 3º.
+
+     A correção não é mexer no peso: é reconhecer que turma sem resposta
+     não tem o que classificar. Ela não "empata na média", ela ainda não
+     entrou. Vai para o fim, e entre elas vale a ordem alfabética. */
+  linhas.sort((a, b) => {
+    const jogouA = a.respostas > 0;
+    const jogouB = b.respostas > 0;
+
+    if (jogouA !== jogouB) return jogouA ? -1 : 1;
+    if (!jogouA) return a.nome.localeCompare(b.nome, 'pt-BR');
+
+    // Desempate: quem respondeu mais vem primeiro — fez mais para chegar lá.
+    return (b.nota - a.nota) || (b.respostas - a.respostas);
+  });
 
   res.json(linhas.map((l, i) => ({
     ...l,

@@ -49,13 +49,6 @@
   <div class="page-wrap">
 
 
-    <!-- ── Basicamente nav quer dizer navegação, então acho uma boa delimitar meu escopo
-de navegação aqui e deparar tudo entre Barra e conteudo──
-
-         A barra inteira é desenhada pelo navbar.js: os links do perfil de
-         quem está logado, o selo de XP e o canto da conta (com o Sair
-         dentro dele). Para mudar o menu, é a lista no topo daquele
-         arquivo — não aqui, senão as seis páginas voltam a divergir. -->
     <nav class="nav_bar" data-navbar></nav>
 
     <main class="main-content">
@@ -66,12 +59,6 @@ de navegação aqui e deparar tudo entre Barra e conteudo──
           <p id="welcome-message">Segunda-feira, 18 de agosto de 2026</p>
           <button id="btn-nova-turma">+ Criar nova turma</button>
         </div>
-        <!-- Antes aqui havia uma pílula escrita à mão: "Nível <span
-             id=user-level> Mestre da Saúde". O span nunca era preenchido
-             por script nenhum, então o texto era fixo e não media nada.
-             Agora é a barra de verdade — o navbar.js preenche toda
-             <div data-nivel> com a patente, o nível e o XP de quem está
-             logado. -->
         <div data-nivel></div>
       </div>
 
@@ -98,6 +85,8 @@ de navegação aqui e deparar tudo entre Barra e conteudo──
               <p class="empty-state__hint">Clique em “+ Criar nova turma” para começar.</p>
             </div>
           </section>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -115,10 +104,6 @@ de navegação aqui e deparar tudo entre Barra e conteudo──
 
       <label class="campo">
         <span class="campo__label">Ano escolar</span>
-        <!-- O jogo atende dos 7 aos 18 anos, então a lista vai do
-             Fundamental ao 3º do Médio. Os valores são os mesmos de
-             ANOS_VALIDOS em server/rotas/professor.js — se mudar aqui,
-             mude lá também. -->
         <select id="in-ano">
           <optgroup label="Ensino Fundamental">
             <option value="1º ano">1º ano</option>
@@ -204,8 +189,6 @@ de navegação aqui e deparar tudo entre Barra e conteudo──
   </div>
 
 
-  <!-- ═══ Confirmar antes de desfazer ═════════════════════════════════
-       Apagar turma é o único botão desta tela que não tem volta. -->
   <div class="modal" id="modal-confirma" hidden>
     <div class="modal__caixa modal__caixa--estreita" role="dialog" aria-labelledby="confirma-titulo">
       <div class="modal-header">

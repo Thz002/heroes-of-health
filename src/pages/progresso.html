@@ -30,8 +30,6 @@
 
   <div class="page-wrap">
 
-    <!-- A barra inteira é desenhada pelo navbar.js: links, selo de XP e o
-         botão Sair. Para mudar o menu, é a lista no topo daquele arquivo. -->
     <nav class="nav_bar" data-navbar></nav>
 
     <main class="main-content">
@@ -44,14 +42,11 @@
         <a href="mapa.html" class="btn btn--sm">Voltar ao mapa</a>
       </div>
 
-      <!-- Um lugar só para erro de carregamento. Nada de número inventado:
-           se o servidor não respondeu, a tela diz isso. -->
       <p class="turmas-erro" id="progresso-erro" hidden></p>
 
       <div class="dashboard-grid">
         <div class="col-full">
 
-          <!-- ── BLOCO 1 — os quatro números ───────────────────────── -->
           <section class="progresso-numeros" id="bloco-numeros" aria-label="Seus números">
 
             <article class="numero-card">
@@ -80,7 +75,6 @@
 
           </section>
 
-          <!-- ── BLOCO 2 — a turma ─────────────────────────────────── -->
           <section class="turma-faixa" id="bloco-turma" hidden>
             <div class="turma-faixa__id">
               <span class="turma-faixa__ponto" id="turma-cor"></span>
@@ -103,7 +97,6 @@
             <a class="btn-entrar-turma" href="minha-turma.html">Escolher minha turma</a>
           </section>
 
-          <!-- ── BLOCO 3 — progresso por tema ──────────────────────── -->
           <section class="dashboard-section">
             <h3>Progresso por tema</h3>
           </section>
@@ -111,7 +104,6 @@
           <section class="painel">
             <p class="temas-intro" id="temas-intro">Quanto você já fez das missões que seu professor passou.</p>
 
-            <!-- O aviso de "novas missões" entra aqui (novas-missoes.js). -->
             <div id="aviso-novas"></div>
 
             <div class="temas" id="lista-temas"></div>

@@ -65,6 +65,26 @@
     sair: '<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>'
   };
 
+  /* As marcas dos avisos de recompensa.
+   *
+   * Eram emoji (✅ 🏅 ☀️) e tinham dois problemas. O desenho do emoji é
+   * do sistema operacional, então o mesmo aviso saía com cara diferente
+   * em cada máquina — e o conjunto todo tinha jeito de template pronto.
+   * Traçado desenhado aqui dentro fica igual em todo lugar e combina
+   * com os ícones que o menu de perfil já usa. */
+  const MARCAS = {
+    certo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" ' +
+           'stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 6.5"/></svg>',
+
+    insignia: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+              'stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/>' +
+              '<path d="M8.5 14.5L7 22l5-2.5L17 22l-1.5-7.5"/></svg>',
+
+    dia: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+         'stroke-linecap="round"><circle cx="12" cy="12" r="4"/>' +
+         '<path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>'
+  };
+
   const icone = (nome) =>
     `<svg class="perfil__icone" viewBox="0 0 24 24" fill="none" stroke="currentColor"
        stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
@@ -83,8 +103,13 @@
 
       <div class="perfil__menu" id="perfil-menu" hidden>
         <div class="perfil__cabeca">
-          <span class="perfil__nome" id="perfil-nome">…</span>
-          <span class="perfil__tipo" id="perfil-tipo"></span>
+          <span class="perfil__avatar perfil__avatar--menu" id="perfil-avatar-menu"></span>
+          <span class="perfil__cabeca-texto">
+            <span class="perfil__nome" id="perfil-nome">…</span>
+            <span class="perfil__tipo">
+              <span id="perfil-tipo"></span><span class="perfil__patente" id="perfil-patente"></span>
+            </span>
+          </span>
         </div>
 
         <ul class="perfil__lista">
@@ -190,18 +215,11 @@
     try { perfil = await AUTH.perfilAtual(); } catch (_) { /* segue com o genérico */ }
     if (!perfil) return;
 
-    // No dia em que usuarios ganhar uma coluna de foto, ela entra aqui e
-    // as iniciais viram o plano B de quem não subiu nenhuma.
-    if (perfil.avatar_url) {
-      const img = document.createElement('img');
-      img.src = perfil.avatar_url;
-      img.alt = '';
-      avatar.innerHTML = '';
-      avatar.appendChild(img);
-      avatar.classList.add('perfil__avatar--foto');
-    } else {
-      avatar.textContent = iniciais(perfil.nome);
-    }
+    // Os DOIS avatares: o do botão e o de dentro do menu. O de dentro
+    // faltava — o menu abria com o nome solto, sem a foto que o botão
+    // logo acima já estava mostrando.
+    desenharAvatar(avatar, perfil.nome, perfil.avatar_url);
+    desenharAvatar(document.getElementById('perfil-avatar-menu'), perfil.nome, perfil.avatar_url);
 
     const nome = document.getElementById('perfil-nome');
     const tipo = document.getElementById('perfil-tipo');
@@ -210,6 +228,43 @@
     if (nome) nome.textContent = perfil.nome || 'Minha conta';
     if (tipo) tipo.textContent = ROTULO_TIPO[perfil.tipo] || '';
   }
+
+  /**
+   * Foto ou iniciais, no mesmo lugar.
+   *
+   * Exposto em window.AVATAR porque o ranking da turma desenha o mesmo
+   * círculo para cada colega — e duas cópias desta regra acabariam
+   * divergindo no dia em que uma imagem quebrada precisasse de um plano
+   * B diferente em cada tela.
+   */
+  function desenharAvatar(alvo, nome, url) {
+    if (!alvo) return;
+
+    alvo.innerHTML = '';
+    alvo.classList.remove('perfil__avatar--foto');
+
+    if (!url) {
+      alvo.textContent = iniciais(nome);
+      return;
+    }
+
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = '';
+
+    // Endereço quebrado, site fora do ar, link que não era imagem: cai
+    // nas iniciais em vez de deixar um círculo vazio sem explicação.
+    img.onerror = () => {
+      alvo.innerHTML = '';
+      alvo.classList.remove('perfil__avatar--foto');
+      alvo.textContent = iniciais(nome);
+    };
+
+    alvo.classList.add('perfil__avatar--foto');
+    alvo.appendChild(img);
+  }
+
+  window.AVATAR = { desenhar: desenharAvatar, iniciais };
 
   /** "Ana Clara Souza" -> "AS". Uma letra só quando não há sobrenome. */
   function iniciais(nome) {
@@ -309,6 +364,12 @@
 
       document.querySelectorAll('[data-nivel]').forEach(el => desenharNivel(el, nivel, xp));
 
+      // A patente no cabeçalho do menu, logo depois de ALUNO/PROFESSOR.
+      // É o mesmo par que aparece no perfil: o papel e a patente são as
+      // duas coisas que a pessoa É dentro do jogo.
+      const patente = document.getElementById('perfil-patente');
+      if (patente) patente.textContent = ` · ${nivel.patente}`;
+
       const selo = document.getElementById('nav-xp');
       if (!selo) return;
 
@@ -397,7 +458,7 @@
 
     if (r.ganhou_hoje) {
       const dias = r.streak_dias > 1 ? ` · ${r.streak_dias} dias seguidos` : '';
-      avisos.push({ emoji: '☀️', titulo: `+${r.pontos_do_dia} XP por hoje`, texto: `Bom te ver de novo${dias}.` });
+      avisos.push({ marca: 'dia', titulo: `+${r.pontos_do_dia} XP por hoje`, texto: `Bom te ver de novo${dias}.` });
     }
 
     // O marco do questionário. A taxa aparece porque é ela que explica o
@@ -406,7 +467,7 @@
     const c = r.conclusao;
     if (c) {
       avisos.push({
-        emoji: '✅',
+        marca: 'certo',
         titulo: `Questionário concluído · +${c.xp_aluno} XP`,
         texto: `${c.perguntas} perguntas em ${c.respostas} respostas (${c.taxa}% de acerto). ` +
                `Seu professor ganhou ${c.xp_professor} XP junto.`
@@ -414,7 +475,7 @@
     }
 
     for (const i of r.insignias_novas || []) {
-      avisos.push({ emoji: '🏅', titulo: i.nome, texto: i.xp ? `${i.descricao} +${i.xp} XP` : i.descricao });
+      avisos.push({ marca: 'insignia', titulo: i.nome, texto: i.xp ? `${i.descricao} +${i.xp} XP` : i.descricao });
     }
 
     if (!avisos.length) return;
@@ -424,14 +485,13 @@
 
     for (const a of avisos) {
       const cartao = document.createElement('div');
-      cartao.className = 'brinde';
+      cartao.className = `brinde brinde--${a.marca}`;
       cartao.innerHTML = `
-        <span class="brinde__emoji" aria-hidden="true"></span>
+        <span class="brinde__marca" aria-hidden="true">${MARCAS[a.marca] || MARCAS.certo}</span>
         <span class="brinde__texto">
           <strong class="brinde__titulo"></strong>
           <span class="brinde__sub"></span>
         </span>`;
-      cartao.querySelector('.brinde__emoji').textContent = a.emoji;
       cartao.querySelector('.brinde__titulo').textContent = a.titulo;
       cartao.querySelector('.brinde__sub').textContent = a.texto;
       caixa.appendChild(cartao);

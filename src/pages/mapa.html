@@ -22,12 +22,6 @@
 
   <div class="page-wrap">
 
-    <!-- ── Basicamente nav quer dizer navegação, então acho uma boa delimitar meu escopo
-de navegação aqui e deparar tudo entre Barra e conteudo──
-
-         A barra inteira é desenhada pelo navbar.js: os links, o selo de
-         XP e o botão Sair. Quem muda o menu é a lista lá no topo dele,
-         não este arquivo. ── -->
     <nav class="nav_bar" data-navbar></nav>
 
     <main class="main-content">
@@ -57,11 +51,6 @@ de navegação aqui e deparar tudo entre Barra e conteudo──
           </div>
         </section>
 
-        <!-- Painel lateral: enquanto o mouse passeia pelo mapa ele mostra o
-             PROGRESSO do aluno nas áreas da saúde que aquele lugar alimenta.
-             A descrição do lugar não mora mais aqui — ela abre no modal, no
-             clique. Assim o passeio pelo mapa responde "o que eu ganho ali?"
-             em vez de virar um texto para ler a cada hover. -->
         <aside class="mapa-sidebar" id="mapa-sidebar">
           <div class="mapa-sidebar__empty" id="mapa-sidebar-empty">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -91,11 +80,6 @@ de navegação aqui e deparar tudo entre Barra e conteudo──
           </div>
         </aside>
       </div>
-      <!-- Missões ativas: ocupa a largura inteira do conteúdo — do começo do
-           mapa até a borda direita do painel lateral. O `.card` do style.css
-           tem max-width de 440px (ele nasceu para a tela de login); sem o
-           modificador --full a lista ficava numa coluna estreita embaixo do
-           mapa. -->
       <div class="col-full fade-up">
         <div class="card card--full" style="padding:24px;">
           <h3 class="section-title">
@@ -103,21 +87,12 @@ de navegação aqui e deparar tudo entre Barra e conteudo──
             <span id="missoes-contador">carregando…</span>
           </h3>
           <div class="missions-list" id="missions-list">
-            <!-- Vazio de proposito: os cards vem de API.getMeuMapa(),
-                 montados por mapa.js. Um card de exemplo aqui dentro
-                 apareceria para o aluno sempre que a busca falhasse. -->
           </div>
         </div>
       </div>
     </main>
   </div>
 
-  <!-- ── Modal do cenário ────────────────────────────────────────────
-       Aberto no clique de um ponto do mapa. Quatro faixas, de cima para
-       baixo: cabeçalho (nome + miniatura do recorte + fechar), a foto do
-       interior do lugar, a descrição e o botão de jogar. As barras de
-       área ficaram só no painel lateral (hover) — aqui o espaço é da
-       imagem. -->
   <div class="modal-overlay" id="cenario-modal" role="dialog" aria-modal="true"
     aria-labelledby="cenario-modal-nome">
     <div class="modal mapa-modal">
@@ -134,9 +109,6 @@ de navegação aqui e deparar tudo entre Barra e conteudo──
         </div>
       </header>
 
-      <!-- Largura do modal, altura livre: a foto do interior aparece
-           inteira, na escala dela. Se passar da tela, quem rola é o
-           modal. -->
       <div class="mapa-modal__figura">
         <img id="cenario-modal-interior" class="mapa-modal__interior" alt="" hidden>
         <p class="mapa-modal__em-breve" id="cenario-modal-em-breve" hidden>Em breve implementado</p>

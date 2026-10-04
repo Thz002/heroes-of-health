@@ -29,8 +29,6 @@
 
   <div class="page-wrap">
 
-    <!-- A barra inteira é desenhada pelo navbar.js: links, selo de XP e o
-         botão Sair. Para mudar o menu, é a lista no topo daquele arquivo. -->
     <nav class="nav_bar" data-navbar></nav>
 
     <main class="main-content">
@@ -48,7 +46,6 @@
       <div class="dashboard-grid">
         <div class="col-full">
 
-          <!-- ── A turma ───────────────────────────────────────────── -->
           <section class="turma-faixa" id="bloco-turma" hidden>
             <div class="turma-faixa__id">
               <span class="turma-faixa__ponto" id="turma-cor"></span>
@@ -64,11 +61,6 @@
             </div>
           </section>
 
-          <!-- Aluno sem turma. Acontece de verdade: o cadastro deixa entrar
-               sem escolher, e turma_id fica nulo quando o professor desfaz a
-               turma. Os dois jeitos de escolher são os mesmos do cadastro
-               (código ou escola + turma), e os dois passam por
-               POST /api/minha-turma — que só aceita quem ainda não tem turma. -->
           <section class="turma-faixa turma-faixa--vazia entrar-turma" id="bloco-sem-turma" hidden>
             <div class="entrar-turma__topo">
               <h3 class="entrar-turma__titulo">Escolha a sua turma</h3>
@@ -108,7 +100,22 @@
             </form>
           </section>
 
-          <!-- ── Quem mais está na turma ───────────────────────────── -->
+          <section class="prof-cartao" id="bloco-professor" hidden>
+            <span class="perfil__avatar prof-cartao__avatar" id="prof-avatar"></span>
+
+            <div class="prof-cartao__meio">
+              <span class="prof-cartao__rot">Seu professor</span>
+              <h3 class="prof-cartao__nome" id="prof-nome"></h3>
+              <p class="prof-cartao__nota" id="prof-nota"></p>
+            </div>
+
+            <div class="prof-cartao__nivel">
+              <span class="prof-cartao__patente" id="prof-patente"></span>
+              <span class="prof-cartao__barra"><i id="prof-barra"></i></span>
+              <span class="prof-cartao__xp" id="prof-xp"></span>
+            </div>
+          </section>
+
           <section class="dashboard-section" id="titulo-colegas" hidden>
             <h3>Quem está jogando</h3>
           </section>

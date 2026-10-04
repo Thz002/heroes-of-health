@@ -653,6 +653,43 @@ async function xpDoProfessor(usuarioId) {
 }
 
 /**
+ * O XP completo de VÁRIAS pessoas de uma vez.
+ *
+ * Existe porque o ranking da turma estava mentindo: ele somava só
+ * `acertos × 10` e ignorava presença, insígnias e conclusões. Um aluno
+ * com 250 XP no próprio perfil aparecia com 90 na lista da turma — dois
+ * números para a mesma coisa, que é como ninguém acaba confiando em
+ * nenhum.
+ *
+ * Em lote, e não um xpDoAluno() por pessoa: uma turma de 40 daria 160
+ * consultas ao banco para desenhar uma lista.
+ */
+async function xpDeVarios(ids) {
+  const vazio = new Map(ids.map(id => [id, 0]));
+  if (!ids.length) return vazio;
+
+  const [certas, dias, insignias, conclusoes] = await Promise.all([
+    lerTudo(() => admin.from('respostas_alunos').select('usuario_id, questao_id')
+      .eq('acertou', true).in('usuario_id', ids).order('usuario_id').order('questao_id')),
+    admin.from('xp_diario').select('usuario_id, pontos').in('usuario_id', ids),
+    admin.from('insignias_usuarios').select('usuario_id, insignias(xp)').in('usuario_id', ids),
+    admin.from('quiz_concluidos').select('usuario_id, xp_aluno').in('usuario_id', ids)
+  ]);
+
+  const total = new Map(ids.map(id => [id, 0]));
+  const soma = (id, quanto) => total.has(id) && total.set(id, total.get(id) + quanto);
+
+  if (!certas.error) {
+    for (const [id, set] of acertosUnicosPorAluno(certas.data)) soma(id, set.size * XP_POR_QUESTAO);
+  }
+  for (const d of ouVazio(dias).data || []) soma(d.usuario_id, d.pontos || 0);
+  for (const i of ouVazio(insignias).data || []) soma(i.usuario_id, i.insignias?.xp || 0);
+  for (const c of ouVazio(conclusoes).data || []) soma(c.usuario_id, c.xp_aluno || 0);
+
+  return total;
+}
+
+/**
  * Chamada a cada acerto: se este foi o que fechou o quiz, grava o marco
  * e devolve o que os dois ganharam. Senão, devolve null.
  *
@@ -732,7 +769,7 @@ module.exports = {
   NIVEIS, TOTAL_DE_NIVEIS, PATENTES, FUSO,
   faltaTabela, ouVazio,
   nivelDoXp, patenteDe, diaLocal, sequenciaDeDias, marcarPresenca,
-  acertosUnicosPorAluno, xpDoAluno, xpDoProfessor,
+  acertosUnicosPorAluno, xpDoAluno, xpDoProfessor, xpDeVarios,
   premioDeConclusao, registrarConclusao,
   conquistar, medirAluno
 };

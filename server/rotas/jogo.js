@@ -460,13 +460,31 @@ async function turmaComColegas(eu, turmaId) {
 
   const [escola, professor, matriculados] = await Promise.all([
     admin.from('escolas').select('nome').eq('id', turma.data.escola_id).maybeSingle(),
-    admin.from('usuarios').select('nome').eq('id', turma.data.professor_id).maybeSingle(),
-    admin.from('usuarios').select('id, nome').eq('turma_id', turmaId).eq('tipo', 'ALUNO')
+    admin.from('usuarios').select('id, nome, avatar_url').eq('id', turma.data.professor_id).maybeSingle(),
+    admin.from('usuarios').select('id, nome, avatar_url').eq('turma_id', turmaId).eq('tipo', 'ALUNO')
   ]);
 
   if (matriculados.error) return { erro: matriculados.error };
 
   const alunos = matriculados.data || [];
+
+  // O professor é mostrado ao aluno com a mesma cara de um perfil: foto,
+  // nome e patente. É a outra metade da dupla que o jogo quer formar —
+  // o aluno precisa ver que o professor dele também está subindo.
+  let dadosProfessor = null;
+
+  if (professor.data) {
+    const dele = await PROG.xpDoProfessor(professor.data.id);
+
+    dadosProfessor = {
+      nome: professor.data.nome,
+      avatar_url: professor.data.avatar_url || null,
+      xp: dele.erro ? 0 : dele.total,
+      nivel: dele.erro ? null : dele.nivel,
+      conclusoes: dele.erro ? 0 : dele.conclusoes,
+      taxa_media: dele.erro ? null : dele.taxa_media
+    };
+  }
 
   const dados = {
     id: turma.data.id,
@@ -474,35 +492,32 @@ async function turmaComColegas(eu, turmaId) {
     cor: turma.data.cor || null,
     ano_escolar: turma.data.ano_escolar || null,
     escola: escola.data?.nome || null,
-    professor: professor.data?.nome || null,
+    professor: dadosProfessor?.nome || null,
+    professor_perfil: dadosProfessor,
     total_alunos: alunos.length
   };
 
   if (!alunos.length) return { turma: dados, colegas: [], posicao: null };
 
-  const respostas = await lerTudo(() => admin
-    .from('respostas_alunos')
-    .select('usuario_id, questao_id')
-    .eq('acertou', true)
-    .in('usuario_id', alunos.map(a => a.id))
-    .order('usuario_id').order('questao_id'));
+  // XP COMPLETO, a mesma régua do perfil: questões, presença, insígnias
+  // e conclusões. Antes aqui só entravam os acertos, e o mesmo aluno
+  // aparecia com um número no perfil e outro no ranking da turma.
+  const porAluno = await PROG.xpDeVarios(alunos.map(a => a.id));
 
-  if (respostas.error) return { erro: respostas.error };
-
-  const porAluno = acertosUnicosPorAluno(respostas.data);
-
-  // O XP é a MESMA régua da tela de progresso: 10 por questão distinta
-  // acertada. Se cada tela calculasse do seu jeito, o aluno veria dois
-  // números diferentes para a mesma coisa e não confiaria em nenhum.
-  const colegas = alunos.map(a => ({
-    nome: a.nome,
-    xp: (porAluno.get(a.id)?.size || 0) * XP_POR_QUESTAO,
-    eu: a.id === eu
-  })).sort((a, b) => b.xp - a.xp || a.nome.localeCompare(b.nome, 'pt-BR'));
+  const colegas = alunos.map(a => {
+    const xp = porAluno.get(a.id) || 0;
+    return {
+      nome: a.nome,
+      avatar_url: a.avatar_url || null,
+      xp,
+      nivel: PROG.nivelDoXp(xp, 'ALUNO'),
+      eu: a.id === eu
+    };
+  }).sort((a, b) => b.xp - a.xp || a.nome.localeCompare(b.nome, 'pt-BR'));
 
   // Empate é a MESMA posição: dois alunos com o mesmo XP são os dois
   // segundos. Contar quantos estão à frente dá isso de graça.
-  const meuXp = (porAluno.get(eu)?.size || 0) * XP_POR_QUESTAO;
+  const meuXp = porAluno.get(eu) || 0;
   const naFrente = colegas.filter(c => !c.eu && c.xp > meuXp).length;
 
   return { turma: dados, colegas, posicao: { lugar: naFrente + 1, total: alunos.length } };
