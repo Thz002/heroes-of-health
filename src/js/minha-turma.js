@@ -2,6 +2,7 @@
  * minha-turma.js — a turma do aluno (minha-turma.html)
  *
  * O que esta tela responde: "em que turma eu estou, e quem joga comigo?"
+ * Para quem ainda não tem turma, é também onde ela se escolhe.
  *
  * Não confundir com turma.html, que é a mesma pergunta pelo lado do
  * professor. Aquela pede `?id=` na URL e usa rotas de /professor; esta
@@ -52,6 +53,7 @@
       if (!turma) {
         blocoSemTurma.hidden = false;
         subtitulo.textContent = 'Você ainda não entrou em uma turma.';
+        prepararEntrada();
         return;
       }
 
@@ -135,6 +137,148 @@
     li.querySelector('.colega__xp').textContent = `${colega.xp.toLocaleString('pt-BR')} XP`;
 
     return li;
+  }
+
+  /* ── Entrar numa turma (só para quem está sem) ─────────────────────
+     Os mesmos dois caminhos do cadastro (auth.js): o código que o
+     professor entrega, ou escola + turma na lista. Os dois terminam num
+     turma_id mandado para POST /api/minha-turma — é o servidor que
+     grava, e só para quem ainda não tem turma.
+     ─────────────────────────────────────────────────────────────── */
+
+  let modoEntrada = 'codigo';
+  let turmaDoCodigo = null;     // a turma que o código digitado achou
+  let escolasCarregadas = false;
+
+  function prepararEntrada() {
+    const form = document.getElementById('form-entrar-turma');
+    const abas = document.getElementById('entrar-abas');
+    const codigo = document.getElementById('entrar-codigo');
+    const escola = document.getElementById('entrar-escola');
+    const turmaSel = document.getElementById('entrar-turma');
+    const dica = document.getElementById('entrar-dica');
+    const btn = document.getElementById('entrar-btn');
+
+    const avisar = (texto, tipo = '') => {
+      dica.textContent = texto;
+      dica.className = 'entrar-turma__dica' + (tipo ? ` entrar-turma__dica--${tipo}` : '');
+    };
+
+    abas.addEventListener('click', (e) => {
+      const aba = e.target.closest('.aba');
+      if (!aba) return;
+
+      modoEntrada = aba.dataset.modo;
+      abas.querySelectorAll('.aba').forEach(a => {
+        const ativa = a === aba;
+        a.classList.toggle('aba--ativa', ativa);
+        a.setAttribute('aria-selected', String(ativa));
+      });
+      form.querySelectorAll('[data-painel]').forEach(p => { p.hidden = p.dataset.painel !== modoEntrada; });
+      avisar('');
+
+      if (modoEntrada === 'lista' && !escolasCarregadas) carregarEscolas();
+      if (modoEntrada === 'codigo') codigo.focus();
+    });
+
+    // ── Pelo código ──
+    codigo.addEventListener('input', () => {
+      turmaDoCodigo = null;
+      codigo.value = codigo.value.toUpperCase();
+      avisar('');
+    });
+    codigo.addEventListener('blur', () => { if (codigo.value.trim()) procurarCodigo(); });
+
+    async function procurarCodigo() {
+      const texto = codigo.value.trim();
+      turmaDoCodigo = null;
+      if (!texto) { avisar('Digite o código que seu professor passou.', 'erro'); return null; }
+
+      avisar('Procurando turma...');
+      try {
+        const turma = await API.getTurmaPorCodigo(texto);
+        if (!turma) { avisar('Código não encontrado. Confira com seu professor.', 'erro'); return null; }
+
+        turmaDoCodigo = turma;
+        avisar(`Turma ${turma.nome}${turma.escola_nome ? ` — ${turma.escola_nome}` : ''}`, 'ok');
+        return turma;
+      } catch (_) {
+        avisar('Não foi possível conferir o código agora. Tente de novo.', 'erro');
+        return null;
+      }
+    }
+
+    // ── Pela lista ──
+    async function carregarEscolas() {
+      try {
+        const escolas = await API.getEscolas();
+        preencher(escola, escolas, escolas.length ? 'Escolha a escola' : 'Nenhuma escola cadastrada');
+        escolasCarregadas = true;
+      } catch (_) {
+        preencher(escola, [], 'Erro ao carregar as escolas');
+      }
+    }
+
+    escola.addEventListener('change', async () => {
+      turmaSel.disabled = true;
+      if (!escola.value) { preencher(turmaSel, [], 'Escolha a escola primeiro'); return; }
+
+      preencher(turmaSel, [], 'Carregando turmas...');
+      try {
+        const turmas = await API.getTurmasPorEscola(Number(escola.value));
+        preencher(turmaSel, turmas, turmas.length ? 'Escolha a turma' : 'Nenhuma turma nesta escola');
+        turmaSel.disabled = turmas.length === 0;
+      } catch (_) {
+        preencher(turmaSel, [], 'Erro ao carregar as turmas');
+      }
+    });
+
+    // ── Entrar ──
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      let turmaId = null;
+      if (modoEntrada === 'codigo') {
+        const turma = turmaDoCodigo || await procurarCodigo();
+        if (!turma) return;
+        turmaId = turma.id;
+      } else {
+        if (!turmaSel.value) { avisar('Escolha a escola e depois a turma.', 'erro'); return; }
+        turmaId = Number(turmaSel.value);
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+
+      try {
+        const { turma, colegas, posicao } = await API.entrarNaTurma(turmaId);
+
+        blocoSemTurma.hidden = true;
+        mostrarTurma(turma, posicao);
+        mostrarColegas(colegas);
+
+      } catch (err) {
+        avisar(err.message, 'erro');
+
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Entrar na turma';
+      }
+    });
+  }
+
+  /** Enche um <select> com [{ id, nome }], com a primeira opção em branco. */
+  function preencher(select, itens, rotulo) {
+    const vazio = document.createElement('option');
+    vazio.value = '';
+    vazio.textContent = rotulo;
+
+    select.replaceChildren(vazio, ...itens.map(i => {
+      const op = document.createElement('option');
+      op.value = i.id;
+      op.textContent = i.nome;
+      return op;
+    }));
   }
 
   /* ── Utilidades ────────────────────────────────────────────────── */

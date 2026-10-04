@@ -64,14 +64,48 @@
             </div>
           </section>
 
-          <!-- Aluno sem turma. Acontece de verdade: turma_id fica nulo
-               quando o professor apaga a turma. -->
-          <section class="turma-faixa turma-faixa--vazia" id="bloco-sem-turma" hidden>
-            <p>
-              Você ainda não está em nenhuma turma. Peça o código ao seu professor —
-              é por ele que as missões da sala chegam até você. Enquanto isso, o mapa
-              continua aberto para explorar.
-            </p>
+          <!-- Aluno sem turma. Acontece de verdade: o cadastro deixa entrar
+               sem escolher, e turma_id fica nulo quando o professor desfaz a
+               turma. Os dois jeitos de escolher são os mesmos do cadastro
+               (código ou escola + turma), e os dois passam por
+               POST /api/minha-turma — que só aceita quem ainda não tem turma. -->
+          <section class="turma-faixa turma-faixa--vazia entrar-turma" id="bloco-sem-turma" hidden>
+            <div class="entrar-turma__topo">
+              <h3 class="entrar-turma__titulo">Escolha a sua turma</h3>
+              <p>
+                É pela turma que as missões do seu professor chegam até você.
+                Peça o código a ele, ou procure a sua escola na lista.
+              </p>
+            </div>
+
+            <form class="entrar-turma__form" id="form-entrar-turma" novalidate>
+              <div class="abas" role="tablist" id="entrar-abas">
+                <button type="button" class="aba aba--ativa" data-modo="codigo" role="tab" aria-selected="true">Tenho o código</button>
+                <button type="button" class="aba" data-modo="lista" role="tab" aria-selected="false">Procurar na lista</button>
+              </div>
+
+              <div class="entrar-turma__campos" data-painel="codigo">
+                <label class="entrar-turma__campo">
+                  <span>Código da turma</span>
+                  <input type="text" id="entrar-codigo" placeholder="Ex: 7B-K3M9" maxlength="12" autocomplete="off">
+                </label>
+              </div>
+
+              <div class="entrar-turma__campos" data-painel="lista" hidden>
+                <label class="entrar-turma__campo">
+                  <span>Escola</span>
+                  <select id="entrar-escola"><option value="">Carregando escolas...</option></select>
+                </label>
+                <label class="entrar-turma__campo">
+                  <span>Turma</span>
+                  <select id="entrar-turma" disabled><option value="">Escolha a escola primeiro</option></select>
+                </label>
+              </div>
+
+              <p class="entrar-turma__dica" id="entrar-dica" aria-live="polite"></p>
+
+              <button type="submit" class="btn-entrar-turma" id="entrar-btn">Entrar na turma</button>
+            </form>
           </section>
 
           <!-- ── Quem mais está na turma ───────────────────────────── -->

@@ -12,6 +12,7 @@ const { admin } = require('../supabase');
 const { autenticar } = require('../middleware/autenticar');
 const { falhou } = require('../erros');
 const { lerTudo } = require('../lerTudo');
+const { CRIADOR_SISTEMA } = require('../conteudo');
 const PROG = require('../progressao');
 
 const { XP_POR_QUESTAO, acertosUnicosPorAluno } = PROG;
@@ -59,8 +60,13 @@ rotas.get('/cenarios', async (req, res) => {
   // Três consultas soltas em vez de um join aninhado: questoes_areas não
   // tem ligação direta com cenarios — a ponte entre as duas é questoes.
   // As duas primeiras passam de mil linhas fácil; daí o lerTudo.
+  //
+  // Só as questões do sistema: as de professor são de uma turma só, e
+  // uma pergunta escrita numa escola não pode acender barra no mapa dos
+  // alunos de todas as outras.
   const [questoes, vinculos, areas] = await Promise.all([
-    lerTudo(() => admin.from('questoes').select('id, cenario_id').order('id')),
+    lerTudo(() => admin.from('questoes').select('id, cenario_id')
+      .eq('criado_por', CRIADOR_SISTEMA).order('id')),
     lerTudo(() => admin.from('questoes_areas').select('questao_id, area_nome')
       .order('questao_id').order('area_nome')),
     admin.from('areas').select('nome, ordem').order('ordem')
@@ -385,33 +391,34 @@ rotas.get('/meu-mapa', async (req, res) => {
 
 
 // ── As 8 barras do aluno ─────────────────────────────────────────────
+//
+// A régua de cada barra é DESTE aluno: os pontos que ele pode ganhar
+// com as missões da turma dele, mais o que já conquistou. Quem calcula
+// é progresso_do_aluno() (db/setup.sql), que explica a regra inteira.
+//
+// Devolve sempre as 8, na ordem das barras:
+//   pontos            o que ele já ganhou na área
+//   pontos_possiveis  o que as missões dele valem na área, ao todo
+//   porcentagem       inteiro de 0 a 100, arredondado PARA BAIXO — 100
+//                     só quando fez tudo; 99,6% não pode virar "dominado"
+//   sem_missoes       nenhuma missão dele vale ponto nesta área (ainda)
 rotas.get('/meu-progresso', async (req, res) => {
-  const { data, error } = await admin
-    .from('areas')
-    .select('nome, ordem, meta')
-    .order('ordem');
+  const { data, error } = await admin.rpc('progresso_do_aluno', { p_usuario: req.usuario.id });
 
   if (error) return falhou(res, 500, 'Não foi possível carregar seu progresso.', error, 'GET /meu-progresso');
 
-  const progresso = await admin
-    .from('progresso_areas')
-    .select('area_nome, pontos, porcentagem')
-    .eq('usuario_id', req.usuario.id);
+  res.json((data || []).map(a => {
+    const pontos = Number(a.pontos_ganhos) || 0;
+    const possiveis = Number(a.pontos_possiveis) || 0;
 
-  const porArea = new Map((progresso.data || []).map(p => [p.area_nome, p]));
-
-  // Devolve sempre as 8, mesmo as que ainda estão zeradas, para a tela
-  // poder desenhar todas as barras desde o primeiro acesso.
-  // A meta vai junto para a tela poder mostrar "620 de 1400" em vez de
-  // uma porcentagem solta. Meta 0 = área ainda sem conteúdo nenhum, e a
-  // tela deve dizer isso em vez de desenhar uma barra eternamente vazia.
-  res.json(data.map(a => ({
-    area:        a.nome,
-    pontos:      porArea.get(a.nome)?.pontos ?? 0,
-    porcentagem: porArea.get(a.nome)?.porcentagem ?? 0,
-    meta:        a.meta ?? 0,
-    sem_conteudo: (a.meta ?? 0) <= 0
-  })));
+    return {
+      area: a.area,
+      pontos,
+      pontos_possiveis: possiveis,
+      porcentagem: possiveis ? Math.floor((pontos * 100) / possiveis) : 0,
+      sem_missoes: possiveis === 0
+    };
+  }));
 });
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -663,6 +670,67 @@ rotas.get('/minha-turma', async (req, res) => {
 
   if (daTurma.erro) {
     return falhou(res, 500, 'Não foi possível carregar sua turma.', daTurma.erro, 'GET /minha-turma');
+  }
+
+  res.json(daTurma);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   ENTRAR NUMA TURMA  —  POST /minha-turma   { turma_id }
+
+   Para o aluno que ficou sem turma: cadastrou sem escolher, ou o
+   professor desfez a turma dele. Os dois caminhos da tela são os mesmos
+   do cadastro (código da turma, ou escola + turma na lista), e os dois
+   chegam aqui como um turma_id.
+
+   SÓ QUEM NÃO TEM TURMA. Trocar de turma muda de quem são as missões e
+   em que ranking a pessoa aparece — é decisão do professor, não um
+   botão do aluno. O "turma_id is null" vai no próprio update, e não só
+   num if antes: duas abas clicando juntas não conseguem gravar duas
+   turmas.
+
+   É a ÚNICA porta: a coluna turma_id não é gravável pelo navegador
+   (grant por coluna em db/setup.sql).
+   ═══════════════════════════════════════════════════════════════════ */
+
+rotas.post('/minha-turma', async (req, res) => {
+  if (req.usuario.tipo !== 'ALUNO') {
+    return res.status(403).json({ message: 'Só alunos entram em turma por aqui.' });
+  }
+  if (req.usuario.turma_id) {
+    return res.status(409).json({ message: 'Você já está numa turma. Para trocar, fale com seu professor.' });
+  }
+
+  const turmaId = Number(req.body?.turma_id);
+  if (!Number.isInteger(turmaId) || turmaId <= 0) {
+    return res.status(400).json({ message: 'Escolha uma turma.' });
+  }
+
+  const turma = await admin.from('turmas').select('id').eq('id', turmaId).maybeSingle();
+  if (turma.error) {
+    return falhou(res, 500, 'Não foi possível entrar na turma.', turma.error, 'POST /minha-turma');
+  }
+  if (!turma.data) {
+    return res.status(404).json({ message: 'Essa turma não existe mais. Confira com seu professor.' });
+  }
+
+  const gravou = await admin
+    .from('usuarios')
+    .update({ turma_id: turmaId })
+    .eq('id', req.usuario.id)
+    .is('turma_id', null)
+    .select('id');
+
+  if (gravou.error) {
+    return falhou(res, 500, 'Não foi possível entrar na turma.', gravou.error, 'POST /minha-turma');
+  }
+  if (!gravou.data.length) {
+    return res.status(409).json({ message: 'Você já está numa turma. Para trocar, fale com seu professor.' });
+  }
+
+  const daTurma = await turmaComColegas(req.usuario.id, turmaId);
+  if (daTurma.erro) {
+    return falhou(res, 500, 'Você entrou na turma, mas não foi possível carregá-la agora.', daTurma.erro, 'POST /minha-turma');
   }
 
   res.json(daTurma);

@@ -29,6 +29,10 @@
   const blocoTurma = document.getElementById('bloco-turma');
   const blocoSemTurma = document.getElementById('bloco-sem-turma');
   const listaTemas = document.getElementById('lista-temas');
+  const temasIntro = document.getElementById('temas-intro');
+  const caixaAviso = document.getElementById('aviso-novas');
+
+  let usuarioId = null;
 
   /* ── Os rótulos gentis ────────────────────────────────────────────
      A faixa é escolhida pela PRIMEIRA linha cujo teto a porcentagem não
@@ -62,6 +66,8 @@
       return;
     }
 
+    usuarioId = perfil ? perfil.id : null;
+
     if (perfil && perfil.nome) {
       subtitulo.textContent = `${primeiroNome(perfil.nome)}, veja onde você já foi e o que ainda falta explorar.`;
     }
@@ -80,7 +86,7 @@
 
       mostrarNumeros(resumo.estatisticas);
       mostrarTurma(resumo.turma, resumo.posicao);
-      mostrarTemas(areas);
+      mostrarTemas(areas, Boolean(resumo.turma));
 
     } catch (err) {
       // Sem invenção: se não deu para carregar, a tela diz isso em vez de
@@ -153,12 +159,34 @@
 
   /* ── BLOCO 3 — as 8 barras ─────────────────────────────────────── */
 
-  function mostrarTemas(areas) {
+  /*
+   * A régua de cada barra é o que AS MISSÕES DESTE ALUNO valem (mais o
+   * que ele já conquistou) — ver GET /api/meu-progresso. Por isso:
+   *
+   *   - sem turma, não há barra para desenhar: a régua seria só o que ele
+   *     já acertou, e tudo apareceria "dominado". A tela convida a
+   *     escolher uma turma (bloco-sem-turma, acima);
+   *   - quando chega missão nova a barra desce, e o aviso explica por quê.
+   */
+  function mostrarTemas(areas, temTurma) {
     listaTemas.innerHTML = '';
-    areas.forEach((a, i) => listaTemas.appendChild(montarTema(a, i)));
+    caixaAviso.replaceChildren();
+
+    if (!temTurma) {
+      temasIntro.textContent =
+        'Assim que você entrar numa turma, as barras mostram quanto já fez das missões do seu professor.';
+      return;
+    }
+
+    const { novas, dispensar } = NOVAS_MISSOES.conferir(usuarioId, areas);
+    if (novas.length) {
+      caixaAviso.appendChild(NOVAS_MISSOES.montarAviso({ novas, dispensar, linkMapa: true }));
+    }
+
+    areas.forEach((a, i) => listaTemas.appendChild(montarTema(a, i, novas.includes(a.area))));
   }
 
-  function montarTema(a, ordem) {
+  function montarTema(a, ordem, temNovidade) {
     const linha = document.createElement('article');
     linha.className = 'tema';
     linha.style.setProperty('--i', ordem);
@@ -174,13 +202,14 @@
     const barra = linha.querySelector('.tema__barra i');
     const rotulo = linha.querySelector('.tema__rotulo');
 
-    // Área sem conteúdo nenhum: a barra ficaria eternamente vazia e o
-    // aluno leria isso como culpa dele. Melhor dizer que ainda não tem.
-    if (a.sem_conteudo) {
+    // Nenhuma missão deste aluno vale ponto nesta área: a barra ficaria
+    // vazia e ele leria isso como culpa dele. Melhor dizer que ainda não
+    // chegou missão dessa área.
+    if (a.sem_missoes) {
       linha.classList.add('tema--vazio');
       barra.style.width = '0%';
-      rotulo.textContent = 'em breve';
-      linha.title = 'Ainda não há perguntas desta área no jogo.';
+      rotulo.textContent = 'sem missões ainda';
+      linha.title = 'Nenhuma das suas missões vale pontos nesta área por enquanto.';
       return linha;
     }
 
@@ -190,10 +219,9 @@
     linha.classList.add(faixa.classe);
     rotulo.textContent = faixa.rotulo;
 
-    // A meta de uma área é TODO o conteúdo que ela tem no jogo (Saúde
-    // vale 1672 pontos hoje). Quem acertou as primeiras perguntas está
-    // em 1% ou 2% — e 2% de uma barra são dois pixels, que a pessoa lê
-    // como "não aconteceu nada".
+    // A régua cresce a cada missão nova, então quem acertou uma ou duas
+    // perguntas de um lote grande pode estar em 1% ou 2% — e 2% de uma
+    // barra são dois pixels, que a pessoa lê como "não aconteceu nada".
     //
     // Então quem já pontuou tem no mínimo um pedacinho visível. Não é
     // mentira: a barra mostra que existe progresso, e o número exato
@@ -202,7 +230,16 @@
 
     // O número exato existe, mas só para quem for atrás dele. Na tela
     // fica a palavra; no title, a conta.
-    linha.title = `${a.pontos} de ${a.meta} pontos em ${a.area}`;
+    linha.title = `${a.pontos} de ${a.pontos_possiveis} pontos das suas missões em ${a.area}`;
+
+    // A barra que desceu por causa de missão nova ganha uma etiqueta —
+    // o aviso lá em cima diz o porquê.
+    if (temNovidade) {
+      const selo = document.createElement('span');
+      selo.className = 'tema__novo';
+      selo.textContent = 'novas missões';
+      linha.querySelector('.tema__nome').appendChild(selo);
+    }
 
     return linha;
   }

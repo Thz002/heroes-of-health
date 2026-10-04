@@ -78,7 +78,9 @@ body {
     margin: 4px 0 0;
 }
 
-#btn-nova-turma {
+#btn-nova-turma,
+#btn-novo-quiz,
+#btn-nova-questao {
     padding: 8px 16px;
     border-radius: 20px;
     background-color: #0ea596;
@@ -91,7 +93,9 @@ body {
     margin-top: 15px;
 }
 
-#btn-nova-turma:hover {
+#btn-nova-turma:hover,
+#btn-novo-quiz:hover,
+#btn-nova-questao:hover {
     background-color: #159D8A;
     transform: translateY(-2px);
     box-shadow: 5px 10px 15px rgba(0, 0, 0, 0.2);
@@ -1490,3 +1494,530 @@ body {
     .ranking-pos__num { font-size: 16px; }
     .ranking-linha__taxa { font-size: 18px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CRIAR QUIZ (novo layout) E NOVA PERGUNTA
+
+   Os dois modais são mais altos que a tela de um notebook: a caixa
+   rola por dentro, e o fundo escuro continua parado atrás.
+   O modal "Nova pergunta" abre POR CIMA do de criar quiz — por isso o
+   z-index a mais em .modal--sobre.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.modal-quiz,
+.modal-questao { padding: 16px; }
+
+.modal--sobre { z-index: 10000; }
+
+.modal__caixa--larga {
+    width: min(880px, 100%);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.modal-quiz .campo,
+.modal-questao .campo {
+    display: block;
+    margin-bottom: 16px;
+}
+
+.modal-quiz .campo-duplo .campo { margin-bottom: 0; }
+
+.modal-questao textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 64px;
+    padding: 11px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.22);
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color .18s;
+}
+
+.modal-questao textarea:focus { border-color: #14b8a6; }
+
+.modal-quiz .campo input,
+.modal-quiz .campo select,
+.modal-questao .campo input[type="text"] { border-radius: 10px; }
+
+/* ── Os passos numerados ──────────────────────────────────────────── */
+.passo {
+    padding: 18px 0 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.passo:first-of-type { border-top: none; padding-top: 0; }
+
+.passo__titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 14px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.passo__num {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12.5px;
+}
+
+.nivel-pill {
+    display: inline-block;
+    margin: 12px 0 4px;
+    padding: 6px 12px;
+    border-radius: 99px;
+    font-size: 12.5px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid rgba(107, 223, 184, 0.25);
+}
+
+.nivel-pill--alerta {
+    color: var(--gold);
+    background: rgba(249, 199, 79, 0.1);
+    border-color: rgba(249, 199, 79, 0.3);
+}
+
+/* ── Os dois cartões de modo ──────────────────────────────────────── */
+.modos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.modo {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    column-gap: 12px;
+    row-gap: 8px;
+    align-items: center;
+    padding: 14px 16px;
+    text-align: left;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.7);
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: transform .16s, border-color .16s, background .16s, box-shadow .16s;
+}
+
+.modo:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+.modo--ativo {
+    border-color: var(--primary);
+    background: rgba(46, 196, 169, 0.12);
+    box-shadow: 0 0 0 1px var(--primary) inset;
+    color: #fff;
+}
+
+.modo__icone {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.modo--ativo .modo__icone {
+    background: var(--primary);
+    color: #05201d;
+}
+
+.modo__titulo {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.modo__texto {
+    grid-column: 1 / -1;
+    align-self: start;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.modo--ativo .modo__texto { color: rgba(255, 255, 255, 0.72); }
+
+/* ── Cenários: etiquetas à esquerda, ícone à direita ──────────────── */
+.cenario-picker {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 14px;
+    align-items: stretch;
+}
+
+.cenario-picker__chips { align-content: flex-start; }
+
+.vitrine {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    align-content: start;
+    gap: 8px;
+    min-height: 120px;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vitrine--vazia {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    border-style: dashed;
+}
+
+.vitrine__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+}
+
+.vitrine__item img {
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.vitrine__item figcaption {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Um cenário só: o ícone ocupa a vitrine inteira. */
+.vitrine--unica { grid-template-columns: 1fr; place-items: center; }
+.vitrine--unica .vitrine__item img { max-width: 140px; }
+.vitrine--unica .vitrine__item figcaption { font-size: 13px; color: #fff; }
+
+.vitrine__item--novo { animation: vitrine-entra .32s cubic-bezier(.2, 1.4, .4, 1); }
+
+@keyframes vitrine-entra {
+    from { opacity: 0; transform: scale(.6); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* Etiqueta de área ligada: acende na cor da barra dela. */
+.chip--cor.chip--ativo {
+    color: color-mix(in srgb, var(--chip-cor) 72%, white);
+    background: color-mix(in srgb, var(--chip-cor) 18%, transparent);
+    border-color: var(--chip-cor);
+}
+
+/* ── Abas (no modal e na página de quizzes) ───────────────────────── */
+.abas {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 99px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.aba {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 99px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .16s, color .16s;
+}
+
+.aba:hover { color: #fff; }
+
+.aba--ativa,
+.aba--ativa:hover {
+    background: var(--primary);
+    color: #05201d;
+}
+
+.abas--pagina { margin-bottom: 12px; }
+.abas--pagina .aba { padding: 9px 20px; font-size: 14px; }
+
+.btn-mini { padding: 6px 14px; font-size: 13px; }
+
+/* ── O banco de perguntas (modo manual) ───────────────────────────── */
+.banco { margin-bottom: 16px; }
+
+.banco__barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.banco__info {
+    margin: 0 0 10px;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.banco__lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 4px;
+    transition: opacity .16s;
+}
+
+.banco__lista--carregando { opacity: 0.45; pointer-events: none; }
+
+.banco__contador {
+    margin: 0;
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    font-size: 14.5px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.banco__contador--cheio {
+    color: var(--accent);
+    border-color: rgba(107, 223, 184, 0.35);
+    font-weight: 700;
+}
+
+/* ── O cartão de uma pergunta ─────────────────────────────────────── */
+.lista-questoes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.questao-card {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 12px;
+    align-items: start;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
+    transition: border-color .16s, background .16s;
+    animation: card-entra .32s ease-out backwards;
+    animation-delay: calc(min(var(--i, 0), 12) * 35ms);
+}
+
+/* Com caixinha (montar quiz) e com × (minhas perguntas) há uma coluna a mais. */
+label.questao-card { grid-template-columns: auto 44px 1fr; cursor: pointer; }
+.questao-card:has(.questao-card__apagar) { grid-template-columns: 44px 1fr auto; }
+
+.questao-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.questao-card--marcada,
+.questao-card--marcada:hover {
+    border-color: var(--primary);
+    background: rgba(46, 196, 169, 0.1);
+}
+
+.questao-card.saindo { animation: card-sai .28s ease-in forwards; }
+
+.questao-card__marca {
+    width: 18px;
+    height: 18px;
+    margin: 12px 0 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.questao-card__icone {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.questao-card__icone img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.questao-card__meio { min-width: 0; }
+
+.questao-card__enunciado {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: #fff;
+}
+
+.questao-card__opcoes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 14px;
+    margin: 0 0 9px;
+    padding: 0;
+    list-style: none;
+}
+
+.questao-card__opcoes li {
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.questao-card__opcoes li::before {
+    content: attr(data-letra) ") ";
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.questao-card__opcoes .questao-card__opcao--certa,
+.questao-card__opcoes .questao-card__opcao--certa::before {
+    color: #86efac;
+    font-weight: 600;
+}
+
+.questao-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.questao-card__explicacao {
+    margin: 9px 0 0;
+    padding-left: 10px;
+    border-left: 2px solid rgba(255, 255, 255, 0.15);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.questao-card:hover .questao-card__apagar { color: rgba(255, 255, 255, 0.45); }
+
+.quiz-tag--lugar { --tag-cor: #2ec4a9; }
+.quiz-tag--nivel { --tag-cor: #94a3b8; }
+.quiz-tag--minha { --tag-cor: #f9c74f; }
+
+/* ── As alternativas no modal "Nova pergunta" ─────────────────────── */
+.alternativas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.alternativa {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.alternativa__certa {
+    position: relative;
+    flex: none;
+    cursor: pointer;
+}
+
+.alternativa__certa input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.alternativa__letra {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.55);
+    transition: background .16s, border-color .16s, color .16s;
+}
+
+.alternativa__certa:hover .alternativa__letra { border-color: #86efac; color: #fff; }
+
+.alternativa__certa input:checked + .alternativa__letra {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #05201d;
+}
+
+.alternativa__certa input:focus-visible + .alternativa__letra {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ── Telas estreitas ──────────────────────────────────────────────── */
+@media (max-width: 680px) {
+    .modos,
+    .cenario-picker,
+    .alternativas,
+    .modal-quiz .campo-duplo { grid-template-columns: 1fr; }
+
+    .modal-quiz .campo-duplo { gap: 14px; }
+
+    .vitrine { min-height: 90px; }
+
+    .questao-card__opcoes { grid-template-columns: 1fr; }
+
+    .modal__caixa--larga { padding: 22px 18px; }
+}
+
+/* Os botões "+ Criar quiz" e "+ Criar pergunta", lado a lado na
+   página de quizzes. O margin-top passa a ser do grupo. */
+.welcome-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.welcome-acoes > button { margin-top: 0; }

@@ -17,6 +17,11 @@
 --  pelos alunos — o que um "delete + insert" destruiria, porque
 --  respostas_alunos referencia questoes com on delete cascade.
 --
+--  A coluna criado_por não aparece aqui de propósito: o default dela é
+--  o código do sistema ('00000000-0000-0000-0000-000000000000'), então
+--  toda questão deste arquivo já entra como "do sistema", visível a
+--  todos os professores. Questão de professor nasce pelo painel.
+--
 --  225 questões, em 18 grupos (cenário × nível).
 --
 --  As explicações nascem como PLACEHOLDER: o arquivo de origem não

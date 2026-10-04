@@ -145,9 +145,36 @@ cada missão para cada uma das suas questões. Hoje **"missão" é só o nome qu
 aluno vê para o quiz do professor** (`quizzes_professores`), e só se joga
 dentro de um quiz — não existe mais exploração livre pelo mapa.
 
-Ninguém cria conteúdo pelo jogo. As questões são escritas pela equipe de
-Medicina e entram pelo `db/importar-questoes.sql`. O `seed.sql` planta só os 7 cenários
-(`ubs`, `escola`, `mercado`, `farmacia`, `praca`, `corrego`, `terreno-baldio`).
+As questões do jogo são escritas pela equipe de Medicina e entram pelo
+`db/importar-questoes.sql`. O `seed.sql` planta os 12 cenários.
+
+**Questões de professor (`questoes.criado_por`).** Desde outubro de 2026 o
+professor também escreve perguntas, pelo painel. A coluna `criado_por` (uuid,
+`not null`) diz de quem é cada questão:
+
+| valor | significa |
+| --- | --- |
+| `00000000-0000-0000-0000-000000000000` (default) | questão **do sistema** — tudo o que veio do import |
+| o `usuarios.id` de um professor | questão criada por ele em `POST /api/professor/questoes` |
+
+- Cada professor vê as do sistema e as **dele**; nunca as de outro. Quem garante
+  é a policy `"le as questoes do sistema e as proprias"` de `questoes` (e a de
+  `questoes_areas`, que segue a questão) **e**, no servidor, o filtro por
+  `criado_por` em `server/rotas/professor.js` — inclusive no `POST /quizzes`,
+  que recusa id de questão alheia mandado pelo console.
+- `criado_por` é gravado pelo servidor a partir do login, nunca do corpo da
+  requisição. Professor não tem policy de insert em `questoes`.
+- Não há FK para `usuarios`, de propósito: o código do sistema não é um usuário.
+- A meta das barras (`recalcular_metas()`) e o painel do mapa (`GET /api/cenarios`)
+  contam **só as do sistema** — uma pergunta escrita numa escola não pode baixar
+  a porcentagem nem acender barra para os alunos de todas as outras.
+- O gabarito das questões do sistema continua sem ir ao navegador, nem para
+  professor (qualquer um se cadastra como professor — ver §4). O das questões
+  do próprio professor vai, porque foi ele quem as escreveu.
+- Apagar questão de professor só é aceito enquanto nenhum aluno a respondeu e
+  ela não está em nenhum quiz: `respostas_alunos` cai em cascata, e o XP iria junto.
+
+Banco criado antes da coluna: `db/migracao-questoes-criado-por.sql`, depois `db/setup.sql`.
 
 **Progresso — uma linha por aluno**
 
@@ -158,6 +185,34 @@ Medicina e entram pelo `db/importar-questoes.sql`. O `seed.sql` planta só os 7 
 
 Nenhuma dessas quatro é criada no cadastro. Um aluno recém-cadastrado tem zero
 linhas nas três primeiras — quem cria é o jogo, na primeira vez que precisar.
+
+**As barras são relativas a cada aluno (outubro de 2026).** O aluno só joga
+dentro dos quizzes do professor, então medir a barra contra o banco inteiro
+(`areas.meta`) era medir contra algo que ele nunca alcança. Hoje as telas leem
+`progresso_do_aluno(p_usuario)`, uma função calculada na hora:
+
+- **régua** = os pontos (`questoes_areas.pontos`) das questões dos quizzes da
+  turma **atual** + das questões que ele **já acertou**, em qualquer momento;
+- **ganho** = os pontos das questões que ele já acertou (primeiro acerto, como
+  em `POST /api/responder`).
+
+Consequências, todas de propósito: quiz novo faz a barra **descer** (a tela
+mostra "Novas missões chegaram!", via `src/js/novas-missoes.js`); apagar um quiz
+já feito ou trocar de turma **não** tira o que foi conquistado; aluno sem turma
+não tem régua, e as telas o convidam a escolher uma (`POST /api/minha-turma`).
+
+Nada disso é gravado — a régua muda sempre que qualquer professor cria ou apaga
+quiz, e um número guardado ficaria velho. `progresso_areas`, `areas.meta`,
+`somar_pontos()` e `recalcular_metas()` **continuam existindo e sendo
+alimentados**, só como reserva para poder voltar atrás; saem numa limpeza
+futura, depois de um backup (`npm run backup`). Ao validar a troca, os pontos
+ganhos da função bateram com `progresso_areas.pontos` em todos os alunos.
+
+**Turma do aluno.** O aluno não grava a própria turma pelo navegador: o grant
+por coluna da seção 5 do `setup.sql` só deixa `nome` e `avatar_url`
+graváveis. Antes disso, a policy "editar o proprio cadastro" deixava qualquer
+aluno trocar `turma_id` (e `idade`) pelo console. Entrar numa turma é
+`POST /api/minha-turma`, que só aceita quem ainda não tem turma.
 
 ---
 

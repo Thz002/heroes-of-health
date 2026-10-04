@@ -231,7 +231,8 @@
      ═══════════════════════════════════════════════════════════════════ */
 
   let areasPorSlug = null;      // slug do cenário -> ["Saúde", "Limpeza", ...]
-  let progressoPorArea = null;  // nome da área    -> { pontos, porcentagem }
+  let progressoPorArea = null;  // nome da área    -> { pontos, pontos_possiveis, porcentagem, sem_missoes }
+  let semTurma = false;         // sem turma, as barras não têm régua (ver desenharAreas)
   let erroAreas = "";
   let hotspotAtual = null;      // o ponto que a lateral está mostrando agora
   let hotspotDoModal = null;    // o ponto que o modal está mostrando agora
@@ -242,13 +243,17 @@
 
   async function carregarAreas() {
     try {
-      const [cenarios, progresso] = await Promise.all([
+      const [cenarios, progresso, perfil] = await Promise.all([
         API.getCenarios(),
         API.getMeuProgresso(),
+        perfilPromessa,
       ]);
 
       areasPorSlug = new Map((cenarios || []).map(c => [c.slug, c.areas || []]));
       progressoPorArea = new Map((progresso || []).map(p => [p.area, p]));
+      semTurma = Boolean(perfil && perfil.tipo === "ALUNO" && !perfil.turma_id);
+
+      if (perfil && !semTurma) mostrarAvisoDeNovas(perfil.id, progresso || []);
     } catch (err) {
       erroAreas = err.message;
     }
@@ -299,10 +304,22 @@
       return;
     }
 
+    // A régua das barras são as missões da turma. Sem turma, ela seria só
+    // o que o aluno já acertou — e tudo apareceria em 100%.
+    if (semTurma) {
+      container.appendChild(avisoDeArea(
+        "Entre numa turma (em Minha turma) para ver aqui o seu progresso nas missões."
+      ));
+      return;
+    }
+
     for (const nome of areas) {
       const visual = AREAS_VISUAL[nome] || { icone: "•", cor: "#6bdfb8" };
       const registro = progressoPorArea ? progressoPorArea.get(nome) : null;
       const pct = Math.round(registro ? registro.porcentagem || 0 : 0);
+      // Nenhuma missão do aluno vale ponto nesta área: "0%" soaria como
+      // fracasso, quando na verdade ainda não chegou tarefa dela.
+      const semMissoes = !registro || registro.sem_missoes;
 
       const el = document.createElement("div");
       el.className = "mapa-area";
@@ -321,7 +338,9 @@
 
       el.querySelector(".mapa-area__icone").textContent = visual.icone;
       el.querySelector(".mapa-area__label").textContent = nome;
-      el.querySelector(".mapa-area__pct").textContent = `${pct}%`;
+      el.querySelector(".mapa-area__pct").textContent = semMissoes ? "sem missões" : `${pct}%`;
+      if (semMissoes) el.classList.add("mapa-area--sem-missoes");
+      else el.title = `${registro.pontos} de ${registro.pontos_possiveis} pontos das suas missões`;
       el.querySelector(".mapa-area__bar").style.width = `${pct}%`;
 
       container.appendChild(el);
@@ -500,6 +519,12 @@
 
   document.getElementById("mapa-viewport")?.addEventListener("mouseleave", limparSidebar);
   AUTH.exigirLogin();
+
+  // O perfil diz se o aluno tem turma (sem turma não há régua para as
+  // barras, nem missões) e dá o id para o aviso de "novas missões". Uma
+  // promessa só, usada pelas duas buscas abaixo.
+  const perfilPromessa = AUTH.perfilAtual().catch(() => null);
+
   carregarAreas();
 
 
@@ -531,10 +556,12 @@
   async function carregarMissoes() {
     let quizzes = [];
     let erro = "";
+    let perfil = null;
 
     try {
-      const r = await API.getMeuMapa();
+      const [r, p] = await Promise.all([API.getMeuMapa(), perfilPromessa]);
       quizzes = r.quizzes || [];
+      perfil = p;
     } catch (err) {
       erro = err.message;
     }
@@ -565,11 +592,27 @@
       return;
     }
 
-    desenharMissoes(quizzes);
+    desenharMissoes(quizzes, Boolean(perfil && perfil.tipo === "ALUNO" && !perfil.turma_id));
   }
 
-  function desenharMissoes(quizzes) {
+  function desenharMissoes(quizzes, alunoSemTurma = false) {
     listaMissoes.innerHTML = "";
+
+    // É pela turma que as missões chegam. Sem ela, a lista vazia não é
+    // "espere o professor" — é "escolha a sua turma".
+    if (alunoSemTurma) {
+      if (contadorMissoes) contadorMissoes.textContent = "sem turma";
+
+      const vazio = document.createElement("p");
+      vazio.className = "missoes-aviso";
+      vazio.append("Você ainda não está numa turma — é por ela que as missões chegam. ");
+      const link = document.createElement("a");
+      link.href = "minha-turma.html";
+      link.textContent = "Escolher minha turma";
+      vazio.appendChild(link);
+      listaMissoes.appendChild(vazio);
+      return;
+    }
 
     if (!quizzes.length) {
       if (contadorMissoes) contadorMissoes.textContent = "nenhuma agora";
@@ -588,6 +631,19 @@
       contadorMissoes.textContent =
         quizzes.length === 1 ? "1 disponível" : `${quizzes.length} disponíveis`;
     }
+  }
+
+  /**
+   * "Novas missões chegaram!", acima da lista. A régua das barras cresceu
+   * desde a última vez que o aluno dispensou o aviso (novas-missoes.js).
+   */
+  function mostrarAvisoDeNovas(usuarioId, progresso) {
+    if (!listaMissoes || typeof NOVAS_MISSOES === "undefined") return;
+
+    const { novas, dispensar } = NOVAS_MISSOES.conferir(usuarioId, progresso);
+    if (!novas.length) return;
+
+    listaMissoes.before(NOVAS_MISSOES.montarAviso({ novas, dispensar }));
   }
 
   /** O card de uma missão (quiz do professor). */

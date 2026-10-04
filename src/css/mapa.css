@@ -842,3 +842,12 @@ body.modal-aberto {
     padding: 18px;
   }
 }
+
+/* Nenhuma missão do aluno vale ponto nesta área: a barra fica apagada e
+   o número dá lugar a "sem missões" — "0%" soaria como fracasso. */
+.mapa-area--sem-missoes { opacity: 0.5; }
+.mapa-area--sem-missoes .mapa-area__pct {
+  font-weight: 600;
+  font-style: italic;
+  color: var(--text-muted);
+}
