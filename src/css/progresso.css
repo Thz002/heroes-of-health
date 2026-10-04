@@ -345,6 +345,18 @@
   gap: 26px 16px;
 }
 
+/* A versão do perfil: menor, sem a linha de "faltam X", só as peças.
+   É um aperitivo da estante, não uma segunda cópia dela. */
+.estante--compacta {
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 18px 12px;
+}
+
+.estante--compacta .insignia__disco { width: 66px; height: 66px; }
+.estante--compacta .insignia__arte { width: 52px; height: 52px; }
+.estante--compacta .insignia__arte--letra { font-size: 21px; }
+.estante--compacta .insignia__nome { font-size: 11.5px; }
+
 .insignia {
   display: flex;
   flex-direction: column;
@@ -496,7 +508,17 @@
   color: var(--white);
 }
 
-.cartao-perfil__dados { flex: 1 1 260px; }
+.cartao-perfil__dados { flex: 1 1 260px; min-width: 0; }
+
+/* A coluna da direita: barra de nível e o botão de editar. Nível fica
+   junto da identidade porque é identidade — não é estatística avulsa. */
+.cartao-perfil__lado {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  flex-shrink: 0;
+}
 
 .cartao-perfil__nome {
   font-family: var(--font-display);

@@ -454,6 +454,46 @@ create index if not exists insignias_por_usuario
   on insignias_usuarios (usuario_id, conquistada_em desc);
 
 
+-- ── Quando um aluno termina um quiz ──────────────────────────────────
+--
+-- O momento em que o professor e o aluno ganham junto. Uma linha por
+-- (aluno, quiz), gravada na resposta que fecha o questionário.
+--
+-- POR QUE GRAVAR, SE DAVA PARA CALCULAR: dava — bastava contar as
+-- respostas. Mas o quiz pode ser APAGADO pelo professor, e
+-- respostas_alunos.quiz_id vira nulo quando isso acontece. O XP de
+-- ambos sumiria junto com o quiz, e o professor perderia nível por ter
+-- feito uma faxina no painel. Conquista não se desfaz.
+--
+-- Por isso `professor_id` também é gravado aqui, e não lido de
+-- quizzes_professores na hora de somar: o quiz pode não existir mais.
+--
+-- `taxa` é acertos ÷ respostas dadas dentro daquele quiz. Como concluir
+-- exige acertar todas, ela mede QUANTAS TENTATIVAS foram precisas —
+-- 1.00 é quem acertou tudo de primeira. É o número que diz se a pessoa
+-- sabia ou se martelou até passar.
+create table if not exists quiz_concluidos (
+  usuario_id uuid not null references usuarios(id) on delete cascade,
+  quiz_id bigint not null,
+  professor_id uuid references usuarios(id) on delete set null,
+
+  perguntas int not null check (perguntas > 0),
+  respostas int not null check (respostas > 0),
+  taxa real not null check (taxa >= 0 and taxa <= 1),
+
+  xp_aluno int not null default 0 check (xp_aluno >= 0),
+  xp_professor int not null default 0 check (xp_professor >= 0),
+
+  concluido_em timestamptz not null default now(),
+  primary key (usuario_id, quiz_id)
+);
+
+-- Para o professor somar o que as turmas dele renderam sem varrer a
+-- tabela inteira.
+create index if not exists conclusoes_por_professor
+  on quiz_concluidos (professor_id, concluido_em desc);
+
+
 -- ── A estante de hoje ────────────────────────────────────────────────
 --
 -- `do update` e não `do nothing`: ajustar o alvo de uma insígnia é algo
@@ -1030,6 +1070,18 @@ create policy "aluno le as questoes do quiz da turma dele"
 alter table xp_diario          enable row level security;
 alter table insignias          enable row level security;
 alter table insignias_usuarios enable row level security;
+alter table quiz_concluidos    enable row level security;
+
+drop policy if exists "le as proprias conclusoes"           on quiz_concluidos;
+drop policy if exists "professor le as conclusoes da turma" on quiz_concluidos;
+
+create policy "le as proprias conclusoes"
+  on quiz_concluidos for select to authenticated using (auth.uid() = usuario_id);
+
+-- O professor precisa ver de onde veio o XP dele. É o mesmo direito que
+-- ele já tem sobre as respostas dos alunos das turmas dele.
+create policy "professor le as conclusoes da turma"
+  on quiz_concluidos for select to authenticated using (auth.uid() = professor_id);
 
 drop policy if exists "le o proprio xp diario" on xp_diario;
 

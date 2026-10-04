@@ -51,7 +51,13 @@
               <dl class="cartao-perfil__lista" id="dado-lista"></dl>
             </div>
 
-            <button type="button" class="btn btn--sm btn--ghost" id="btn-editar">Editar</button>
+            <!-- A barra de nível fica ao LADO de quem a pessoa é: nível é
+                 identidade no jogo, não estatística avulsa. Preenchida
+                 pelo navbar.js, como em qualquer <div data-nivel>. -->
+            <div class="cartao-perfil__lado">
+              <div data-nivel></div>
+              <button type="button" class="btn btn--sm btn--ghost" id="btn-editar">Editar perfil</button>
+            </div>
           </section>
 
           <!-- ── Editar ─────────────────────────────────────────────── -->
@@ -113,31 +119,27 @@
             </form>
           </section>
 
-          <!-- ── Os números (só para aluno) ─────────────────────────── -->
-          <section class="progresso-numeros" id="bloco-numeros" hidden>
-            <article class="numero-card numero-card--xp">
-              <span class="numero-card__valor" id="num-xp">—</span>
-              <span class="numero-card__rot">XP acumulado</span>
-              <span class="numero-card__nota" id="num-xp-nota"></span>
-            </article>
+          <!-- ── Os números ────────────────────────────────────────── -->
+          <!-- Montados pelo perfil.js, porque o aluno e o professor
+               medem coisas diferentes: um tem missões e acertos, o outro
+               tem turmas e o quanto elas chegam sabendo. -->
+          <section class="dashboard-section" id="titulo-numeros" hidden>
+            <h3 id="numeros-titulo">Seus números</h3>
+          </section>
 
-            <article class="numero-card">
-              <span class="numero-card__valor" id="num-missoes">—</span>
-              <span class="numero-card__rot">missões concluídas</span>
-              <span class="numero-card__nota" id="num-missoes-nota"></span>
-            </article>
+          <section class="progresso-numeros" id="bloco-numeros" hidden></section>
 
-            <article class="numero-card">
-              <span class="numero-card__valor" id="num-streak">—</span>
-              <span class="numero-card__rot">de sequência</span>
-              <span class="numero-card__nota" id="num-streak-nota"></span>
-            </article>
+          <!-- ── A estante, resumida ───────────────────────────────── -->
+          <section class="dashboard-section" id="titulo-estante" hidden>
+            <h3>Insígnias</h3>
+          </section>
 
-            <article class="numero-card">
-              <span class="numero-card__valor" id="num-taxa">—</span>
-              <span class="numero-card__rot">de acerto</span>
-              <span class="numero-card__nota" id="num-taxa-nota"></span>
-            </article>
+          <section class="painel" id="bloco-estante" hidden>
+            <p class="temas-intro" id="estante-resumo"></p>
+            <div class="estante estante--compacta" id="estante"></div>
+            <p class="perfil-atalhos">
+              <a href="conquistas.html">Ver a estante inteira</a>
+            </p>
           </section>
 
           <p class="perfil-atalhos" id="atalhos" hidden>

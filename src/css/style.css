@@ -643,6 +643,93 @@ img { max-width: 100%; display: block; }
 
 
 /* ═══════════════════════════════════════════════════════════════════
+   A BARRA DE NÍVEL
+
+   Entra em qualquer página com <div data-nivel></div>; quem preenche é
+   o navbar.js. Substituiu a pílula fixa que dizia "Nível Mestre da
+   Saúde" sem medir coisa alguma.
+
+   Largura fixa e não flexível: ela aparece no canto de barras de
+   boas-vindas ao lado de texto que varia de tamanho, e uma barra de
+   progresso que muda de largura conforme a frase ao lado não dá para
+   comparar de uma tela para outra.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.nivelzinho {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 232px;
+  flex-shrink: 0;
+
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.nivelzinho__topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nivelzinho__patente {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nivelzinho__nv {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.nivelzinho__barra {
+  display: block;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.nivelzinho__barra i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--primary), var(--gold));
+
+  /* Lenta de propósito: a barra subindo é o feedback do acerto, e uma
+     transição instantânea não é vista. 0,9s é tempo de perceber. */
+  transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nivelzinho__nota {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 560px) {
+  .nivelzinho { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nivelzinho__barra i { transition: none; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
    O AVISO DE RECOMPENSA
 
    Aparece no canto quando a pessoa ganha o XP do dia ou uma insígnia, e

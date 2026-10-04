@@ -299,6 +299,20 @@
     try {
       const r = await API.responder(questao.id, letra, quizAtual.id);
 
+      // A barra de nível sobe AGORA, no acerto, e não só na próxima
+      // troca de página. É o feedback que faltava: o aluno via o XP
+      // parado e não ligava o número ao que acabou de fazer.
+      if (r.nivel && window.NIVEL) window.NIVEL.atualizar(r.nivel, r.xp);
+
+      // Terminou o questionário com esta resposta, ou ganhou insígnia:
+      // o aviso de recompensa aparece no canto, por cima do quiz.
+      if (window.comemorarGanho) {
+        window.comemorarGanho({
+          conclusao: r.conclusao,
+          insignias_novas: r.insignias_novas
+        });
+      }
+
       if (r.acertou) {
         botao.classList.add('quiz-option--correct');
         acertos++;

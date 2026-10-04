@@ -74,6 +74,86 @@
       : 'Seus dados no jogo.';
   }
 
+  /**
+   * Os cartões de número.
+   *
+   * `cartoes` é uma lista de { valor, rotulo, nota, destaque } e o
+   * primeiro costuma ser o XP. Montar por lista em vez de deixar quatro
+   * <article> fixos no HTML é o que permite o aluno e o professor terem
+   * números diferentes sem duplicar a tela — eles medem coisas que não
+   * se parecem.
+   */
+  function mostrarNumeros(cartoes, titulo) {
+    const bloco = document.getElementById('bloco-numeros');
+    bloco.innerHTML = '';
+
+    for (const c of cartoes) {
+      const art = document.createElement('article');
+      art.className = 'numero-card' + (c.destaque ? ' numero-card--xp' : '');
+      art.innerHTML = `
+        <span class="numero-card__valor"></span>
+        <span class="numero-card__rot"></span>
+        <span class="numero-card__nota"></span>`;
+      art.querySelector('.numero-card__valor').textContent = c.valor;
+      art.querySelector('.numero-card__rot').textContent = c.rotulo;
+      art.querySelector('.numero-card__nota').textContent = c.nota || '';
+      bloco.appendChild(art);
+    }
+
+    escrever('numeros-titulo', titulo);
+    document.getElementById('titulo-numeros').hidden = false;
+    bloco.hidden = false;
+  }
+
+  /**
+   * A estante resumida: as já conquistadas primeiro, depois as próximas
+   * a cair. Mostra oito — o suficiente para a pessoa ver que existe uma
+   * estante, sem repetir a página inteira de conquistas.
+   */
+  async function mostrarEstante() {
+    let dados;
+    try { dados = await API.getMinhaEstante(); } catch (_) { return; }
+
+    const lista = dados.insignias || [];
+    if (!lista.length) return;
+
+    const ordem = [...lista].sort((a, b) =>
+      (b.conquistada - a.conquistada) || (b.porcentagem - a.porcentagem));
+
+    const estante = document.getElementById('estante');
+    estante.innerHTML = '';
+
+    for (const i of ordem.slice(0, 8)) {
+      const item = document.createElement('article');
+      item.className = `insignia insignia--${i.conquistada ? 'feita' : 'presa'}`;
+      item.style.setProperty('--pct', i.porcentagem);
+      item.innerHTML = `<div class="insignia__disco"><span class="insignia__arte"></span></div>
+                        <h4 class="insignia__nome"></h4>`;
+
+      const arte = item.querySelector('.insignia__arte');
+      if (i.imagem) {
+        const img = document.createElement('img');
+        img.src = '../imgs/insignias/' + i.imagem;
+        img.alt = '';
+        arte.appendChild(img);
+      } else {
+        arte.textContent = (i.nome || '?').charAt(0).toUpperCase();
+        arte.classList.add('insignia__arte--letra');
+      }
+
+      item.querySelector('.insignia__nome').textContent = i.nome;
+      item.title = i.descricao;
+      estante.appendChild(item);
+    }
+
+    escrever('estante-resumo', dados.conquistadas
+      ? `${dados.conquistadas} de ${dados.total} conquistadas.`
+      : `Nenhuma ainda — são ${dados.total} esperando.`);
+
+    document.getElementById('titulo-estante').hidden = false;
+    document.getElementById('bloco-estante').hidden = false;
+  }
+
   async function comoAluno(perfil) {
     const faixa = FAIXAS.find(f => perfil.idade <= f.ate);
 
@@ -94,11 +174,35 @@
       linha('Turma', 'ainda não entrou em nenhuma');
     }
 
-    mostrarNumeros(estatisticas);
-    document.getElementById('bloco-numeros').hidden = false;
+    const e = estatisticas || {};
+
+    mostrarNumeros([
+      { valor: (e.xp || 0).toLocaleString('pt-BR'), rotulo: 'XP acumulado', destaque: true,
+        nota: e.acertos_unicos ? `${e.acertos_unicos} ${plural(e.acertos_unicos, 'pergunta nova', 'perguntas novas')}` : 'cada pergunta nova vale 10' },
+
+      { valor: e.missoes_concluidas ?? 0, rotulo: 'missões concluídas',
+        nota: e.missoes_totais ? `de ${e.missoes_totais} que seu professor passou` : 'nenhuma tarefa passada ainda' },
+
+      { valor: e.streak_dias ? `${e.streak_dias} ${plural(e.streak_dias, 'dia', 'dias')}` : '—', rotulo: 'de sequência',
+        nota: e.jogou_hoje ? 'você jogou hoje' : 'jogue hoje para continuar' },
+
+      { valor: e.taxa === null || e.taxa === undefined ? '—' : `${e.taxa}%`, rotulo: 'de acerto',
+        nota: e.respostas ? `${e.acertos} de ${e.respostas} ${plural(e.respostas, 'resposta', 'respostas')}` : 'assim que você responder a primeira' }
+    ], 'Seus números');
+
     document.getElementById('atalhos').hidden = false;
+    await mostrarEstante();
   }
 
+  /**
+   * O professor mede outra coisa.
+   *
+   * O XP dele vem inteiro da turma — por isso os cartões falam de
+   * turmas, de tarefas concluídas e de com quanta facilidade a turma
+   * chega lá. "Quizzes criados" aparece como contexto, e não como
+   * conquista: criar tarefa não dá mais XP, porque tarefa que ninguém
+   * faz não ensinou ninguém.
+   */
   async function comoProfessor(perfil) {
     let turmas = [];
     try { turmas = await API.getMinhasTurmas(); } catch (_) { /* segue sem a contagem */ }
@@ -106,12 +210,37 @@
     const escola = await nomeDaEscola(perfil.escola_id);
     if (escola) linha('Escola', escola);
 
+    const alunos = turmas.reduce((s, t) => s + (t.total_alunos || 0), 0);
+
     linha('Turmas', turmas.length
       ? `${turmas.length} ${turmas.length === 1 ? 'turma' : 'turmas'}`
       : 'nenhuma turma criada ainda');
-
-    const alunos = turmas.reduce((s, t) => s + (t.total_alunos || 0), 0);
     if (alunos) linha('Alunos', `${alunos} ${alunos === 1 ? 'aluno' : 'alunos'} no total`);
+
+    let e = {};
+    try {
+      const r = await API.getMeuResumo();
+      e = r.estatisticas || {};
+    } catch (_) { /* segue com o que já há em tela */ }
+
+    mostrarNumeros([
+      { valor: (e.xp || 0).toLocaleString('pt-BR'), rotulo: 'XP acumulado', destaque: true,
+        nota: 'tudo vem do avanço das suas turmas' },
+
+      { valor: e.conclusoes ?? 0, rotulo: 'tarefas concluídas',
+        nota: e.quizzes_criados ? `em ${e.quizzes_criados} ${plural(e.quizzes_criados, 'quiz criado', 'quizzes criados')}` : 'nenhum quiz criado ainda' },
+
+      { valor: e.taxa_media === null || e.taxa_media === undefined ? '—' : `${e.taxa_media}%`,
+        rotulo: 'a turma chega sabendo',
+        nota: e.taxa_media === null || e.taxa_media === undefined
+          ? 'aparece na primeira tarefa concluída'
+          : 'acertos na primeira tentativa' },
+
+      { valor: e.acertos_da_turma ?? 0, rotulo: 'acertos dos alunos',
+        nota: alunos ? `entre ${alunos} ${plural(alunos, 'aluno', 'alunos')}` : 'quando entrarem na turma' }
+    ], 'Suas turmas');
+
+    await mostrarEstante();
   }
 
   /** O nome da escola sai da lista pública — é a mesma que o cadastro usa. */
@@ -125,31 +254,6 @@
     }
   }
 
-  /* ── Os números do aluno ───────────────────────────────────────── */
-
-  function mostrarNumeros(e) {
-    if (!e) return;
-
-    escrever('num-xp', e.xp.toLocaleString('pt-BR'));
-    escrever('num-xp-nota', e.acertos_unicos
-      ? `${e.acertos_unicos} ${plural(e.acertos_unicos, 'pergunta nova', 'perguntas novas')}`
-      : 'cada pergunta nova vale 10');
-
-    escrever('num-missoes', e.missoes_concluidas);
-    escrever('num-missoes-nota', e.missoes_totais
-      ? `de ${e.missoes_totais} que seu professor passou`
-      : 'nenhuma tarefa passada ainda');
-
-    escrever('num-streak', e.streak_dias
-      ? `${e.streak_dias} ${plural(e.streak_dias, 'dia', 'dias')}`
-      : '—');
-    escrever('num-streak-nota', e.jogou_hoje ? 'você jogou hoje' : 'jogue hoje para continuar');
-
-    escrever('num-taxa', e.taxa === null ? '—' : `${e.taxa}%`);
-    escrever('num-taxa-nota', e.respostas
-      ? `${e.acertos} de ${e.respostas} ${plural(e.respostas, 'resposta', 'respostas')}`
-      : 'assim que você responder a primeira');
-  }
 
   /* ── Editar ────────────────────────────────────────────────────── */
 

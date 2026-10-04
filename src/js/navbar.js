@@ -282,6 +282,74 @@
     });
   }
 
+  /* ── A BARRA DE NÍVEL, EM QUALQUER LUGAR ─────────────────────────────
+     Uma página ganha a barra escrevendo só isto:
+
+         <div data-nivel></div>
+
+     e o resto acontece aqui. Existe para resolver um problema concreto:
+     o dashboard tinha uma pílula escrita à mão dizendo "Nível Mestre da
+     Saúde", com um <span id="user-level"> que nenhum script preencheu
+     nunca. Era enfeite parado, não progresso.
+
+     Fica neste arquivo porque ele já roda em todas as páginas e já
+     busca o nível em /presenca — um arquivo novo significaria mais uma
+     tag <script> em nove HTMLs e mais uma chamada ao servidor.
+
+     window.NIVEL.atualizar() deixa qualquer tela redesenhar a barra sem
+     recarregar: é o que o quiz usa para ela subir no momento do acerto.
+     ────────────────────────────────────────────────────────────────── */
+
+  let ultimoNivel = null;
+
+  window.NIVEL = {
+    atualizar(nivel, xp) {
+      if (!nivel) return;
+      ultimoNivel = { nivel, xp };
+
+      document.querySelectorAll('[data-nivel]').forEach(el => desenharNivel(el, nivel, xp));
+
+      const selo = document.getElementById('nav-xp');
+      if (!selo) return;
+
+      selo.textContent = `Nv ${nivel.nivel} · ${(xp ?? 0).toLocaleString('pt-BR')} XP`;
+      selo.title = nivel.maximo
+        ? `${nivel.patente} — nível máximo`
+        : `${nivel.patente} · faltam ${nivel.faltam} XP para o nível ${nivel.nivel + 1}`;
+      selo.hidden = false;
+    },
+
+    atual: () => ultimoNivel
+  };
+
+  function desenharNivel(el, nivel, xp) {
+    el.classList.add('nivelzinho');
+
+    const feito = (xp ?? 0) - nivel.xp_do_nivel;
+    const trecho = nivel.maximo ? 0 : nivel.xp_do_proximo - nivel.xp_do_nivel;
+
+    el.innerHTML = `
+      <div class="nivelzinho__topo">
+        <span class="nivelzinho__patente"></span>
+        <span class="nivelzinho__nv"></span>
+      </div>
+      <span class="nivelzinho__barra"><i></i></span>
+      <span class="nivelzinho__nota"></span>`;
+
+    el.querySelector('.nivelzinho__patente').textContent = nivel.patente;
+    el.querySelector('.nivelzinho__nv').textContent =
+      `Nível ${nivel.nivel}/${nivel.total_de_niveis || 20}`;
+
+    el.querySelector('.nivelzinho__barra i').style.width = `${nivel.porcentagem}%`;
+
+    // Dois números concretos em vez de uma porcentagem: "190 de 300 XP"
+    // diz o que falta fazer, "63%" não.
+    el.querySelector('.nivelzinho__nota').textContent = nivel.maximo
+      ? `${(xp ?? 0).toLocaleString('pt-BR')} XP · nível máximo`
+      : `${feito.toLocaleString('pt-BR')} de ${trecho.toLocaleString('pt-BR')} XP` +
+        (nivel.proxima_patente ? ` · depois: ${nivel.proxima_patente}` : '');
+  }
+
   /**
    * Marca a presença do dia e mostra nível e XP na barra.
    *
@@ -298,20 +366,13 @@
    * de mensagem de erro — a tela de progresso é que vai dizer o que houve.
    */
   async function mostrarProgresso() {
-    const selo = document.getElementById('nav-xp');
     if (!window.API || !API.marcarPresenca) return;
 
     try {
       const r = await API.marcarPresenca();
 
-      if (selo) {
-        const xp = (r.xp ?? 0).toLocaleString('pt-BR');
-        selo.textContent = `Nv ${r.nivel?.nivel ?? 1} · ${xp} XP`;
-        selo.title = r.nivel?.maximo
-          ? `${r.nivel.titulo} — nível máximo`
-          : `${r.nivel?.titulo || ''} · faltam ${r.nivel?.faltam ?? 0} XP para o nível ${(r.nivel?.nivel ?? 1) + 1}`;
-        selo.hidden = false;
-      }
+      // Preenche o selo da barra E toda <div data-nivel> da página.
+      window.NIVEL.atualizar(r.nivel, r.xp);
 
       comemorar(r);
     } catch (_) { /* sem selo na barra; a tela de progresso explica */ }
@@ -328,12 +389,28 @@
    * O aviso some sozinho. Nada aqui pede clique: é comemoração, não
    * tarefa.
    */
+  window.comemorarGanho = comemorar;
+
   function comemorar(r) {
+    if (!r) return;
     const avisos = [];
 
     if (r.ganhou_hoje) {
       const dias = r.streak_dias > 1 ? ` · ${r.streak_dias} dias seguidos` : '';
       avisos.push({ emoji: '☀️', titulo: `+${r.pontos_do_dia} XP por hoje`, texto: `Bom te ver de novo${dias}.` });
+    }
+
+    // O marco do questionário. A taxa aparece porque é ela que explica o
+    // tamanho do prêmio — sem isso, dois alunos que concluíram o mesmo
+    // quiz veriam números diferentes sem entender por quê.
+    const c = r.conclusao;
+    if (c) {
+      avisos.push({
+        emoji: '✅',
+        titulo: `Questionário concluído · +${c.xp_aluno} XP`,
+        texto: `${c.perguntas} perguntas em ${c.respostas} respostas (${c.taxa}% de acerto). ` +
+               `Seu professor ganhou ${c.xp_professor} XP junto.`
+      });
     }
 
     for (const i of r.insignias_novas || []) {

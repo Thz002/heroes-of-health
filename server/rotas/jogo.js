@@ -187,13 +187,33 @@ rotas.post('/responder', async (req, res) => {
     }
   }
 
+  // Terminou o quiz com esta resposta? É o marco que premia os dois.
+  const conclusao = acertou ? await PROG.registrarConclusao(req.usuario, quizId) : null;
+
+  // O XP e o nível DEPOIS desta resposta, para a barra subir na hora em
+  // vez de só na próxima troca de página. É o pedido de "progressão
+  // notável": o número tem de se mexer no momento do acerto.
+  const retrato = await PROG.xpDoAluno(req.usuario.id);
+
+  const novas = retrato.erro ? [] : await PROG.conquistar(
+    req.usuario.id, 'ALUNO',
+    await PROG.medirAluno(req.usuario.id, req.usuario.turma_id, retrato));
+
+  const xp = (retrato.total || 0) + novas.reduce((s, i) => s + (i.xp || 0), 0);
+
   // O que volta para a tela. Mesmo errando, a pessoa recebe a explicação
   // — mas NUNCA a letra certa: a ideia é que ela tente de novo com o
   // conteúdo em mãos, e não que copie a resposta.
   res.json({
     acertou,
     explicacao: questao.data.explicacao,
-    pontos: pontosGanhos
+    pontos: pontosGanhos,
+    conclusao,
+    xp,
+    nivel: PROG.nivelDoXp(xp, 'ALUNO'),
+    insignias_novas: novas.map(i => ({
+      codigo: i.codigo, nome: i.nome, descricao: i.descricao, xp: i.xp, imagem: i.imagem
+    }))
   });
 });
 rotas.get('/meus-quizzes', async (req, res) => {
@@ -531,7 +551,16 @@ rotas.get('/meu-resumo', async (req, res) => {
     xp_de_questoes: retrato.de_questoes,
     xp_de_dias: retrato.de_dias,
     xp_de_insignias: retrato.de_insignias,
+    xp_de_conclusoes: retrato.de_conclusoes,
     nivel: retrato.nivel,
+
+    conclusoes: retrato.conclusoes,
+
+    // Só o professor tem estes. Para o aluno vêm undefined e somem do
+    // JSON — a tela dele não pergunta por eles.
+    quizzes_criados: retrato.quizzes_criados,
+    acertos_da_turma: retrato.acertos_da_turma,
+    taxa_media: retrato.taxa_media,
 
     missoes_concluidas: 0,
     missoes_totais: 0,
@@ -691,7 +720,7 @@ rotas.post('/presenca', async (req, res) => {
     pontos_do_dia: presenca.pontos,
     dia: presenca.dia,
     xp,
-    nivel: PROG.nivelDoXp(xp),
+    nivel: PROG.nivelDoXp(xp, sou),
     streak_dias: retrato.streak_dias,
     dias_jogados: retrato.dias_jogados,
     insignias_novas: novas.map(i => ({

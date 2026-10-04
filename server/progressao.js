@@ -97,18 +97,59 @@ const UM_DIA = 24 * 60 * 60 * 1000;
    entrar por um mês chega perto do nível 7.
    ═══════════════════════════════════════════════════════════════════ */
 
-const NIVEIS = [
-  { nivel: 1,  xp: 0,    titulo: 'Visitante' },
-  { nivel: 2,  xp: 150,  titulo: 'Aprendiz' },
-  { nivel: 3,  xp: 400,  titulo: 'Explorador' },
-  { nivel: 4,  xp: 800,  titulo: 'Agente Comunitário' },
-  { nivel: 5,  xp: 1400, titulo: 'Cuidador' },
-  { nivel: 6,  xp: 2200, titulo: 'Guardião do Bairro' },
-  { nivel: 7,  xp: 3200, titulo: 'Herói da Saúde' },
-  { nivel: 8,  xp: 4500, titulo: 'Herói Veterano' },
-  { nivel: 9,  xp: 6000, titulo: 'Lenda do Bairro' },
-  { nivel: 10, xp: 8000, titulo: 'Lenda da Saúde' }
-];
+const TOTAL_DE_NIVEIS = 20;
+
+/**
+ * Os degraus, gerados por fórmula e não escritos à mão.
+ *
+ * O degrau n custa 60 + 30·(n-2) XP a mais que o anterior: o primeiro
+ * sai por 60, o décimo por 340, o vigésimo por 880. A soma dá 7.920 XP
+ * para chegar ao nível 20.
+ *
+ * ESSE NÚMERO NÃO É ARBITRÁRIO. É o que um aluno dedicado consegue
+ * juntar com o conteúdo que existe hoje:
+ *
+ *     2.250  acertar as 225 perguntas do banco
+ *     ~900   bônus de conclusão dos quizzes
+ *     2.750  as dez insígnias
+ *     1.500  trinta dias de presença
+ *     ─────
+ *     ~7.400
+ *
+ * Ou seja: o nível 20 é "fiz tudo o que havia para fazer, e apareci".
+ * Uma escada calibrada acima disso deixaria os últimos degraus
+ * inalcançáveis — e um nível que ninguém alcança não é objetivo, é
+ * enfeite.
+ *
+ * Quando o conteúdo crescer, acrescentam-se degraus NO TOPO. Mexer nos
+ * de baixo faria quem já subiu descer, e isso o jogo não faz.
+ */
+const NIVEIS = Array.from({ length: TOTAL_DE_NIVEIS }, (_, i) => {
+  const nivel = i + 1;
+  let xp = 0;
+  for (let n = 2; n <= nivel; n++) xp += 60 + 30 * (n - 2);
+  return { nivel, xp };
+});
+
+/* ── As patentes ──────────────────────────────────────────────────────
+ *
+ * O NÚMERO do nível é o mesmo para os dois papéis; o NOME muda, porque
+ * o que cada um está construindo é diferente. O aluno aprende, o
+ * professor ensina — e o jogo não deveria chamar os dois da mesma coisa.
+ *
+ * As faixas são 1–10 e 11–20. O pedido dizia "1-10" e "10-20", e o 10
+ * não pode pertencer às duas: aqui ele fecha a primeira faixa, para que
+ * passar de 10 para 11 seja a troca de patente — um degrau que se sente.
+ */
+const PATENTES = {
+  ALUNO:     [{ ate: 10, nome: 'Pequeno Aprendiz' }, { ate: 20, nome: 'Estudante' }],
+  PROFESSOR: [{ ate: 10, nome: 'Monitor' },          { ate: 20, nome: 'Mentor Iniciante' }]
+};
+
+function patenteDe(nivel, tipo) {
+  const faixas = PATENTES[tipo === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO'];
+  return (faixas.find(f => nivel <= f.ate) || faixas[faixas.length - 1]).nome;
+}
 
 /**
  * Em que degrau este XP cai, e quanto falta para o próximo.
@@ -117,36 +158,45 @@ const NIVEIS = [
  * mostrar — e ela é do TRECHO atual, não do total. Uma barra que fosse
  * do zero ao nível 10 quase não se mexeria no começo.
  */
-function nivelDoXp(xp) {
+function nivelDoXp(xp, tipo = 'ALUNO') {
   const total = Math.max(0, Number(xp) || 0);
 
   let atual = NIVEIS[0];
   for (const degrau of NIVEIS) if (total >= degrau.xp) atual = degrau;
 
   const proximo = NIVEIS.find(d => d.nivel === atual.nivel + 1) || null;
+  const patente = patenteDe(atual.nivel, tipo);
 
   // No último nível a barra fica cheia: não há mais degrau, e mostrar
   // uma barra pela metade sugeriria que falta algo que não existe.
   if (!proximo) {
     return {
-      nivel: atual.nivel, titulo: atual.titulo, xp: total,
+      nivel: atual.nivel, patente, titulo: patente, xp: total,
       xp_do_nivel: atual.xp, xp_do_proximo: null,
-      faltam: 0, porcentagem: 100, maximo: true
+      faltam: 0, porcentagem: 100, maximo: true,
+      total_de_niveis: TOTAL_DE_NIVEIS, proxima_patente: null
     };
   }
 
   const trecho = proximo.xp - atual.xp;
   const andado = total - atual.xp;
 
+  // A próxima patente só é anunciada quando ela está no degrau seguinte.
+  // Avisar com dez níveis de antecedência não é promessa, é ruído.
+  const patenteDoProximo = patenteDe(proximo.nivel, tipo);
+
   return {
     nivel: atual.nivel,
-    titulo: atual.titulo,
+    patente,
+    titulo: patente,                // nome antigo, mantido para não quebrar telas
     xp: total,
     xp_do_nivel: atual.xp,
     xp_do_proximo: proximo.xp,
     faltam: proximo.xp - total,
     porcentagem: Math.min(100, Math.round((andado / trecho) * 100)),
-    maximo: false
+    maximo: false,
+    total_de_niveis: TOTAL_DE_NIVEIS,
+    proxima_patente: patenteDoProximo !== patente ? patenteDoProximo : null
   };
 }
 
@@ -259,24 +309,31 @@ async function xpDoAluno(usuarioId, respostas = null) {
   const certas = respostas.filter(r => r.acertou);
   const distintas = new Set(certas.map(r => r.questao_id));
 
-  const [bruto1, bruto2] = await Promise.all([
+  const [bruto1, bruto2, bruto3] = await Promise.all([
     admin.from('xp_diario').select('dia, pontos').eq('usuario_id', usuarioId),
     admin.from('insignias_usuarios')
       .select('insignia_codigo, conquistada_em, insignias(nome, descricao, xp, imagem, ordem)')
-      .eq('usuario_id', usuarioId)
+      .eq('usuario_id', usuarioId),
+    admin.from('quiz_concluidos')
+      .select('xp_aluno, taxa, perguntas, concluido_em').eq('usuario_id', usuarioId)
   ]);
 
   const dias = ouVazio(bruto1);
   const ganhas = ouVazio(bruto2);
+  const conclusoes = ouVazio(bruto3);
 
   if (dias.error) return { erro: dias.error };
   if (ganhas.error) return { erro: ganhas.error };
+  if (conclusoes.error) return { erro: conclusoes.error };
+
+  const feitos = conclusoes.data || [];
 
   const deQuestoes = distintas.size * XP_POR_QUESTAO;
   const deDias = (dias.data || []).reduce((s, d) => s + (d.pontos || 0), 0);
   const deInsignias = (ganhas.data || []).reduce((s, i) => s + (i.insignias?.xp || 0), 0);
+  const deConclusoes = feitos.reduce((s, c) => s + (c.xp_aluno || 0), 0);
 
-  const total = deQuestoes + deDias + deInsignias;
+  const total = deQuestoes + deDias + deInsignias + deConclusoes;
 
   // Os dias que contam para a SEQUÊNCIA são os de presença, não os de
   // resposta: a pessoa que entra todo dia mantém a sequência mesmo nos
@@ -288,8 +345,10 @@ async function xpDoAluno(usuarioId, respostas = null) {
     de_questoes: deQuestoes,
     de_dias: deDias,
     de_insignias: deInsignias,
+    de_conclusoes: deConclusoes,
     acertos_unicos: distintas.size,
-    nivel: nivelDoXp(total),
+    conclusoes: feitos.length,
+    nivel: nivelDoXp(total, 'ALUNO'),
     ...presencas,
     insignias: ganhas.data || [],
     respostas
@@ -410,46 +469,128 @@ async function medirAluno(usuarioId, turmaId, retrato) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   O PRÊMIO DE CONCLUIR UM QUIZ
+
+   O evento que liga o aluno ao professor. Quando um questionário é
+   fechado, os dois ganham — e o quanto depende de quantas tentativas
+   foram precisas.
+
+   A TAXA. Concluir exige acertar todas as perguntas, então "acertos"
+   é sempre o total. O que varia é quantas RESPOSTAS a pessoa deu até
+   lá. Dez perguntas em dez respostas = 1.00, sabia tudo. Dez perguntas
+   em vinte respostas = 0.50, chegou lá tentando.
+
+   Isso fecha dois furos de uma vez. O aluno não ganha mais martelando
+   alternativa até passar; e o professor não ganha mais por ter dado uma
+   tarefa fácil, porque o que conta não é o acerto bruto, é o aluno ter
+   chegado sabendo.
+
+   POR QUE O PRÊMIO É PROPORCIONAL AO TAMANHO: sem isso, dez quizzes de
+   3 perguntas pagariam dez vezes mais que um de 30 — e criar quiz de
+   três perguntas em série viraria a forma mais rápida de subir de
+   nível. Multiplicando pelo tamanho, 10×3 e 1×30 valem igual, e a
+   fábrica de quizzes deixa de ser atalho.
+   ═══════════════════════════════════════════════════════════════════ */
+
+const XP_CONCLUSAO_ALUNO = 5;        // × perguntas × taxa
+const XP_CONCLUSAO_PROFESSOR = 20;   // × perguntas × qualidade, DIVIDIDO pela turma
+
+/**
+ * @param perguntas  quantas questões o quiz tinha
+ * @param respostas  quantas o aluno deu até fechar
+ * @param alunos     quantos alunos existem na turma
+ *
+ * A DIVISÃO PELO TAMANHO DA TURMA É O PONTO. Sem ela, uma simulação de
+ * um semestre mostrou o professor batendo o nível 20 na semana 12,
+ * enquanto o aluno dele chegava ao 14 — porque cada aluno que terminava
+ * pagava o prêmio inteiro, e vinte e cinco alunos pagavam vinte e cinco
+ * vezes.
+ *
+ * O efeito perverso era pior do que parecer rápido: o professor subia
+ * por ter turma GRANDE, não por ensinar bem. Dividindo, o prêmio total
+ * de um questionário é o mesmo para uma turma de 5 e uma de 40 — e o
+ * que muda entre eles passa a ser a única coisa que deveria importar,
+ * que é com quanta facilidade a turma chegou lá.
+ *
+ * A barra continua andando a cada aluno que termina: cada um entrega
+ * a sua fração.
+ */
+function premioDeConclusao(perguntas, respostas, alunos = 1) {
+  const taxa = respostas > 0 ? Math.min(1, perguntas / respostas) : 0;
+  const turma = Math.max(1, alunos);
+
+  // Metade garantida, metade pela taxa. A garantida existe porque a
+  // tarefa foi cumprida — isso já é trabalho do professor. A outra
+  // metade é o quanto a turma chegou pronta.
+  const doQuizInteiro = perguntas * XP_CONCLUSAO_PROFESSOR * (0.5 + 0.5 * taxa);
+
+  return {
+    taxa,
+    // O aluno ganha pela taxa inteira: quem precisou de muitas
+    // tentativas concluiu do mesmo jeito, mas o prêmio reconhece quem
+    // chegou sabendo.
+    aluno: Math.round(perguntas * XP_CONCLUSAO_ALUNO * taxa),
+
+    // Pelo menos 1: numa turma muito grande a fração arredondaria para
+    // zero, e um aluno terminar nunca pode valer nada.
+    professor: Math.max(1, Math.round(doQuizInteiro / turma))
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    O PROFESSOR
 
    Ele não responde pergunta nenhuma, então o XP dele não pode sair de
-   respostas_alunos como o do aluno. Sai das duas coisas que ele de fato
-   faz: PASSAR tarefa e ter uma turma que avança.
+   respostas_alunos como o do aluno. Sai inteiro de como a turma avança
+   — que é exatamente a ideia do jogo: um educador não melhora sozinho,
+   melhora tendo com quem praticar.
 
-   O peso é deliberado. 50 por quiz criado reconhece o trabalho de
-   montar a tarefa; 1 por acerto distinto dos alunos faz o professor
-   subir junto com a turma, sem que uma turma grande valha mais que uma
-   turma que aprende — são os acertos que contam, não a quantidade de
-   gente matriculada.
+   CRIAR QUIZ NÃO DÁ MAIS XP, e essa mudança merece explicação. Antes
+   eram 50 por quiz criado, e era um buraco: criar cinquenta quizzes que
+   ninguém respondesse valia 2.500 XP de trabalho nenhum. Agora o quiz
+   só rende quando um aluno o conclui. Tarefa que a turma não faz não
+   ensinou ninguém, e portanto não promove o professor.
+
+   Sobram duas fontes, e as duas dependem da turma:
+
+     1 XP   por questão distinta que um aluno dele acertou
+            — faz a barra andar continuamente, pergunta a pergunta
+     prêmio por quiz concluído por um aluno
+            — o marco, calculado em premioDeConclusao()
    ═══════════════════════════════════════════════════════════════════ */
 
-const XP_POR_QUIZ_CRIADO = 50;
 const XP_POR_ACERTO_DA_TURMA = 1;
 
 async function xpDoProfessor(usuarioId) {
-  const [quizzes, turmas, brutoDias, brutoGanhas] = await Promise.all([
+  const [quizzes, turmas, brutoDias, brutoGanhas, brutoConclusoes] = await Promise.all([
     admin.from('quizzes_professores').select('id', { count: 'exact', head: true })
       .eq('professor_id', usuarioId),
     admin.from('turmas').select('id').eq('professor_id', usuarioId),
     admin.from('xp_diario').select('dia, pontos').eq('usuario_id', usuarioId),
     admin.from('insignias_usuarios')
       .select('insignia_codigo, conquistada_em, insignias(nome, descricao, xp, imagem, ordem)')
-      .eq('usuario_id', usuarioId)
+      .eq('usuario_id', usuarioId),
+    admin.from('quiz_concluidos')
+      .select('xp_professor, taxa, perguntas, concluido_em')
+      .eq('professor_id', usuarioId)
   ]);
 
   const dias = ouVazio(brutoDias);
   const ganhas = ouVazio(brutoGanhas);
+  const conclusoes = ouVazio(brutoConclusoes);
 
   const criados = quizzes.count || 0;
   const idsTurmas = (turmas.data || []).map(t => t.id);
 
   let acertosDaTurma = 0;
+  let quantosAlunos = 0;
 
   if (idsTurmas.length) {
     const alunos = await admin.from('usuarios').select('id')
       .eq('tipo', 'ALUNO').in('turma_id', idsTurmas);
 
     const ids = (alunos.data || []).map(a => a.id);
+    quantosAlunos = ids.length;
 
     if (ids.length) {
       const respostas = await lerTudo(() => admin
@@ -466,37 +607,132 @@ async function xpDoProfessor(usuarioId) {
     }
   }
 
+  const feitos = conclusoes.data || [];
+
   const deDias = (dias.data || []).reduce((s, d) => s + (d.pontos || 0), 0);
-  const deQuizzes = criados * XP_POR_QUIZ_CRIADO;
-  const deTurmas = acertosDaTurma * XP_POR_ACERTO_DA_TURMA;
+  const deConclusoes = feitos.reduce((s, c) => s + (c.xp_professor || 0), 0);
+
+  // MÉDIA por aluno, e não soma: somar fazia uma turma de 40 render
+  // quatro vezes mais que uma de 10 ensinando igual. Assim o número
+  // significa "o quanto um aluno meu típico já aprendeu", que é o que
+  // o professor de fato constrói — e tem teto no conteúdo que existe.
+  const mediaDeAcertos = quantosAlunos ? Math.round(acertosDaTurma / quantosAlunos) : 0;
+  const deTurmas = mediaDeAcertos * XP_POR_ACERTO_DA_TURMA;
 
   // Hoje dá zero, porque não há insígnia de professor cadastrada. Está
   // aqui para que, no dia em que houver, o XP dele já conte — e não vire
   // um bug silencioso de "conquistei e o total não mudou".
   const deInsignias = (ganhas.data || []).reduce((s, i) => s + (i.insignias?.xp || 0), 0);
 
-  const total = deQuizzes + deTurmas + deDias + deInsignias;
+  const total = deTurmas + deConclusoes + deDias + deInsignias;
+
+  // A média das taxas é o número que resume o ensino dele: perto de 1,
+  // a turma chega sabendo; perto de 0,5, ela chega tentando. Vai para a
+  // tela do professor porque é a informação que ele pode USAR.
+  const taxaMedia = feitos.length
+    ? feitos.reduce((s, c) => s + c.taxa, 0) / feitos.length
+    : null;
 
   return {
     total,
-    de_quizzes: deQuizzes,
     de_turmas: deTurmas,
+    de_conclusoes: deConclusoes,
     de_dias: deDias,
     de_insignias: deInsignias,
     insignias: ganhas.data || [],
     quizzes_criados: criados,
     acertos_da_turma: acertosDaTurma,
-    nivel: nivelDoXp(total),
+    media_de_acertos: mediaDeAcertos,
+    total_alunos: quantosAlunos,
+    conclusoes: feitos.length,
+    taxa_media: taxaMedia === null ? null : Math.round(taxaMedia * 100),
+    nivel: nivelDoXp(total, 'PROFESSOR'),
     ...sequenciaDeDias((dias.data || []).map(d => d.dia)),
-    medidas: { QUIZZES: criados, ACERTOS_TURMA: acertosDaTurma }
+    medidas: { QUIZZES: criados, ACERTOS_TURMA: acertosDaTurma, CONCLUSOES: feitos.length }
+  };
+}
+
+/**
+ * Chamada a cada acerto: se este foi o que fechou o quiz, grava o marco
+ * e devolve o que os dois ganharam. Senão, devolve null.
+ *
+ * TRÊS COISAS QUE ELA SE RECUSA A FAZER:
+ *
+ * 1. Premiar o professor pelo próprio quiz. A rota /responder deixa ele
+ *    responder a tarefa que criou, para testar — e sem esta trava ele
+ *    subiria de nível sozinho, sem aluno nenhum, que é o oposto do que
+ *    o jogo quer medir.
+ *
+ * 2. Gravar duas vezes. A chave (usuario_id, quiz_id) recusa a segunda,
+ *    e o código trata 23505 como "já era", não como erro.
+ *
+ * 3. Contar um quiz vazio. Quiz sem questão tem total 0, e 0 >= 0 seria
+ *    "concluído" no primeiro acesso.
+ */
+async function registrarConclusao(usuario, quizId) {
+  const quiz = await admin
+    .from('quizzes_professores').select('professor_id').eq('id', quizId).maybeSingle();
+
+  if (quiz.error || !quiz.data) return null;
+
+  // O professor testando a própria tarefa não gera marco para ninguém.
+  if (quiz.data.professor_id === usuario.id) return null;
+
+  const [vinculos, respostas, turma] = await Promise.all([
+    admin.from('quiz_questoes').select('questao_id', { count: 'exact', head: true })
+      .eq('quiz_id', quizId),
+    lerTudo(() => admin.from('respostas_alunos')
+      .select('questao_id, acertou').eq('usuario_id', usuario.id).eq('quiz_id', quizId)
+      .order('id')),
+    admin.from('usuarios').select('id', { count: 'exact', head: true })
+      .eq('turma_id', usuario.turma_id || 0).eq('tipo', 'ALUNO')
+  ]);
+
+  const perguntas = vinculos.count || 0;
+  if (!perguntas || respostas.error) return null;
+
+  const dadas = respostas.data.length;
+  const certas = new Set(respostas.data.filter(r => r.acertou).map(r => r.questao_id));
+
+  if (certas.size < perguntas) return null;          // ainda falta pergunta
+
+  // O tamanho da turma NO MOMENTO da conclusão. Fica congelado na linha
+  // gravada: se alguém entrar ou sair da turma depois, o que já foi
+  // ganho não muda.
+  const premio = premioDeConclusao(perguntas, dadas, turma.count || 1);
+
+  const r = await admin.from('quiz_concluidos').insert({
+    usuario_id: usuario.id,
+    quiz_id: quizId,
+    professor_id: quiz.data.professor_id,
+    perguntas,
+    respostas: dadas,
+    taxa: premio.taxa,
+    xp_aluno: premio.aluno,
+    xp_professor: premio.professor
+  }).select('concluido_em').maybeSingle();
+
+  // 23505 = já estava gravado. Concluir de novo não existe.
+  if (r.error && r.error.code === '23505') return null;
+  if (r.error && faltaTabela(r.error)) return null;
+  if (r.error) return null;
+
+  return {
+    perguntas,
+    respostas: dadas,
+    taxa: Math.round(premio.taxa * 100),
+    xp_aluno: premio.aluno,
+    xp_professor: premio.professor
   };
 }
 
 module.exports = {
-  XP_POR_QUESTAO, XP_DIARIO, XP_POR_QUIZ_CRIADO, XP_POR_ACERTO_DA_TURMA,
-  NIVEIS, FUSO,
+  XP_POR_QUESTAO, XP_DIARIO, XP_POR_ACERTO_DA_TURMA,
+  XP_CONCLUSAO_ALUNO, XP_CONCLUSAO_PROFESSOR,
+  NIVEIS, TOTAL_DE_NIVEIS, PATENTES, FUSO,
   faltaTabela, ouVazio,
-  nivelDoXp, diaLocal, sequenciaDeDias, marcarPresenca,
+  nivelDoXp, patenteDe, diaLocal, sequenciaDeDias, marcarPresenca,
   acertosUnicosPorAluno, xpDoAluno, xpDoProfessor,
+  premioDeConclusao, registrarConclusao,
   conquistar, medirAluno
 };
