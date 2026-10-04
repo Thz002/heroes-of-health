@@ -208,7 +208,13 @@ const API = (() => {
   /** As questões congeladas de um quiz — mesma ordem para a turma toda */
   const getQuestoesDoQuiz = (quizId) => get(`/quizzes/${quizId}/questoes`);
 
-  /** As 8 barras do aluno, sempre as 8, mesmo as zeradas */
+  /**
+   * As 8 barras do aluno, sempre as 8, mesmo as zeradas:
+   * [{ area, pontos, pontos_possiveis, porcentagem, sem_missoes }].
+   *
+   * A régua é DELE — o que as missões da turma valem, mais o que já
+   * conquistou —, então quando chega missão nova a barra desce.
+   */
   const getMeuProgresso = () => get('/meu-progresso');
 
   /**
@@ -233,6 +239,12 @@ const API = (() => {
    * as turmas que ele criou.
    */
   const getMinhaTurma = () => get('/minha-turma');
+
+  /**
+   * Põe o aluno SEM turma numa turma. Devolve o mesmo que getMinhaTurma().
+   * Quem já tem turma recebe erro 409: trocar é com o professor.
+   */
+  const entrarNaTurma = (turmaId) => post('/minha-turma', { turma_id: turmaId });
 
   /**
    * Marca que a pessoa apareceu hoje e devolve o que isso rendeu.
@@ -261,8 +273,47 @@ const API = (() => {
 
   // ── Professor ──────────────────────────────
   const getMinhasTurmas = () => get('/professor/turmas');
-  const criarQuiz = ({ turma_id, titulo, descricao, cenarios, areas, qtd_questoes, tempo_limite_segundos }) =>
-    post('/professor/quizzes', { turma_id, titulo, descricao, cenarios, areas, qtd_questoes, tempo_limite_segundos });
+  /**
+   * Cria um quiz para a turma. Dois modos:
+   *   modo 'auto'   — o servidor sorteia `qtd_questoes` entre as que casam
+   *                   com `cenarios` (obrigatório) e `areas`;
+   *   modo 'manual' — vão as `questao_ids` escolhidas, na ordem da lista;
+   *                   cenários e áreas do quiz saem das próprias questões.
+   */
+  const criarQuiz = ({ turma_id, titulo, descricao, modo, cenarios, areas, qtd_questoes, questao_ids, tempo_limite_segundos }) =>
+    post('/professor/quizzes', {
+      turma_id, titulo, descricao, modo, cenarios, areas, qtd_questoes, questao_ids, tempo_limite_segundos
+    });
+
+  /**
+   * As questões que o professor pode pôr num quiz.
+   *   origem:   'sistema' (as da equipe de Medicina) ou 'minhas'
+   *   nivel:    1, 2 ou 3 (opcional)
+   *   cenarios: lista de slugs (opcional)
+   *   areas:    lista de nomes de área (opcional)
+   *
+   * As do sistema vêm SEM gabarito; as minhas vêm com resposta_correta
+   * e explicacao, porque foi o próprio professor quem as escreveu.
+   */
+  const getQuestoesProfessor = ({ origem = 'sistema', nivel, cenarios = [], areas = [] } = {}) => {
+    const p = new URLSearchParams({ origem });
+    if (nivel) p.set('nivel', nivel);
+    if (cenarios.length) p.set('cenarios', cenarios.join(','));
+    if (areas.length) p.set('areas', areas.join(','));
+    return get(`/professor/questoes?${p}`);
+  };
+
+  /**
+   * Cria uma questão do professor. Quem ela pertence o servidor decide
+   * pelo login — não existe campo de "dono" aqui.
+   */
+  const criarQuestao = ({ cenario, nivel_etario, enunciado, opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao, areas }) =>
+    post('/professor/questoes', {
+      cenario, nivel_etario, enunciado, opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao, areas
+    });
+
+  /** Só apaga a própria, e só se nenhum aluno respondeu nem está em quiz. */
+  const excluirQuestao = (questaoId) => del(`/professor/questoes/${questaoId}`);
 
   const getQuizzesDaTurma = (turmaId) => get(`/professor/quizzes?turma_id=${turmaId}`);
 
@@ -317,6 +368,7 @@ const API = (() => {
     getMeuProgresso,
     getMeuResumo,
     getMinhaTurma,
+    entrarNaTurma,
     marcarPresenca,
     getMinhaEstante,
     salvarMeuPerfil,
@@ -328,6 +380,9 @@ const API = (() => {
     getMinhasTurmas,
     criarTurma,
     criarQuiz,
+    getQuestoesProfessor,
+    criarQuestao,
+    excluirQuestao,
     getQuizzesDaTurma,
     getQuizzesCriados,
     getRankingDasTurmas,

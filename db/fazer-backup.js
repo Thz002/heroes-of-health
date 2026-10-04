@@ -36,7 +36,8 @@ const { admin } = require('../server/supabase');
 // que troca missoes/missao_areas por questoes_areas.
 //
 // `ordem` é a coluna usada para paginar: sem ordem fixa, a página 2
-// poderia repetir ou pular linhas da página 1.
+// poderia repetir ou pular linhas da página 1. Tabela de chave composta
+// passa a lista inteira das colunas da chave.
 const TABELAS = [
   { nome: 'escolas',             ordem: 'id' },
   { nome: 'turmas',              ordem: 'id' },
@@ -52,6 +53,12 @@ const TABELAS = [
   { nome: 'quizzes_professores', ordem: 'id' },
   { nome: 'quiz_questoes',       ordem: 'quiz_id' },
   { nome: 'respostas_alunos',    ordem: 'id' },
+  // A progressão (XP diário e insígnias). Ficaram de fora da lista quando
+  // as tabelas nasceram — e insignias_usuarios é justamente o dado que o
+  // jogo promete nunca recalcular, ou seja, o que não dá para refazer.
+  { nome: 'xp_diario',           ordem: ['usuario_id', 'dia'] },
+  { nome: 'insignias',           ordem: 'codigo' },
+  { nome: 'insignias_usuarios',  ordem: ['usuario_id', 'insignia_codigo'] },
 ];
 
 const POR_PAGINA = 1000;   // o máximo que o PostgREST devolve por vez
@@ -61,11 +68,10 @@ async function lerTabela(nome, ordem) {
   const linhas = [];
 
   for (let de = 0; ; de += POR_PAGINA) {
-    const { data, error } = await admin
-      .from(nome)
-      .select('*')
-      .order(ordem)
-      .range(de, de + POR_PAGINA - 1);
+    let consulta = admin.from(nome).select('*');
+    for (const coluna of [].concat(ordem)) consulta = consulta.order(coluna);
+
+    const { data, error } = await consulta.range(de, de + POR_PAGINA - 1);
 
     if (error) {
       // Tabela que não existe neste banco: pula, não é erro.

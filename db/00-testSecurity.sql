@@ -106,4 +106,59 @@ order by grantee, column_name;
 
 select proname, proacl
 from pg_proc
-where proname = 'somar_pontos';
+where proname in ('somar_pontos', 'progresso_do_aluno');
+
+-- progresso_do_aluno entra na mesma conferência pelo mesmo motivo, e com
+-- um agravante: ela recebe o id do aluno por parâmetro. Executável por
+-- PUBLIC, qualquer logado leria as barras de qualquer colega trocando o
+-- uuid.
+
+
+-- ── 8. Toda questão tem dono? ───────────────────────────────────────
+--
+-- questoes.criado_por diz quem escreveu: o código do sistema
+-- ('00000000-0000-0000-0000-000000000000') para o conteúdo da Medicina,
+-- ou o id do professor que a criou no painel.
+--
+-- Esperado: a coluna existe, is_nullable = 'NO', e o default é o código
+-- do sistema. Se não vier linha nenhuma, falta rodar
+-- db/migracao-questoes-criado-por.sql.
+
+select column_name, data_type, is_nullable, column_default
+from information_schema.columns
+where table_schema = 'public' and table_name = 'questoes' and column_name = 'criado_por';
+
+-- Quantas são de cada origem.
+select case when criado_por = '00000000-0000-0000-0000-000000000000'
+            then 'sistema' else 'professor' end as origem,
+       count(*) as questoes
+from questoes
+group by 1;
+
+
+-- ── 9. Um professor não lê a questão de outro? ──────────────────────
+--
+-- A policy de select de questoes precisa filtrar por criado_por. Se
+-- aparecer aqui uma policy com qual = 'true', qualquer logado lê as
+-- perguntas que os professores escreveram.
+
+select policyname, cmd, qual
+from pg_policies
+where schemaname = 'public' and tablename in ('questoes', 'questoes_areas')
+order by tablename, cmd;
+
+
+-- ── 10. O aluno troca a própria turma pelo console? ─────────────────
+--
+-- A policy "editar o proprio cadastro" libera a LINHA; quem limita as
+-- COLUNAS é o grant da seção 5 do setup.sql. Esperado: só avatar_url e
+-- nome para authenticated, e nada para anon. Se aparecer turma_id,
+-- idade, tipo ou escola_id, qualquer aluno entra em qualquer turma sem
+-- código (ou muda a própria idade) direto pelo navegador.
+
+select grantee, column_name
+from information_schema.column_privileges
+where table_name = 'usuarios'
+  and privilege_type = 'UPDATE'
+  and grantee in ('anon', 'authenticated')
+order by grantee, column_name;

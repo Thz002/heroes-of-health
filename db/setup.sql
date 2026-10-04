@@ -26,6 +26,9 @@
 --  Banco criado ANTES de as questões deixarem de ter "missão"? Rode
 --  primeiro db/migracao-questoes-sem-missoes.sql — a trava logo abaixo
 --  recusa seguir enquanto a tabela missoes existir.
+--
+--  Banco que já tinha questões antes da coluna questoes.criado_por
+--  existir? Rode primeiro db/migracao-questoes-criado-por.sql.
 -- =====================================================================
 
 do $$
@@ -202,6 +205,34 @@ alter table questoes alter column opcao_c drop not null;
 alter table questoes alter column opcao_d drop not null;
 
 create unique index if not exists questoes_codigo_externo on questoes (codigo_externo);
+
+-- Quem escreveu a questão.
+--
+--   '00000000-0000-0000-0000-000000000000'  -> questão DO SISTEMA (equipe de
+--                                              Medicina, via importar-questoes.sql)
+--   o id de um professor (usuarios.id)      -> questão criada por ele no painel
+--
+-- O default é o código do sistema, então o import da Medicina não precisa
+-- mencionar a coluna: toda questão que entra por ele já nasce "do sistema".
+-- Quem grava o id do professor é o servidor (POST /api/professor/questoes),
+-- a partir do login — nunca de um campo vindo do navegador.
+--
+-- Cada professor enxerga as do sistema e as DELE, nunca as de outro
+-- professor: quem garante é a policy de questoes (seção 4) e, no servidor,
+-- o filtro de server/rotas/professor.js.
+--
+-- Não há FK para usuarios DE PROPÓSITO: o código do sistema não é um
+-- usuário, e a FK recusaria todas as questões da Medicina. Se a conta de um
+-- professor for apagada, as questões dele ficam no banco sem ninguém que as
+-- veja — e as respostas que os alunos já deram a elas continuam valendo XP.
+--
+-- Banco que já tinha questões antes desta coluna existir: rode
+-- db/migracao-questoes-criado-por.sql (ele preenche e confere). O alter
+-- abaixo também preencheria sozinho, mas a migração mostra o que mudou.
+alter table questoes add column if not exists criado_por uuid
+  not null default '00000000-0000-0000-0000-000000000000';
+
+create index if not exists questoes_por_criador on questoes (criado_por, cenario_id, nivel_etario);
 
 
 -- ── As 8 barras e o que as alimenta ──────────────────────────────────
@@ -630,12 +661,22 @@ $$;
 -- Chame depois de importar conteúdo. As porcentagens de quem já jogou
 -- são refeitas junto — sem isso um aluno ficaria com 100% numa barra
 -- cuja régua acabou de crescer.
+--
+-- Só as questões DO SISTEMA entram na régua. As de professor valem pontos
+-- para quem as acerta, mas não esticam a meta: senão cada pergunta criada
+-- numa escola baixaria a porcentagem dos alunos de todas as outras, que
+-- nem conseguem ver essa pergunta. (O teto de 100% em somar_pontos cobre
+-- quem passar da meta somando as duas.)
 create or replace function public.recalcular_metas()
 returns void language plpgsql security definer set search_path = public as $$
 begin
   update areas a
      set meta = coalesce((
-       select sum(qa.pontos) from questoes_areas qa where qa.area_nome = a.nome
+       select sum(qa.pontos)
+         from questoes_areas qa
+         join questoes q on q.id = qa.questao_id
+        where qa.area_nome = a.nome
+          and q.criado_por = '00000000-0000-0000-0000-000000000000'
      ), 0);
 
   update progresso_areas p
@@ -647,6 +688,78 @@ begin
    where a.nome = p.area_nome;
 end;
 $$;
+
+
+-- ── As barras de cada aluno, relativas ao que ELE tem para fazer ─────
+--
+-- É ESTA função que as telas usam hoje (GET /api/meu-progresso). As
+-- metas globais acima (areas.meta, recalcular_metas, a porcentagem
+-- gravada em progresso_areas) ficaram como reserva e saem numa limpeza
+-- futura.
+--
+-- POR QUE A RÉGUA MUDOU: o aluno só joga dentro dos quizzes que o
+-- professor passa. Medir a barra contra o banco inteiro era medir contra
+-- algo que ele nunca alcança — e, ao contrário, uma meta fixa que ele
+-- já tivesse batido deixaria sem sentido continuar jogando quando
+-- chegasse missão nova.
+--
+-- A RÉGUA DE CADA ALUNO é o "universo" dele:
+--     as questões dos quizzes da turma ATUAL
+--   + as questões que ele JÁ ACERTOU, em qualquer momento.
+--
+-- A segunda parte é a regra "conquista não se perde": se o professor
+-- apaga um quiz já feito, ou o aluno troca de turma, o que ele acertou
+-- continua contando — a barra não cai por uma decisão que não foi dele.
+-- Já um quiz NOVO aumenta o universo e a barra desce: há coisa nova
+-- para fazer (a tela avisa "novas missões" quando isso acontece).
+--
+-- O peso de cada questão é o `pontos` de questoes_areas, como sempre.
+-- Os pontos ganhos são os do PRIMEIRO acerto de cada questão (distinct),
+-- a mesma regra de POST /api/responder.
+--
+-- Calculada na hora, e não gravada: a régua muda quando QUALQUER
+-- professor cria ou apaga quiz, ou quando o aluno troca de turma. Um
+-- número gravado ficaria velho em cada um desses caminhos. Uma turma
+-- com dezenas de quizzes ainda são poucos milhares de linhas — nada
+-- para o Postgres, e numa ida só, sem o corte de 1000 linhas da API.
+create or replace function public.progresso_do_aluno(p_usuario uuid)
+returns table (area varchar, ordem int, pontos_ganhos bigint, pontos_possiveis bigint)
+language sql stable security definer set search_path = public as $$
+  with disponiveis as (
+    select qq.questao_id
+      from quiz_questoes qq
+      join quizzes_professores qp on qp.id = qq.quiz_id
+      join usuarios u on u.turma_id = qp.turma_id
+     where u.id = p_usuario
+  ),
+  acertadas as (
+    select distinct r.questao_id
+      from respostas_alunos r
+     where r.usuario_id = p_usuario and r.acertou
+  ),
+  universo as (
+    select questao_id from disponiveis
+    union
+    select questao_id from acertadas
+  ),
+  pontos as (
+    select qa.area_nome, qa.pontos, (ac.questao_id is not null) as ganho
+      from universo un
+      join questoes_areas qa on qa.questao_id = un.questao_id
+      left join acertadas ac on ac.questao_id = un.questao_id
+  )
+  select a.nome,
+         a.ordem,
+         coalesce(sum(p.pontos) filter (where p.ganho), 0)::bigint,
+         coalesce(sum(p.pontos), 0)::bigint
+    from areas a
+    left join pontos p on p.area_nome = a.nome
+   group by a.nome, a.ordem
+   order by a.ordem;
+$$;
+
+-- O "quizzes desta turma" da função acima.
+create index if not exists quizzes_por_turma on quizzes_professores (turma_id);
 
 
 -- #####################################################################
@@ -901,6 +1014,10 @@ create policy "admin apaga turma"
 
 
 -- ── Conteúdo do jogo: todos leem, só o admin escreve ─────────────────
+--
+-- O "drop" de "logado le o conteudo" roda nas QUATRO tabelas, mas a
+-- policy só volta em cenarios e areas: questoes e questoes_areas ganharam
+-- regra própria logo abaixo, por causa das questões de professor.
 
 do $$
 declare t text;
@@ -910,12 +1027,44 @@ begin
     execute format('drop policy if exists "admin escreve o conteudo" on %I', t);
 
     execute format(
-      'create policy "logado le o conteudo" on %I for select to authenticated using (true)', t);
-    execute format(
       'create policy "admin escreve o conteudo" on %I for all to authenticated
          using (public.eh_admin()) with check (public.eh_admin())', t);
   end loop;
+
+  foreach t in array array['cenarios', 'areas'] loop
+    execute format(
+      'create policy "logado le o conteudo" on %I for select to authenticated using (true)', t);
+  end loop;
 end $$;
+
+-- As questões do sistema, todo logado lê. As de professor, só o próprio
+-- autor (e o admin). Sem isto, um professor listaria pelo console as
+-- perguntas que os colegas de outras escolas escreveram.
+--
+-- O aluno não precisa ler a questão do professor por aqui: ele a recebe
+-- pelo servidor (GET /api/quizzes/:id/questoes), que confere se o quiz é
+-- da turma dele.
+--
+-- Professor NÃO tem policy de insert: questão nova passa pelo servidor,
+-- que valida os campos e grava criado_por a partir do login.
+drop policy if exists "le as questoes do sistema e as proprias" on questoes;
+
+create policy "le as questoes do sistema e as proprias"
+  on questoes for select to authenticated using (
+    criado_por = '00000000-0000-0000-0000-000000000000'
+    or criado_por = auth.uid()
+    or public.eh_admin()
+  );
+
+-- Os pontos por área seguem a questão: quem não vê a questão não vê as
+-- linhas dela. O exists passa pela policy de questoes acima — e não há
+-- recursão, porque aquela policy não consulta questoes_areas.
+drop policy if exists "le as areas das questoes que enxerga" on questoes_areas;
+
+create policy "le as areas das questoes que enxerga"
+  on questoes_areas for select to authenticated using (
+    exists (select 1 from questoes q where q.id = questoes_areas.questao_id)
+  );
 
 -- ⚠️ A policy acima libera a LINHA INTEIRA de questoes, e a linha tem
 -- resposta_correta. O RLS é por linha e não sabe esconder coluna, então
@@ -1111,6 +1260,26 @@ revoke execute on function public.somar_pontos(uuid, varchar, int) from anon, au
 -- de TODO mundo. Roda no SQL Editor (como postgres) ou pelo servidor.
 revoke execute on function public.recalcular_metas() from public;
 revoke execute on function public.recalcular_metas() from anon, authenticated;
+
+-- As barras de um aluno: só o servidor pergunta. A função é security
+-- definer e recebe o id por parâmetro — aberta, qualquer logado leria o
+-- progresso de qualquer colega só trocando o uuid.
+revoke execute on function public.progresso_do_aluno(uuid) from public;
+revoke execute on function public.progresso_do_aluno(uuid) from anon, authenticated;
+
+-- ── O que a pessoa pode alterar no próprio cadastro ──────────────────
+-- A policy "editar o proprio cadastro" (seção 4) diz QUAL LINHA: a
+-- própria. Não diz QUAIS COLUNAS — e o RLS não sabe dizer. Sem isto, um
+-- aluno trocava pelo console a própria turma (entrando em qualquer
+-- sala, sem código), a idade (mudando as perguntas que recebe) ou a
+-- escola.
+--
+-- Pelo navegador, só nome e foto. E nem esses são escritos direto
+-- hoje: passam por PATCH /api/meu-perfil. Entrar numa turma é
+-- POST /api/minha-turma, que só aceita quem ainda não tem turma.
+-- O servidor usa a chave secreta e não passa por aqui.
+revoke update on usuarios from anon, authenticated;
+grant  update (nome, avatar_url) on usuarios to authenticated;
 
 
 -- #####################################################################

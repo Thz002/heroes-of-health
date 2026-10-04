@@ -22,18 +22,8 @@
   const menu = document.getElementById('menu-turma');
   const menuNome = document.getElementById('menu-turma-nome');
 
-  // Modal de criar quiz
-  const modalQuiz = document.getElementById('modal-quiz');
-  const quizTurma = document.getElementById('quiz-turma');
-  const quizNome = document.getElementById('quiz-nome');
-  const quizDescricao = document.getElementById('quiz-descricao');
-  const quizQtd = document.getElementById('quiz-qtd');
-  const quizTempo = document.getElementById('quiz-tempo');
-  const quizErro = document.getElementById('quiz-erro');
-  const quizResumo = document.getElementById('quiz-resumo');
-  const quizFechar = document.getElementById('quiz-fechar');
-  const quizCancelar = document.getElementById('quiz-cancelar');
-  const quizSalvar = document.getElementById('quiz-salvar');
+  // O modal de criar quiz mora em quiz-modal.js (QUIZ_MODAL): é o mesmo
+  // da página de quizzes, e desenha o próprio HTML.
 
   // Modal de confirmar o "desfazer turma"
   const modalConfirma = document.getElementById('modal-confirma');
@@ -341,7 +331,6 @@
      por card daria 30 menus escondidos numa tela com 30 turmas.
      ═══════════════════════════════════════════════════════════════════ */
 
-  let turmaDoQuiz = null;
   let turmaParaExcluir = null;
 
   function abrirMenu(card) {
@@ -421,157 +410,12 @@
 
     if (item.dataset.acao === 'info') return irParaInformacoes(turma);
     if (item.dataset.acao === 'editar') return abrirEdicao(turma);
-    if (item.dataset.acao === 'quiz') return abrirQuiz(turma);
+    if (item.dataset.acao === 'quiz') return QUIZ_MODAL.abrir({ turma });
     if (item.dataset.acao === 'excluir') return pedirConfirmacao(turma);
   });
 
   function irParaInformacoes(turma) {
     window.location.href = `turma.html?id=${encodeURIComponent(turma.id)}`;
-  }
-
-
-  /* ═══════════════════════════════════════════════════════════════════
-     CRIAR QUIZ
-
-     A tela está pronta; a rota no servidor ainda não (Tópico 2). Por
-     isso o botão NÃO diz "quiz criado" — ele mostra exatamente o que
-     será enviado quando o servidor existir. Fingir sucesso é o tipo de
-     bug mais caro de achar depois.
-     ═══════════════════════════════════════════════════════════════════ */
-
-  function abrirQuiz(turma) {
-    turmaDoQuiz = turma;
-
-    quizTurma.textContent = `para a turma ${turma.nome}`;
-    quizNome.value = '';
-    if (quizDescricao) quizDescricao.value = '';
-    quizQtd.value = 10;
-    quizTempo.value = '20';
-
-    quizErro.hidden = true;
-    quizResumo.hidden = true;
-
-
-    mostrarNivelDaTurma(turma);
-    desmarcarTudo('quiz-cenarios');
-    desmarcarTudo('quiz-areas');
-
-    modalQuiz.hidden = false;
-    quizNome.focus();
-  }
-
-  function fecharQuiz() {
-    modalQuiz.hidden = true;
-    turmaDoQuiz = null;
-  }
-
-  quizFechar.addEventListener('click', fecharQuiz);
-  quizCancelar.addEventListener('click', fecharQuiz);
-  modalQuiz.addEventListener('click', (e) => {
-    if (e.target === modalQuiz) fecharQuiz();
-  });
-
-  // Ligar e desligar as etiquetas. Um escutador só para todas: o grupo
-  // diz, no data-escolha, se aceita "uma" (igual a um rádio) ou "varias".
-  modalQuiz.addEventListener('click', (e) => {
-    const chip = e.target.closest('.chip');
-    if (!chip) return;
-
-    const grupo = chip.parentElement;
-
-    if (grupo.dataset.escolha === 'uma') {
-      grupo.querySelectorAll('.chip').forEach(c => c.classList.remove('chip--ativo'));
-      chip.classList.add('chip--ativo');
-    } else {
-      chip.classList.toggle('chip--ativo');
-    }
-  });
-
-  quizSalvar.addEventListener('click', async () => {
-    const titulo = quizNome.value.trim();
-
-    if (titulo.length < 2) {
-      return avisar(quizErro, 'Dê um título ao quiz. Ex: Revisão de Dengue');
-    }
-
-    const cenarios = valoresMarcados('quiz-cenarios');
-    if (cenarios.length === 0) {
-      return avisar(quizErro, 'Escolha pelo menos um cenário de onde tirar as perguntas.');
-    }
-    if (!turmaDoQuiz) {
-      return avisar(quizErro, 'Abra o quiz a partir de uma turma.');
-    }
-
-    quizErro.hidden = true;
-    quizSalvar.disabled = true;
-    quizSalvar.textContent = 'Sorteando...';
-
-    try {
-      const quiz = await API.criarQuiz({
-        turma_id: turmaDoQuiz.id,
-        titulo,
-        descricao: quizDescricao ? quizDescricao.value.trim() : '',
-        cenarios,
-        areas: valoresMarcados('quiz-areas'),
-        qtd_questoes: Number(quizQtd.value),
-        tempo_limite_segundos: Number(quizTempo.value)
-      });
-      const pedidas = Number(quizQtd.value);
-      const veio = quiz.total_questoes;
-
-      quizResumo.hidden = false;
-      quizResumo.textContent = veio < pedidas
-        ? `Quiz "${quiz.titulo}" criado com ${veio} das ${pedidas} questões pedidas — `
-          + 'o banco ainda não tem mais perguntas para esse filtro.'
-        : `Quiz "${quiz.titulo}" criado com ${veio} questões. A turma já pode responder.`;
-
-      quizNome.value = '';
-
-    } catch (err) {
-      avisar(quizErro, err.message);
-
-    } finally {
-      quizSalvar.disabled = false;
-      quizSalvar.textContent = 'Criar quiz';
-    }
-  });
-
-  const FAIXAS = { 1: 'perguntas de 7 a 10 anos', 2: 'perguntas de 11 a 14 anos', 3: 'perguntas de 15 a 18 anos' };
-
-  function nivelDoAnoEscolar(ano) {
-    if (!ano) return null;
-    if (ano.includes('EM')) return 3;
-    const n = parseInt(ano, 10);
-    if (!Number.isInteger(n)) return null;
-    if (n >= 6 && n <= 9) return 2;
-    if (n >= 1 && n <= 5) return 1;
-    return null;
-  }
-
-  function mostrarNivelDaTurma(turma) {
-    const info = document.getElementById('quiz-nivel-info');
-    if (!info) return;
-
-    const nivel = nivelDoAnoEscolar(turma.ano_escolar);
-
-    info.textContent = nivel
-      ? `Turma ${turma.ano_escolar} · ${FAIXAS[nivel]}`
-      : 'Esta turma não tem ano escolar definido — edite a turma antes de criar o quiz.';
-  }
-
-  function valoresMarcados(idGrupo) {
-    const grupo = document.getElementById(idGrupo);
-    if (!grupo) return [];
-
-    return Array.from(grupo.querySelectorAll('.chip--ativo'))
-      .map(c => c.dataset.valor);
-  }
-
-
-  function desmarcarTudo(idGrupo) {
-    const grupo = document.getElementById(idGrupo);
-    if (!grupo) return;
-    grupo.querySelectorAll('.chip').forEach(c => c.classList.remove('chip--ativo'));
   }
 
 
@@ -667,7 +511,6 @@
     if (e.key !== 'Escape') return;
 
     if (!menu.hidden) return fecharMenu();
-    if (!modalQuiz.hidden) return fecharQuiz();
     if (!modalConfirma.hidden) return fecharConfirma();
   });
 

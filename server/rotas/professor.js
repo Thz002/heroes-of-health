@@ -12,6 +12,7 @@ const { admin } = require('../supabase');
 const { autenticar, exigirTipo } = require('../middleware/autenticar');
 const { falhou } = require('../erros');
 const { lerTudo } = require('../lerTudo');
+const { CRIADOR_SISTEMA } = require('../conteudo');
 
 const rotas = express.Router();
 rotas.use(autenticar, exigirTipo('PROFESSOR', 'ADMIN'));
@@ -328,21 +329,18 @@ rotas.post('/quizzes', async (req, res) => {
     return res.status(403).json({ message: 'Essa turma não é sua.' });
   }
 
-  const cenarios = Array.isArray(req.body?.cenarios) ? req.body.cenarios : [];
-  if (cenarios.length === 0) {
-    return res.status(400).json({ message: 'Escolha pelo menos um cenário de onde tirar as perguntas.' });
-  }
+  // Dois jeitos de montar o quiz:
+  //   'auto'   — o servidor sorteia entre as questões que casam com os
+  //              cenários/áreas pedidos (o jeito de sempre);
+  //   'manual' — o professor manda a lista de questões que escolheu.
+  // Nos dois, só entram questões do sistema ou do próprio professor:
+  // a de outro professor nunca vira tarefa aqui, nem mandando o id dela.
+  const manual = req.body?.modo === 'manual';
 
-  const areas = Array.isArray(req.body?.areas) ? req.body.areas : [];
   const descricao = String(req.body?.descricao || '').trim().slice(0, 200) || null;
-
-  let qtd = Number(req.body?.qtd_questoes);
-  if (!Number.isInteger(qtd)) qtd = 10;
-  qtd = Math.min(QTD_MAX, Math.max(QTD_MIN, qtd));
 
   let tempo = Number(req.body?.tempo_limite_segundos);
   if (!Number.isInteger(tempo) || tempo <= 0) tempo = 20;
-
 
   const turma = await admin
     .from('turmas').select('ano_escolar').eq('id', turmaId).maybeSingle();
@@ -354,45 +352,17 @@ rotas.post('/quizzes', async (req, res) => {
     });
   }
 
-  // As candidatas: questões dos cenários escolhidos, na faixa etária da
-  // turma e — se o professor filtrou — que pontuem em alguma das áreas
-  // pedidas. Os "!inner" fazem o join virar filtro: questão sem o
-  // cenário (ou sem a área) não vem.
-  //
-  // Com filtro de área, a mesma questão pode casar com duas áreas e vir
-  // duas vezes; o Set logo abaixo desfaz a repetição.
-  const questoes = await lerTudo(() => {
-    let consulta = admin
-      .from('questoes')
-      .select('id, cenarios!inner(slug)' + (areas.length ? ', questoes_areas!inner(area_nome)' : ''))
-      .eq('nivel_etario', nivel)
-      .in('cenarios.slug', cenarios);
+  const escolha = manual
+    ? await escolherAMao(req, nivel)
+    : await sortear(req, nivel);
 
-    if (areas.length) consulta = consulta.in('questoes_areas.area_nome', areas);
-    return consulta.order('id');
-  });
-
-  if (questoes.error) {
-    return falhou(res, 500, 'Não foi possível procurar as perguntas.', questoes.error, 'POST /professor/quizzes');
+  if (escolha.erro) {
+    const { status, message, causa } = escolha.erro;
+    if (status === 500) return falhou(res, 500, message, causa, 'POST /professor/quizzes');
+    return res.status(status).json({ message });
   }
 
-  const bolo = [...new Set(questoes.data.map(q => q.id))];
-
-  if (bolo.length === 0) {
-    return res.status(400).json({
-      message: 'Não há perguntas para essa combinação de cenário, área e ano da turma.'
-    });
-  }
-
-  for (let i = bolo.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [bolo[i], bolo[j]] = [bolo[j], bolo[i]];
-  }
-  const sorteadas = bolo.slice(0, qtd);
-
-  if (sorteadas.length === 0) {
-    return res.status(400).json({ message: 'Não há perguntas para essa combinação.' });
-  }
+  const { sorteadas, cenarios, areas, qtd } = escolha;
   const COLUNAS = 'id, turma_id, titulo, tempo_limite_segundos, nivel_etario, cenarios, areas, qtd_pedida, created_at';
 
   const linha = {
@@ -448,6 +418,358 @@ rotas.post('/quizzes', async (req, res) => {
   }
 
   res.status(201).json({ ...criado.data, total_questoes: sorteadas.length });
+});
+
+/**
+ * Modo automático: sorteia `qtd` questões entre as que casam com os
+ * cenários (obrigatórios) e áreas (opcionais) pedidos, na faixa etária
+ * da turma. Devolve { sorteadas, cenarios, areas, qtd } ou { erro }.
+ */
+async function sortear(req, nivel) {
+  const cenarios = Array.isArray(req.body?.cenarios) ? req.body.cenarios.map(String) : [];
+  if (cenarios.length === 0) {
+    return { erro: { status: 400, message: 'Escolha pelo menos um cenário de onde tirar as perguntas.' } };
+  }
+
+  const areas = Array.isArray(req.body?.areas) ? req.body.areas.map(String) : [];
+
+  let qtd = Number(req.body?.qtd_questoes);
+  if (!Number.isInteger(qtd)) qtd = 10;
+  qtd = Math.min(QTD_MAX, Math.max(QTD_MIN, qtd));
+
+  // As candidatas: questões dos cenários escolhidos, na faixa etária da
+  // turma, do sistema ou do próprio professor e — se ele filtrou — que
+  // pontuem em alguma das áreas pedidas. Os "!inner" fazem o join virar
+  // filtro: questão sem o cenário (ou sem a área) não vem.
+  //
+  // Com filtro de área, a mesma questão pode casar com duas áreas e vir
+  // duas vezes; o Set logo abaixo desfaz a repetição.
+  const questoes = await lerTudo(() => {
+    let consulta = admin
+      .from('questoes')
+      .select('id, cenarios!inner(slug)' + (areas.length ? ', questoes_areas!inner(area_nome)' : ''))
+      .eq('nivel_etario', nivel)
+      .in('criado_por', [CRIADOR_SISTEMA, req.usuario.id])
+      .in('cenarios.slug', cenarios);
+
+    if (areas.length) consulta = consulta.in('questoes_areas.area_nome', areas);
+    return consulta.order('id');
+  });
+
+  if (questoes.error) {
+    return { erro: { status: 500, message: 'Não foi possível procurar as perguntas.', causa: questoes.error } };
+  }
+
+  const bolo = [...new Set(questoes.data.map(q => q.id))];
+
+  if (bolo.length === 0) {
+    return { erro: { status: 400, message: 'Não há perguntas para essa combinação de cenário, área e ano da turma.' } };
+  }
+
+  for (let i = bolo.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [bolo[i], bolo[j]] = [bolo[j], bolo[i]];
+  }
+
+  return { sorteadas: bolo.slice(0, qtd), cenarios, areas, qtd };
+}
+
+/**
+ * Modo manual: o professor mandou `questao_ids`, na ordem em que quer
+ * que a turma responda. Cada uma é conferida aqui — existir, ser do
+ * sistema ou dele, e ser da faixa etária da turma — porque a lista vem
+ * do navegador e pode ter sido escrita no console.
+ *
+ * Os cenários e as áreas do quiz saem das próprias questões: são eles
+ * que decidem em quais lugares do mapa a missão aparece para o aluno.
+ */
+async function escolherAMao(req, nivel) {
+  const pedidas = Array.isArray(req.body?.questao_ids) ? req.body.questao_ids : [];
+  const ids = [...new Set(pedidas.map(Number))].filter(n => Number.isInteger(n) && n > 0);
+
+  if (ids.length === 0) {
+    return { erro: { status: 400, message: 'Escolha pelo menos uma pergunta para o quiz.' } };
+  }
+  if (ids.length > QTD_MAX) {
+    return { erro: { status: 400, message: `Um quiz tem no máximo ${QTD_MAX} perguntas.` } };
+  }
+
+  const { data, error } = await admin
+    .from('questoes')
+    .select('id, nivel_etario, criado_por, cenarios(slug), questoes_areas(area_nome)')
+    .in('id', ids);
+
+  if (error) {
+    return { erro: { status: 500, message: 'Não foi possível conferir as perguntas escolhidas.', causa: error } };
+  }
+
+  const porId = new Map(data.map(q => [q.id, q]));
+  const cenarios = [];
+  const areas = [];
+
+  for (const id of ids) {
+    const q = porId.get(id);
+
+    // "Não existe" e "é de outro professor" dão a MESMA mensagem: com
+    // mensagens diferentes, dava para descobrir pelo console quais ids
+    // são perguntas escondidas de colegas.
+    if (!q || (q.criado_por !== CRIADOR_SISTEMA && q.criado_por !== req.usuario.id)) {
+      return { erro: { status: 400, message: 'Uma das perguntas escolhidas não está disponível. Recarregue a lista e escolha de novo.' } };
+    }
+    if (q.nivel_etario !== nivel) {
+      return { erro: { status: 400, message: 'Uma das perguntas escolhidas é de outra faixa etária, diferente da turma.' } };
+    }
+
+    const slug = q.cenarios?.slug;
+    if (slug && !cenarios.includes(slug)) cenarios.push(slug);
+
+    for (const a of q.questoes_areas || []) {
+      if (!areas.includes(a.area_nome)) areas.push(a.area_nome);
+    }
+  }
+
+  return { sorteadas: ids, cenarios, areas, qtd: ids.length };
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   AS QUESTÕES
+
+   O professor vê dois montes: as do SISTEMA (equipe de Medicina, iguais
+   para todo mundo) e as DELE, que ele mesmo escreveu. As de outro
+   professor nunca aparecem — todo select aqui filtra por criado_por.
+
+   O gabarito (resposta_correta + explicacao) só vai junto nas questões
+   do próprio professor. As do sistema saem sem ele: qualquer pessoa
+   pode se cadastrar como PROFESSOR hoje (docs/banco-de-dados.md §4), e
+   entregar o gabarito aqui seria entregá-lo a qualquer aluno esperto.
+   ═══════════════════════════════════════════════════════════════════ */
+
+// Quanto uma questão de professor vale em cada área que ele marcar. O
+// conteúdo da Medicina usa pesos de 4 a 10; 10 é o padrão da tabela.
+const PONTOS_POR_AREA = 10;
+
+const COLUNAS_QUESTAO =
+  'id, enunciado, opcao_a, opcao_b, opcao_c, opcao_d, nivel_etario, criado_por';
+
+/** "ubs,escola" -> ['ubs', 'escola'] */
+function lista(valor) {
+  return String(valor || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
+/** As 8 áreas na ordem canônica das barras. */
+async function lerAreas() {
+  const { data, error } = await admin.from('areas').select('nome, ordem').order('ordem');
+  return { nomes: (data || []).map(a => a.nome), error };
+}
+
+/** Deixa a questão no formato que a tela usa, com o gabarito só se for dela. */
+function formatarQuestao(q, usuario, ordemDasAreas) {
+  const minha = q.criado_por === usuario.id;
+  const areas = (q.questoes_areas || []).map(a => a.area_nome)
+    .sort((a, b) => ordemDasAreas.indexOf(a) - ordemDasAreas.indexOf(b));
+
+  const saida = {
+    id: q.id,
+    enunciado: q.enunciado,
+    opcao_a: q.opcao_a,
+    opcao_b: q.opcao_b,
+    opcao_c: q.opcao_c,
+    opcao_d: q.opcao_d,
+    nivel_etario: q.nivel_etario,
+    cenario: q.cenarios ? { slug: q.cenarios.slug, nome: q.cenarios.nome } : null,
+    areas,
+    minha
+  };
+
+  if (minha) {
+    saida.resposta_correta = q.resposta_correta;
+    saida.explicacao = q.explicacao;
+  }
+  return saida;
+}
+
+// ── Listar questões ──────────────────────────────────────────────────
+//   ?origem=sistema|minhas   de qual monte (padrão: sistema)
+//   ?nivel=1|2|3             faixa etária (opcional)
+//   ?cenarios=ubs,escola     só desses lugares (opcional)
+//   ?areas=Saúde,Educação    só as que pontuam em alguma destas (opcional)
+rotas.get('/questoes', async (req, res) => {
+  const minhas = req.query.origem === 'minhas';
+  const cenarios = lista(req.query.cenarios);
+  const filtroAreas = lista(req.query.areas);
+
+  let nivel = null;
+  if (req.query.nivel !== undefined && req.query.nivel !== '') {
+    nivel = Number(req.query.nivel);
+    if (![1, 2, 3].includes(nivel)) {
+      return res.status(400).json({ message: 'Nível etário inválido.' });
+    }
+  }
+
+  const colunas = COLUNAS_QUESTAO
+    + (minhas ? ', resposta_correta, explicacao' : '')
+    + (cenarios.length ? ', cenarios!inner(slug, nome)' : ', cenarios(slug, nome)')
+    + ', questoes_areas(area_nome)';
+
+  const [questoes, areas] = await Promise.all([
+    lerTudo(() => {
+      let consulta = admin
+        .from('questoes')
+        .select(colunas)
+        .eq('criado_por', minhas ? req.usuario.id : CRIADOR_SISTEMA);
+
+      if (nivel) consulta = consulta.eq('nivel_etario', nivel);
+      if (cenarios.length) consulta = consulta.in('cenarios.slug', cenarios);
+
+      // As minhas, da mais nova para a mais velha: quem acabou de criar
+      // uma pergunta quer vê-la no topo.
+      return consulta.order('id', { ascending: !minhas });
+    }),
+    lerAreas()
+  ]);
+
+  const erro = questoes.error || areas.error;
+  if (erro) return falhou(res, 500, 'Não foi possível carregar as perguntas.', erro, 'GET /professor/questoes');
+
+  // O filtro de área é feito aqui, e não com um !inner no banco: o
+  // !inner cortaria da resposta as OUTRAS áreas da questão, e a tela
+  // mostraria "Saúde" numa pergunta que também vale Educação.
+  const linhas = filtroAreas.length
+    ? questoes.data.filter(q => (q.questoes_areas || []).some(a => filtroAreas.includes(a.area_nome)))
+    : questoes.data;
+
+  res.json(linhas.map(q => formatarQuestao(q, req.usuario, areas.nomes)));
+});
+
+// ── Criar questão ────────────────────────────────────────────────────
+rotas.post('/questoes', async (req, res) => {
+  const b = req.body || {};
+  const texto = (v) => String(v ?? '').trim();
+  const recusar = (message) => res.status(400).json({ message });
+
+  const enunciado = texto(b.enunciado);
+  if (enunciado.length < 10) return recusar('Escreva o enunciado da pergunta (pelo menos 10 letras).');
+  if (enunciado.length > 1000) return recusar('O enunciado passou de 1000 letras. Tente resumir.');
+
+  const opcoes = { A: texto(b.opcao_a), B: texto(b.opcao_b), C: texto(b.opcao_c), D: texto(b.opcao_d) };
+
+  if (!opcoes.A || !opcoes.B) return recusar('Preencha pelo menos as alternativas A e B.');
+  if (!opcoes.C && opcoes.D) return recusar('Preencha a alternativa C antes da D.');
+
+  // 255 é o tamanho das colunas opcao_* (db/setup.sql). Cortar calado
+  // mudaria o sentido da alternativa sem o professor saber.
+  for (const letra of 'ABCD') {
+    if (opcoes[letra].length > 255) return recusar(`A alternativa ${letra} passou de 255 letras.`);
+  }
+
+  const certa = texto(b.resposta_correta).toUpperCase();
+  if (!['A', 'B', 'C', 'D'].includes(certa) || !opcoes[certa]) {
+    return recusar('Marque qual alternativa é a correta.');
+  }
+
+  const explicacao = texto(b.explicacao);
+  if (explicacao.length < 5) return recusar('Escreva a explicação que o aluno lê depois de responder.');
+  if (explicacao.length > 1000) return recusar('A explicação passou de 1000 letras. Tente resumir.');
+
+  const nivel = Number(b.nivel_etario);
+  if (![1, 2, 3].includes(nivel)) return recusar('Escolha o nível etário da pergunta.');
+
+  const [cenario, areas] = await Promise.all([
+    admin.from('cenarios').select('id, slug, nome').eq('slug', texto(b.cenario)).maybeSingle(),
+    lerAreas()
+  ]);
+
+  if (areas.error) return falhou(res, 500, 'Não foi possível salvar a pergunta.', areas.error, 'POST /professor/questoes');
+  if (!cenario.data) return recusar('Escolha o cenário da pergunta.');
+
+  const pedidas = [...new Set((Array.isArray(b.areas) ? b.areas : []).map(String))];
+  if (pedidas.length === 0) return recusar('Escolha pelo menos uma área para a pergunta dar pontos.');
+
+  const desconhecida = pedidas.find(a => !areas.nomes.includes(a));
+  if (desconhecida) return recusar(`A área "${desconhecida}" não existe.`);
+
+  // criado_por vem do login, NUNCA do corpo da requisição: é ele que
+  // decide quem enxerga a pergunta.
+  const criada = await admin
+    .from('questoes')
+    .insert({
+      cenario_id: cenario.data.id,
+      nivel_etario: nivel,
+      enunciado,
+      opcao_a: opcoes.A,
+      opcao_b: opcoes.B,
+      opcao_c: opcoes.C || null,
+      opcao_d: opcoes.D || null,
+      resposta_correta: certa,
+      explicacao,
+      criado_por: req.usuario.id
+    })
+    .select(COLUNAS_QUESTAO + ', resposta_correta, explicacao')
+    .single();
+
+  if (criada.error) {
+    return falhou(res, 500, 'Não foi possível salvar a pergunta.', criada.error, 'POST /professor/questoes');
+  }
+
+  // Sem linha em questoes_areas, acertar a pergunta não pontua nada. Se
+  // esta parte falhar, a questão sai junto — melhor nenhuma pergunta do
+  // que uma que não vale ponto e ninguém sabe por quê.
+  const pontos = await admin.from('questoes_areas').insert(
+    pedidas.map(area_nome => ({ questao_id: criada.data.id, area_nome, pontos: PONTOS_POR_AREA }))
+  );
+
+  if (pontos.error) {
+    await admin.from('questoes').delete().eq('id', criada.data.id);
+    return falhou(res, 500, 'Não foi possível salvar as áreas da pergunta.', pontos.error, 'POST /professor/questoes');
+  }
+
+  res.status(201).json(formatarQuestao({
+    ...criada.data,
+    cenarios: cenario.data,
+    questoes_areas: pedidas.map(area_nome => ({ area_nome }))
+  }, req.usuario, areas.nomes));
+});
+
+// ── Apagar questão ───────────────────────────────────────────────────
+// Só a própria, e só enquanto ninguém a respondeu nem a usa num quiz.
+// respostas_alunos referencia questoes com "on delete cascade": apagar
+// uma pergunta já respondida levaria junto as respostas — e o XP — dos
+// alunos, por causa de uma decisão que não foi deles.
+rotas.delete('/questoes/:id', async (req, res) => {
+  const questaoId = Number(req.params.id);
+
+  if (!Number.isInteger(questaoId) || questaoId <= 0) {
+    return res.status(400).json({ message: 'Pergunta inválida.' });
+  }
+
+  const questao = await admin
+    .from('questoes').select('id, criado_por').eq('id', questaoId).maybeSingle();
+
+  if (!questao.data || questao.data.criado_por !== req.usuario.id) {
+    return res.status(403).json({ message: 'Essa pergunta não é sua.' });
+  }
+
+  const [respostas, quizzes] = await Promise.all([
+    admin.from('respostas_alunos').select('id', { count: 'exact', head: true }).eq('questao_id', questaoId),
+    admin.from('quiz_questoes').select('quiz_id', { count: 'exact', head: true }).eq('questao_id', questaoId)
+  ]);
+
+  if (respostas.count > 0) {
+    return res.status(409).json({
+      message: 'Alunos já responderam esta pergunta. Apagá-la apagaria as respostas e o XP deles.'
+    });
+  }
+  if (quizzes.count > 0) {
+    return res.status(409).json({
+      message: 'Esta pergunta está em um quiz. Apague o quiz antes de apagar a pergunta.'
+    });
+  }
+
+  const { error } = await admin.from('questoes').delete().eq('id', questaoId);
+  if (error) return falhou(res, 500, 'Não foi possível apagar a pergunta.', error, 'DELETE /professor/questoes/:id');
+
+  res.status(204).end();
 });
 
 

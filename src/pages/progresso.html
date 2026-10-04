@@ -12,6 +12,7 @@
   <script src="../js/supabase.js" defer></script>
   <script src="../js/api.js" defer></script>
   <script src="../js/navbar.js" defer></script>
+  <script src="../js/novas-missoes.js" defer></script>
   <script src="../js/progresso.js" defer></script>
 </head>
 
@@ -97,9 +98,9 @@
 
           <section class="turma-faixa turma-faixa--vazia" id="bloco-sem-turma" hidden>
             <p>
-              Você ainda não está em nenhuma turma. Peça o código para o seu professor
-              — é com ele que as missões chegam até aqui.
+              Você ainda não está em nenhuma turma — é por ela que as missões chegam até aqui.
             </p>
+            <a class="btn-entrar-turma" href="minha-turma.html">Escolher minha turma</a>
           </section>
 
           <!-- ── BLOCO 3 — progresso por tema ──────────────────────── -->
@@ -108,7 +109,10 @@
           </section>
 
           <section class="painel">
-            <p class="temas-intro">Onde você já está bem, e o que ainda dá para explorar.</p>
+            <p class="temas-intro" id="temas-intro">Quanto você já fez das missões que seu professor passou.</p>
+
+            <!-- O aviso de "novas missões" entra aqui (novas-missoes.js). -->
+            <div id="aviso-novas"></div>
 
             <div class="temas" id="lista-temas"></div>
           </section>

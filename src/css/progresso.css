@@ -824,3 +824,117 @@
 
   .numero-card__valor { font-size: 26px; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   BARRA COM MISSÃO NOVA, E O CONVITE PARA ESCOLHER A TURMA
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* A barra desceu porque chegou missão nova: um selinho ao lado do nome. */
+.tema__novo {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 700;
+  vertical-align: middle;
+  color: var(--gold);
+  background: rgba(249, 199, 79, 0.14);
+  border: 1px solid rgba(249, 199, 79, 0.35);
+}
+
+.btn-entrar-turma {
+  display: inline-block;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 99px;
+  background: var(--primary);
+  color: #05201d;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .16s, box-shadow .16s;
+}
+
+.btn-entrar-turma:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(46, 196, 169, 0.35);
+  opacity: 1;
+}
+
+.btn-entrar-turma:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── O formulário de entrar numa turma (minha-turma.html) ─────────── */
+.entrar-turma {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.entrar-turma__titulo {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.entrar-turma__form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.entrar-turma__campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.entrar-turma__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.entrar-turma__campo input,
+.entrar-turma__campo select {
+  width: 100%;
+  padding: 10px 13px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  outline: none;
+}
+
+.entrar-turma__campo input:focus,
+.entrar-turma__campo select:focus { border-color: var(--primary); }
+
+.entrar-turma__campo select option { background: #10312c; }
+.entrar-turma__campo select:disabled { opacity: 0.5; }
+
+.entrar-turma__dica {
+  min-height: 1.2em;
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.entrar-turma__dica--ok   { color: var(--accent); font-weight: 600; }
+.entrar-turma__dica--erro { color: #fca5a5; }
