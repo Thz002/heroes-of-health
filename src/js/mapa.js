@@ -211,6 +211,7 @@
   const modalEmBreve = document.getElementById("cenario-modal-em-breve");
   const modalCaixa = modal?.querySelector(".mapa-modal");
   const modalPlay = document.getElementById("cenario-modal-play");
+  const modalMissoes = document.getElementById("cenario-modal-missoes");
   const modalClose = document.getElementById("cenario-modal-close");
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -236,6 +237,7 @@
   let erroAreas = "";
   let hotspotAtual = null;      // o ponto que a lateral está mostrando agora
   let hotspotDoModal = null;    // o ponto que o modal está mostrando agora
+  let missaoEscolhida = null;   // o quiz escolhido na lista do modal
 
   // slug do cenário -> as missões (quizzes do professor) pendentes que
   // cobrem aquele lugar, a mais recente primeiro. null = ainda não chegou.
@@ -372,35 +374,40 @@
 
   // ── Modal: o que o clique abre ────────────────────────────────────
 
+  /** Já respondeu alguma pergunta desta missão? Então é "continuar". */
+  function missaoComecada(quiz) {
+    return quiz.total - quiz.restantes > 0;
+  }
+
   /**
-   * O botão aparece sempre — o lugar sem missão mostra a versão cinza,
-   * bloqueada, em vez de sumir: o botão faltando fazia o aluno achar que
-   * o modal tinha carregado errado.
+   * O botão aparece sempre — sem missão escolhida ele mostra a versão
+   * cinza, bloqueada, em vez de sumir: o botão faltando fazia o aluno
+   * achar que o modal tinha carregado errado.
    *
-   * Só se joga dentro de uma missão (quiz do professor). O botão abre a
-   * mais recente das que cobrem este lugar; lugar que nenhuma missão
-   * pendente cobre fica com o botão cinza.
+   * Só se joga dentro de uma missão (quiz do professor), e o aluno
+   * escolhe qual na lista ao lado. Até escolher, o botão fica travado;
+   * escolhida uma que já tem resposta, ele vira "Continuar".
    *
    * Enquanto as missões não chegaram, todo lugar parece sem missão; dizer
    * "sem missões" aí seria mentira, então o carregamento tem o seu próprio
-   * rótulo. Fica separado de `abrirModal` porque `carregarMissoes` chama
-   * só isto quando a resposta chega com o modal já aberto — remontar o
-   * modal inteiro jogaria a foto de volta ao topo no meio da leitura.
+   * rótulo.
    */
   function atualizarBotaoJogar(h) {
     if (!modalPlay) return;
 
     const carregando = quizzesPorSlug === null;
-    const quiz = quizzesDoLugar(h.tipo)[0];
-    const jogavel = Boolean(quiz);
+    const temMissoes = quizzesDoLugar(h.tipo).length > 0;
+    const quiz = missaoEscolhida;
 
-    modalPlay.disabled = !jogavel;
-    modalPlay.classList.toggle("mapa-modal__play--bloqueado", !jogavel);
-    modalPlay.textContent = jogavel
-      ? "Jogar"
+    modalPlay.disabled = !quiz;
+    modalPlay.classList.toggle("mapa-modal__play--bloqueado", !quiz);
+    modalPlay.textContent = quiz
+      ? (missaoComecada(quiz) ? "Continuar" : "Jogar")
       : carregando
         ? "Carregando missões…"
-        : "Sem missões disponíveis";
+        : temMissoes
+          ? "Jogar"
+          : "Sem missões disponíveis";
     modalPlay.dataset.cenario = h.tipo;
     if (quiz) modalPlay.dataset.quiz = quiz.id;
     else delete modalPlay.dataset.quiz;
@@ -408,6 +415,70 @@
     // interior daquela casa e a família que mora nela.
     if (h.casa) modalPlay.dataset.casa = h.casa;
     else delete modalPlay.dataset.casa;
+  }
+
+  function escolherMissao(quiz, card) {
+    missaoEscolhida = quiz;
+    modalMissoes.querySelectorAll(".mission-item").forEach(el => {
+      const escolhido = el === card;
+      el.classList.toggle("is-escolhida", escolhido);
+      el.setAttribute("aria-checked", String(escolhido));
+    });
+    if (hotspotDoModal) atualizarBotaoJogar(hotspotDoModal);
+  }
+
+  /**
+   * A lista de missões do lugar, à direita da foto. Mesmo card da lista
+   * de "Missões ativas", só que clicar nele escolhe em vez de jogar — quem
+   * leva para a missão é o botão. Fica separada de `abrirModal` porque
+   * `carregarMissoes` chama só isto (e o botão) quando a resposta chega
+   * com o modal já aberto — remontar o modal inteiro jogaria a foto de
+   * volta ao topo no meio da leitura.
+   */
+  function desenharMissoesDoModal(h) {
+    if (!modalMissoes) return;
+    modalMissoes.innerHTML = "";
+
+    const quizzes = quizzesDoLugar(h.tipo);
+    // A escolha só sobrevive se a missão ainda estiver na lista.
+    if (missaoEscolhida && !quizzes.some(q => q.id === missaoEscolhida.id)) {
+      missaoEscolhida = null;
+    }
+
+    if (!quizzes.length) {
+      const aviso = document.createElement("p");
+      aviso.className = "missoes-aviso";
+      aviso.textContent = quizzesPorSlug === null
+        ? "Carregando missões…"
+        : "Nenhuma missão disponível neste lugar por enquanto.";
+      modalMissoes.appendChild(aviso);
+      return;
+    }
+
+    const cenario = CENARIOS[h.tipo] || {};
+    // A miniatura é a do ponto clicado (cada casa tem a sua fachada), não
+    // a do primeiro lugar que o quiz cobre, como na lista de baixo.
+    const imagem = h.imagem || cenario.imagem;
+
+    for (const quiz of quizzes) {
+      const card = montarCard(quiz, imagem);
+      const escolhido = Boolean(missaoEscolhida && missaoEscolhida.id === quiz.id);
+      card.classList.add("mission-item--escolher");
+      card.classList.toggle("is-escolhida", escolhido);
+      card.setAttribute("role", "radio");
+      card.setAttribute("aria-checked", String(escolhido));
+      card.tabIndex = 0;
+
+      card.addEventListener("click", () => escolherMissao(quiz, card));
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          escolherMissao(quiz, card);
+        }
+      });
+
+      modalMissoes.appendChild(card);
+    }
   }
 
   function abrirModal(h) {
@@ -433,6 +504,8 @@
       modalInterior.alt = `Interior — ${cenario.nome}`;
     }
 
+    missaoEscolhida = null;
+    desenharMissoesDoModal(h);
     atualizarBotaoJogar(h);
 
     // Quem rola agora é o modal inteiro: sem isto ele abriria no meio da
@@ -577,7 +650,10 @@
     }
 
     // O modal pode já estar aberto, preso no "Carregando missões…".
-    if (hotspotDoModal) atualizarBotaoJogar(hotspotDoModal);
+    if (hotspotDoModal) {
+      desenharMissoesDoModal(hotspotDoModal);
+      atualizarBotaoJogar(hotspotDoModal);
+    }
 
     if (!listaMissoes) return;
 
@@ -625,12 +701,41 @@
       return;
     }
 
-    quizzes.forEach(q => listaMissoes.appendChild(montarCard(q)));
+    for (const quiz of quizzes) {
+      const card = montarCard(quiz);
+      card.addEventListener("click", () => abrirMissaoNoModal(quiz));
+      listaMissoes.appendChild(card);
+    }
 
     if (contadorMissoes) {
       contadorMissoes.textContent =
         quizzes.length === 1 ? "1 disponível" : `${quizzes.length} disponíveis`;
     }
+  }
+
+  /**
+   * Clique num card de "Missões ativas": abre o modal do lugar que a
+   * missão cobre, já com ela escolhida. Lugar com vários pontos no mapa
+   * (as casas, as ruas) sorteia um — cada casa tem a sua família, então o
+   * sorteio é o que varia quem o aluno vai visitar.
+   */
+  function abrirMissaoNoModal(quiz) {
+    const slug = (quiz.cenarios || []).find(s => HOTSPOTS.some(h => h.tipo === s));
+    // Missão de um lugar que não está desenhado no mapa: sem modal para
+    // abrir, vai direto para ela.
+    if (!slug) {
+      window.location.href = `missao.html?quiz=${encodeURIComponent(quiz.id)}`;
+      return;
+    }
+
+    const pontos = HOTSPOTS.filter(h => h.tipo === slug);
+    abrirModal(pontos[Math.floor(Math.random() * pontos.length)]);
+
+    const card = [...modalMissoes.querySelectorAll(".mission-item")]
+      .find(el => el.dataset.quiz === String(quiz.id));
+    if (!card) return;
+    escolherMissao(quiz, card);
+    card.scrollIntoView({ block: "nearest" });
   }
 
   /**
@@ -646,8 +751,12 @@
     listaMissoes.before(NOVAS_MISSOES.montarAviso({ novas, dispensar }));
   }
 
-  /** O card de uma missão (quiz do professor). */
-  function montarCard(quiz) {
+  /**
+   * O card de uma missão (quiz do professor). Sem ação de clique — quem
+   * usa decide: a lista de baixo abre o modal do lugar, o modal só escolhe.
+   * `imagem` troca a miniatura (o modal usa a do ponto clicado).
+   */
+  function montarCard(quiz, imagem) {
     const slug = (quiz.cenarios || [])[0];
     const cenario = CENARIOS[slug] || {};
 
@@ -678,7 +787,7 @@
     `;
 
     const img = el.querySelector(".mission-icon img");
-    img.src = `../imgs/${cenario.imagem || "UBS.png"}`;
+    img.src = `../imgs/${imagem || cenario.imagem || "UBS.png"}`;
     img.alt = cenario.nome || "";
 
     el.querySelector(".mission-name").textContent = quiz.titulo;
@@ -689,10 +798,6 @@
     el.querySelector(".mission-xp").textContent = `+${quiz.restantes * PONTOS_POR_ACERTO} XP`;
     el.querySelector(".mission-pct").textContent =
       feitas === 0 ? "Nova" : `${pct}%`;
-
-    el.addEventListener("click", () => {
-      window.location.href = `missao.html?quiz=${encodeURIComponent(quiz.id)}`;
-    });
 
     return el;
   }

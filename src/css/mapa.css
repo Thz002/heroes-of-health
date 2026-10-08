@@ -490,8 +490,8 @@
 }
 
 /* ── Modal do cenário ────────────────────────── */
-/* Quatro faixas empilhadas: cabeçalho, imagem do interior, descrição e
-   botão. O padding do `.modal` genérico é zerado aqui — cabeçalho e
+/* Cabeçalho em cima; embaixo, duas colunas: foto do interior + descrição
+   à esquerda, lista de missões + botão à direita. O padding do `.modal` genérico é zerado aqui — cabeçalho e
    imagem vão de borda a borda, e o respiro passa a ser de cada faixa.
 
    Quem rola é o modal inteiro, não o corpo: a imagem tem altura livre
@@ -587,9 +587,22 @@
   background: rgba(255, 255, 255, 0.14);
 }
 
-/* Imagem do interior ─ largura cheia e altura LIVRE: a foto aparece
-   inteira, na escala dela. Recortar para uma altura fixa cortava fora
-   justamente o que o aluno foi ali ver. */
+/* Duas colunas de mesma largura: à esquerda o lugar (foto + descrição),
+   à direita as missões dele para escolher. */
+.mapa-modal__conteudo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+}
+
+.mapa-modal__lugar {
+  min-width: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Imagem do interior ─ largura da coluna (metade do modal) e altura
+   LIVRE: a foto aparece inteira, na escala dela. Recortar para uma altura
+   fixa cortava fora justamente o que o aluno foi ali ver. */
 .mapa-modal__figura {
   position: relative;
   width: 100%;
@@ -626,10 +639,62 @@
   color: rgba(255, 255, 255, 0.72);
 }
 
+/* Coluna das missões. */
+.mapa-modal__missoes {
+  min-width: 0;
+  padding: 22px 22px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mapa-modal__missoes-titulo {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+}
+
+.mapa-modal__missoes-instrucao {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 4px 0 14px;
+}
+
+/* Mesmos cards da lista de "Missões ativas", empilhados. Rola por dentro
+   quando o lugar tem muitas missões, para o botão não sumir lá embaixo. */
+.mapa-modal__missoes-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 340px;
+  overflow-y: auto;
+  /* O hover do card desliza 4px para a direita (ver .missions-list). */
+  overflow-x: hidden;
+  padding-right: 8px;
+}
+
+.mapa-modal__missoes-lista .missoes-aviso {
+  margin: 0;
+}
+
+/* A escolhida fica acesa em verde — a faixa dourada de tarefa continua. */
+.mission-item--escolher.is-escolhida,
+.mission-item--escolher.is-escolhida:hover {
+  background: rgba(107, 223, 184, 0.14);
+  border-color: #6bdfb8;
+  box-shadow: inset 3px 0 0 var(--gold, #f9c74f), 0 0 0 1px #6bdfb8;
+}
+
+.mission-item--escolher:focus-visible {
+  outline: 2px solid #6bdfb8;
+  outline-offset: 2px;
+}
+
 .mapa-modal__play {
   width: 100%;
   padding: 13px;
-  margin-top: 22px;
+  margin-top: 18px;
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 15px;
@@ -839,6 +904,20 @@ body.modal-aberto {
   }
 
   .mapa-modal__corpo {
+    padding: 18px;
+  }
+
+  /* Tela estreita: as missões descem para baixo da descrição. */
+  .mapa-modal__conteudo {
+    grid-template-columns: 1fr;
+  }
+
+  .mapa-modal__lugar {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mapa-modal__missoes {
     padding: 18px;
   }
 }

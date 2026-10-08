@@ -109,14 +109,27 @@
         </div>
       </header>
 
-      <div class="mapa-modal__figura">
-        <img id="cenario-modal-interior" class="mapa-modal__interior" alt="" hidden>
-        <p class="mapa-modal__em-breve" id="cenario-modal-em-breve" hidden>Em breve implementado</p>
-      </div>
+      <div class="mapa-modal__conteudo">
+        <div class="mapa-modal__lugar">
+          <div class="mapa-modal__figura">
+            <img id="cenario-modal-interior" class="mapa-modal__interior" alt="" hidden>
+            <p class="mapa-modal__em-breve" id="cenario-modal-em-breve" hidden>Em breve implementado</p>
+          </div>
 
-      <div class="mapa-modal__corpo">
-        <p class="mapa-modal__desc" id="cenario-modal-desc"></p>
-        <button type="button" id="cenario-modal-play" class="btn-primary mapa-modal__play">Jogar</button>
+          <div class="mapa-modal__corpo">
+            <p class="mapa-modal__desc" id="cenario-modal-desc"></p>
+          </div>
+        </div>
+
+        <section class="mapa-modal__missoes" aria-labelledby="cenario-modal-missoes-titulo">
+          <h4 class="mapa-modal__missoes-titulo" id="cenario-modal-missoes-titulo">Missões</h4>
+          <p class="mapa-modal__missoes-instrucao">Escolha uma missão para jogar!</p>
+
+          <div class="mapa-modal__missoes-lista" id="cenario-modal-missoes" role="radiogroup"
+            aria-labelledby="cenario-modal-missoes-titulo"></div>
+
+          <button type="button" id="cenario-modal-play" class="btn-primary mapa-modal__play">Jogar</button>
+        </section>
       </div>
     </div>
   </div>
