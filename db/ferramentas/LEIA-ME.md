@@ -73,3 +73,40 @@ daquele lote existem hoje só dentro do JSON — não há como regerá-las.
 
 Duas consequências: **o JSON é fonte, não cache** (versione, não apague),
 e **guarde os `.docx` originais** em algum lugar estável.
+
+---
+
+## Atualização: o terceiro lote (outubro de 2026)
+
+Três `.docx` novos (7–10, 11–14 e o primeiro nível 3), cada um num formato
+diferente — e diferentes dos lotes anteriores também. O caminho agora tem
+três passos, e a decisão de cenário e barra ficou num arquivo só dela:
+
+```
+parser_lote3.py  -> os 3 .docx               -> lote3_bruto.json   (só lê)
+montar_lote3.py  -> lote3_bruto.json         -> questoes_extraidas.json
+                    (cenário, barras, código; acrescenta no fim, com "lote": 3)
+gerar_sql.py ../importar-lote3.sql --lote 3  -> db/importar-lote3.sql
+```
+
+O que estes arquivos ensinam, e que não estava escrito em lugar nenhum:
+
+- **A resposta certa nem sempre é verde.** No 11–14 ela vem em **negrito**
+  (o enunciado também é negrito; a certa é a única *outra* linha em negrito).
+- **Verdadeiro/Falso pode vir sem alternativa nenhuma**: só a frase, pintada
+  de verde (verdadeira) ou de vermelho (falsa).
+- **Duas alternativas podem dividir um parágrafo** ("A) ... B) ..."), e a
+  letra pode estar num pedaço de texto e o ")" no seguinte. Por isso o
+  parser lê letra a letra, com o negrito e a cor de cada uma.
+- **O nível 3 tem cinco alternativas (A a E)**, no formato do ENEM. O banco
+  ganhou a coluna `opcao_e` para isso (`setup.sql`), e o `gerar_sql.py`
+  aceita 2, 4 ou 5.
+
+Sem `--lote`, o `gerar_sql.py` continua gerando só os dois primeiros lotes,
+exatamente como antes — conferido: regerar o `importar-questoes.sql` dá o
+mesmo arquivo, mudando só a coluna `opcao_e` (nula) nos inserts.
+
+O `montar_lote3.py` recusa rodar duas vezes: os códigos já estão no JSON.
+As duas questões que vieram sem resposta marcada (7–10, UBS nº 12 e UPA
+nº 14) estão no JSON **sem código**; quando a Medicina marcar, preencha
+`certa`, dê o próximo código livre do grupo e gere de novo.

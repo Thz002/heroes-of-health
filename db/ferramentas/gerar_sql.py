@@ -3,8 +3,14 @@
 
 Passo 2 de 2, depois do parser.py.
 
-  python gerar_sql.py                        -> db/importar-questoes.sql
-  python gerar_sql.py ../importar-n3.sql     -> outro arquivo
+  python gerar_sql.py                                -> db/importar-questoes.sql
+  python gerar_sql.py ../importar-n3.sql             -> outro arquivo
+  python gerar_sql.py ../importar-lote3.sql --lote 3 -> so as do lote 3
+
+Sem --lote, entram so as questoes SEM o campo "lote" (os dois primeiros
+lotes, que ja moram em importar-questoes.sql) -- o mesmo que este script
+sempre gerou. Lote novo ganha o campo "lote" na mesclagem e o proprio
+arquivo de import.
 
 CUIDADO: nao gere por cima de um .sql que ja recebeu explicacoes
 escritas a mao -- elas voltariam a ser placeholder. Para um lote novo,
@@ -32,8 +38,18 @@ def q(s):
     return "'" + str(s).replace("'", "''") + "'"
 
 
+args = sys.argv[1:]
+LOTE = None
+if '--lote' in args:
+    i = args.index('--lote')
+    LOTE = int(args[i + 1])
+    del args[i:i + 2]
+
 qs = json.load(open(os.path.join(AQUI, 'questoes_extraidas.json'), encoding='utf-8'))
-prontas = [x for x in qs if len(x['alts']) in (2, 4) and x['certa'] is not None
+qs = [x for x in qs if x.get('lote') == LOTE]
+
+# 2 = Verdadeiro/Falso, 4 = o normal, 5 = nivel 3 no formato do ENEM.
+prontas = [x for x in qs if len(x['alts']) in (2, 4, 5) and x['certa'] is not None
            and x['lugares'] and x['areas'] and x.get('codigo')]
 fora = [x for x in qs if x not in prontas]
 
@@ -45,7 +61,8 @@ L = []
 w = L.append
 
 w('-- =====================================================================')
-w('--  HERÓIS DA SAÚDE — as perguntas da equipe de Medicina')
+w('--  HERÓIS DA SAÚDE — as perguntas da equipe de Medicina'
+  + (' (lote %d)' % LOTE if LOTE else ''))
 w('--')
 w('--  Gerado a partir dos .docx da equipe por db/ferramentas/gerar_sql.py,')
 w('--  mas A PARTIR DAQUI ESTE ARQUIVO É A FONTE DA VERDADE: as explicações')
@@ -84,15 +101,16 @@ w('-- =====================================================================')
 w('')
 
 if fora:
-    w('-- Ficaram DE FORA, por não caberem no formato de 4 alternativas ou')
-    w('-- por não terem a resposta marcada em verde no arquivo de origem:')
+    w('-- Ficaram DE FORA, por não caberem no formato de 2, 4 ou 5 alternativas')
+    w('-- ou por não terem a resposta marcada no arquivo de origem:')
     for x in fora:
         motivo = []
-        if len(x['alts']) not in (2, 4):
+        if len(x['alts']) not in (2, 4, 5):
             motivo.append('%d alternativas' % len(x['alts']))
         if x['certa'] is None:
             motivo.append('sem resposta marcada')
-        w('--   nível %d, questão %d: %s' % (x['nivel'], x['num'], ', '.join(motivo)))
+        lugar = ' (%s)' % x['lugares'][0] if x['lugares'] else ''
+        w('--   nível %d%s, questão %d: %s' % (x['nivel'], lugar, x['num'], ', '.join(motivo)))
         w('--     %s' % x['enunciado'][:88])
     w('')
 
@@ -110,6 +128,17 @@ w("    raise exception 'Cenários que faltam no banco: %. Rode db/seed.sql antes
 w('  end if;')
 w('end $$;')
 w('')
+w('-- ── Guarda: a coluna da letra E tem de existir antes ─────────────────')
+w('-- Ela chegou com o nível 3 (formato ENEM). Banco que ainda não rodou o')
+w('-- setup.sql novo pararia no primeiro insert com um erro sem explicação.')
+w('do $$')
+w('begin')
+w('  if not exists (select 1 from information_schema.columns')
+w("                 where table_name = 'questoes' and column_name = 'opcao_e') then")
+w("    raise exception 'Falta a coluna questoes.opcao_e. Rode db/setup.sql de novo antes deste arquivo.';")
+w('  end if;')
+w('end $$;')
+w('')
 w('')
 
 def codigo_do_grupo(slug, nivel):
@@ -123,13 +152,14 @@ for (slug, nivel), itens in sorted(grupos.items()):
     w('-- %s — %d questões' % (codigo_do_grupo(slug, nivel), len(itens)))
     w('')
     for x in itens:
-        letra = 'ABCD'[x['certa']]
+        letra = 'ABCDE'[x['certa']]
         w('insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,')
-        w('       opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao)')
+        w('       opcao_a, opcao_b, opcao_c, opcao_d, opcao_e, resposta_correta, explicacao)')
         w('select %s, c.id, %d, %s,' % (q(x['codigo']), nivel, q(x['enunciado'])))
-        # Verdadeiro/Falso tem duas opcoes; C e D vao nulas.
-        quatro = list(x['alts']) + [None] * (4 - len(x['alts']))
-        for a in quatro:
+        # Verdadeiro/Falso tem duas opcoes (C, D e E vao nulas); so o
+        # nivel 3 no formato ENEM preenche a E.
+        cinco = list(x['alts']) + [None] * (5 - len(x['alts']))
+        for a in cinco:
             w('       %s,' % (q(a) if a is not None else 'null'))
         w('       %s, %s' % (q(letra), q(PLACEHOLDER)))
         w('  from cenarios c where c.slug = %s' % q(slug))
@@ -138,6 +168,7 @@ for (slug, nivel), itens in sorted(grupos.items()):
         w('      cenario_id = excluded.cenario_id, nivel_etario = excluded.nivel_etario,')
         w('      opcao_a = excluded.opcao_a, opcao_b = excluded.opcao_b,')
         w('      opcao_c = excluded.opcao_c, opcao_d = excluded.opcao_d,')
+        w('      opcao_e = excluded.opcao_e,')
         w('      resposta_correta = excluded.resposta_correta,')
         w('      explicacao = excluded.explicacao;')
         w('')
@@ -199,7 +230,7 @@ w('-- select c.slug, q.nivel_etario, count(*) as questoes')
 w('--   from questoes q join cenarios c on c.id = q.cenario_id')
 w('--  group by c.slug, q.nivel_etario order by c.slug, q.nivel_etario;')
 
-destino = sys.argv[1] if len(sys.argv) > 1 else os.path.join(RAIZ, 'db', 'importar-questoes.sql')
+destino = args[0] if args else os.path.join(RAIZ, 'db', 'importar-questoes.sql')
 io.open(destino, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
 
 print('gerado: %s' % destino)

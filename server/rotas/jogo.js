@@ -106,12 +106,13 @@ rotas.get('/cenarios', async (req, res) => {
 // exploração livre pelo mapa, qualquer questão do banco podia ser
 // respondida; sem ela, aceitar uma questão avulsa deixaria o aluno
 // pontuar, pelo console, em perguntas que ninguém passou para ele —
-// bastava tentar as quatro letras em cada uma.
+// bastava tentar todas as letras em cada uma.
 rotas.post('/responder', async (req, res) => {
   const questaoId = Number(req.body?.questao_id);
   const resposta  = String(req.body?.resposta || '').trim().toUpperCase();
 
-  if (!questaoId || !['A', 'B', 'C', 'D'].includes(resposta)) {
+  // A E é do nível 3, no formato do ENEM.
+  if (!questaoId || !['A', 'B', 'C', 'D', 'E'].includes(resposta)) {
     return res.status(400).json({ message: 'Resposta inválida.' });
   }
 
@@ -291,7 +292,7 @@ rotas.get('/quizzes/:id/questoes', async (req, res) => {
 
   const questoes = await admin
     .from('questoes')
-    .select('id, enunciado, opcao_a, opcao_b, opcao_c, opcao_d')
+    .select('id, enunciado, opcao_a, opcao_b, opcao_c, opcao_d, opcao_e')
     .in('id', ids);
 
   if (questoes.error) {

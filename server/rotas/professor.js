@@ -550,7 +550,7 @@ async function escolherAMao(req, nivel) {
 const PONTOS_POR_AREA = 10;
 
 const COLUNAS_QUESTAO =
-  'id, enunciado, opcao_a, opcao_b, opcao_c, opcao_d, nivel_etario, criado_por';
+  'id, enunciado, opcao_a, opcao_b, opcao_c, opcao_d, opcao_e, nivel_etario, criado_por';
 
 /** "ubs,escola" -> ['ubs', 'escola'] */
 function lista(valor) {
@@ -576,6 +576,7 @@ function formatarQuestao(q, usuario, ordemDasAreas) {
     opcao_b: q.opcao_b,
     opcao_c: q.opcao_c,
     opcao_d: q.opcao_d,
+    opcao_e: q.opcao_e,
     nivel_etario: q.nivel_etario,
     cenario: q.cenarios ? { slug: q.cenarios.slug, nome: q.cenarios.nome } : null,
     areas,

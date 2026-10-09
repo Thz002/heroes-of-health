@@ -36,7 +36,9 @@
   const tempoEl = document.getElementById('missao-tempo');
   const barraTempo = document.getElementById('quiz-tempo-barra');
 
-  const LETRAS = ['A', 'B', 'C', 'D'];
+  // A E só vem no nível 3 (formato ENEM); nas outras a opção é nula e
+  // o laço que desenha os botões a pula.
+  const LETRAS = ['A', 'B', 'C', 'D', 'E'];
 
   // Foto de dentro de cada lugar — as mesmas de src/imgs/Interiores que o
   // modal do mapa mostra (CENARIOS[tipo].interior em mapa.js). Mudou lá,
@@ -303,15 +305,6 @@
       // troca de página. É o feedback que faltava: o aluno via o XP
       // parado e não ligava o número ao que acabou de fazer.
       if (r.nivel && window.NIVEL) window.NIVEL.atualizar(r.nivel, r.xp);
-
-      // Terminou o questionário com esta resposta, ou ganhou insígnia:
-      // o aviso de recompensa aparece no canto, por cima do quiz.
-      if (window.comemorarGanho) {
-        window.comemorarGanho({
-          conclusao: r.conclusao,
-          insignias_novas: r.insignias_novas
-        });
-      }
 
       if (r.acertou) {
         botao.classList.add('quiz-option--correct');

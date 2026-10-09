@@ -416,7 +416,7 @@ img { max-width: 100%; display: block; }
   list-style: none;
 }
 
-/* O lado direito da barra: links, selo de XP e o canto do perfil. Era um
+/* O lado direito da barra: links, barrinha de nível e o canto do perfil. Era um
    style="display:flex" repetido dentro de cada HTML. */
 .navbar__acoes {
   display: flex;
@@ -514,25 +514,30 @@ img { max-width: 100%; display: block; }
   to   { opacity: 1; transform: none; }
 }
 
+/* Centralizado: a foto em cima, o nome e o papel embaixo. */
 .perfil__cabeca {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 11px;
-  padding: 10px 12px 12px;
+  gap: 8px;
+  padding: 12px 12px 14px;
   margin-bottom: 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  text-align: center;
 }
 
-/* min-width:0 para o nome longo poder cortar com reticências em vez de
+/* max-width para o nome longo poder cortar com reticências em vez de
    empurrar o menu inteiro para fora da tela. */
 .perfil__cabeca-texto {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 1px;
+  max-width: 100%;
   min-width: 0;
 }
 
-.perfil__avatar--menu { width: 38px; height: 38px; font-size: 14px; }
+.perfil__avatar--menu { width: 44px; height: 44px; font-size: 15px; }
 
 .perfil__nome {
   font-family: var(--font-display);
@@ -554,10 +559,6 @@ img { max-width: 100%; display: block; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-/* A patente vem depois do papel, em dourado: "ALUNO · Pequeno Aprendiz".
-   Mesma cor do XP e das insígnias no resto do jogo. */
-.perfil__patente { color: var(--gold); }
 
 /* A perspectiva mora AQUI, no pai. Sem ela o translateZ não tem de onde
    ser visto e o item não se mexe um milímetro — é o erro clássico de
@@ -747,103 +748,55 @@ img { max-width: 100%; display: block; }
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   O AVISO DE RECOMPENSA
+/* ── A MESMA BARRA, ENCOLHIDA PARA A BARRA DE NAVEGAÇÃO ─────────────
+   Na navbar não cabe a versão inteira: patente, "Nível 5/20" e
+   "190 de 300 XP" em 64px de altura viram um amontoado. Então ali fica
+   só a patente em cima e o traço embaixo, sem número, e o resto vai no
+   title, para quem parar o mouse em cima.
 
-   Aparece no canto quando a pessoa ganha o XP do dia ou uma insígnia, e
-   some sozinho. Não pede clique nem bloqueia nada: é comemoração, não
-   tarefa — um modal aqui faria o prêmio virar interrupção.
-   ═══════════════════════════════════════════════════════════════════ */
+   É a MESMA marcação de "Meu progresso", desenhada pela mesma função:
+   o que muda é só o que o CSS deixa aparecer. Duas versões do desenho
+   acabariam divergindo na primeira mudança de regra.
+   ────────────────────────────────────────────────────────────────── */
 
-.brindes {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 400;
-
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  /* Não rouba o clique de nada que esteja embaixo. */
-  pointer-events: none;
+/* Tira a moldura da versão grande: aqui ela flutua na própria barra. */
+.nivel-nav.nivelzinho {
+  width: 130px;
+  gap: 4px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
 }
 
-.brinde {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  max-width: 330px;
-  padding: 14px 18px;
+/* Da linha de cima, só a patente — o "Nível 5/20" fica no title. */
+.nivel-nav .nivelzinho__topo { justify-content: center; }
 
-  background: linear-gradient(160deg, #13867e 0%, #0e6b6c 100%);
-  border: 1px solid rgba(249, 199, 79, 0.45);
-  border-radius: var(--radius-md);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+.nivel-nav .nivelzinho__nv,
+.nivel-nav .nivelzinho__nota { display: none; }
 
-  animation: brinde-entra 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+.nivel-nav .nivelzinho__patente {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
 }
 
-/* Um atraso crescente por cartão: quando a pessoa ganha três coisas de
-   uma vez, elas chegam em sequência em vez de aparecerem num bloco. */
-.brinde:nth-child(2) { animation-delay: 0.18s; }
-.brinde:nth-child(3) { animation-delay: 0.36s; }
-.brinde:nth-child(n+4) { animation-delay: 0.5s; }
+.nivel-nav .nivelzinho__barra { height: 6px; }
 
-@keyframes brinde-entra {
-  from { opacity: 0; transform: translateX(28px) scale(0.96); }
-  to   { opacity: 1; transform: none; }
+/* Sem esta linha a barra ignora o `hidden` e aparece zerada antes de o
+   servidor responder: o display:flex de .nivelzinho vence o atributo. */
+.nivel-nav[hidden] { display: none; }
+
+/* No celular a barra encolhe, mas não some: é o único sinal de
+   progresso que fica à vista em todas as telas. */
+@media (max-width: 480px) {
+  .nivel-nav.nivelzinho { width: 104px; }
+  .nivel-nav .nivelzinho__patente { font-size: 9.5px; letter-spacing: 0.2px; }
 }
 
-/* A marca do aviso. Era emoji; virou traçado desenhado, que fica igual
-   em qualquer sistema e combina com os ícones do menu de perfil. */
-.brinde__marca {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--accent);
-}
 
-.brinde__marca svg { width: 19px; height: 19px; }
-
-/* Cada tipo de ganho tem a sua cor, e a cor é a informação: verde
-   terminou, dourado conquistou, claro apareceu. */
-.brinde--certo .brinde__marca    { background: rgba(107, 223, 184, 0.2);  color: var(--accent); }
-.brinde--insignia .brinde__marca { background: rgba(249, 199, 79, 0.2);   color: var(--gold); }
-.brinde--dia .brinde__marca      { background: rgba(255, 255, 255, 0.14); color: rgba(255,255,255,0.8); }
-
-.brinde__texto {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.brinde__titulo {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 14px;
-  color: var(--gold);
-}
-
-.brinde__sub {
-  font-size: 12.5px;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.82);
-}
-
-@media (max-width: 560px) {
-  .brindes { left: 16px; right: 16px; bottom: 16px; }
-  .brinde { max-width: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .brinde { animation: none; }
-}
 
 .navbar__links a {
   font-size: 14px;

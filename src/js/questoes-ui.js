@@ -221,9 +221,9 @@ const QUESTOES_UI = (() => {
 
     const opcoes = document.createElement('ol');
     opcoes.className = 'questao-card__opcoes';
-    for (const letra of ['A', 'B', 'C', 'D']) {
+    for (const letra of ['A', 'B', 'C', 'D', 'E']) {
       const texto = q[`opcao_${letra.toLowerCase()}`];
-      if (!texto) continue;   // Verdadeiro/Falso tem só A e B
+      if (!texto) continue;   // Verdadeiro/Falso tem só A e B; só o nível 3 tem E
       const li = document.createElement('li');
       li.dataset.letra = letra;
       li.textContent = texto;

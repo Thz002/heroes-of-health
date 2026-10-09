@@ -78,8 +78,8 @@ order by u.created_at desc;
 -- libera a linha de questoes, e a linha tem resposta_correta. Quem
 -- fecha isso é a permissão por coluna (seção 5 do setup.sql).
 --
--- Esperado: 8 colunas por grantee — cenario_id, enunciado, id,
--- nivel_etario e opcao_a..opcao_d. Se resposta_correta ou explicacao aparecerem aqui,
+-- Esperado: 9 colunas por grantee — cenario_id, enunciado, id,
+-- nivel_etario e opcao_a..opcao_e. Se resposta_correta ou explicacao aparecerem aqui,
 -- qualquer aluno logado lê o gabarito pelo console do navegador.
 --
 -- O filtro por privilege_type é obrigatório: sem ele a consulta traz

@@ -146,7 +146,13 @@ aluno vê para o quiz do professor** (`quizzes_professores`), e só se joga
 dentro de um quiz — não existe mais exploração livre pelo mapa.
 
 As questões do jogo são escritas pela equipe de Medicina e entram pelo
-`db/importar-questoes.sql`. O `seed.sql` planta os 12 cenários.
+`db/importar-questoes.sql` (os dois primeiros lotes) e pelo
+`db/importar-lote3.sql` (o terceiro, de outubro de 2026). O `seed.sql` planta
+os 12 cenários.
+
+As de nível 3 seguem o formato do ENEM, com **cinco alternativas**: por isso
+existe a coluna `opcao_e`, nula em todas as outras. Verdadeiro/Falso usa só a
+A e a B.
 
 **Questões de professor (`questoes.criado_por`).** Desde outubro de 2026 o
 professor também escreve perguntas, pelo painel. A coluna `criado_por` (uuid,

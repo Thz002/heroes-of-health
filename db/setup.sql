@@ -175,7 +175,10 @@ create table if not exists questoes (
   -- vazia, então isso não exigiu nada do lado de lá.
   opcao_c varchar(255),
   opcao_d varchar(255),
-  resposta_correta char(1) not null check (resposta_correta in ('A','B','C','D')),
+  -- A E só existe no nível 3, que segue o formato do ENEM (cinco
+  -- alternativas). Nas outras fica nula, e a tela pula, como a C e a D.
+  opcao_e varchar(255),
+  resposta_correta char(1) not null check (resposta_correta in ('A','B','C','D','E')),
 
   -- Texto educativo mostrado depois da resposta, escrito pela equipe de
   -- Medicina. Aparece também quando o aluno erra, em tom de incentivo.
@@ -203,6 +206,36 @@ alter table questoes add column if not exists codigo_externo varchar(60);
 -- já foram criados antes das questões de Verdadeiro/Falso existirem.
 alter table questoes alter column opcao_c drop not null;
 alter table questoes alter column opcao_d drop not null;
+
+-- A mesma coisa para a letra E, que chegou com o nível 3: num banco que
+-- já existe, o "create table" não acrescenta a coluna nem afrouxa o
+-- check. O check antigo (só A a D) é achado pelo que ele diz, e não pelo
+-- nome — o mesmo jeito do unique de escolas, lá em cima.
+alter table questoes add column if not exists opcao_e varchar(255);
+
+do $$
+declare antigo record;
+begin
+  for antigo in
+    select conname from pg_constraint
+    where conrelid = 'public.questoes'::regclass
+      and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%resposta_correta%'
+      and pg_get_constraintdef(oid) not ilike '%''E''%'
+  loop
+    execute format('alter table questoes drop constraint %I', antigo.conname);
+  end loop;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.questoes'::regclass
+      and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%resposta_correta%'
+  ) then
+    alter table questoes add constraint questoes_resposta_correta_check
+      check (resposta_correta in ('A','B','C','D','E'));
+  end if;
+end $$;
 
 create unique index if not exists questoes_codigo_externo on questoes (codigo_externo);
 
@@ -1292,7 +1325,7 @@ grant  select (id, nome, escola_id, created_at) on turmas to anon, authenticated
 -- que roda como postgres e ignora estas permissões — é o mesmo caminho
 -- que o projeto já usa para importar questão.
 revoke select on questoes from anon, authenticated;
-grant  select (id, cenario_id, nivel_etario, enunciado, opcao_a, opcao_b, opcao_c, opcao_d)
+grant  select (id, cenario_id, nivel_etario, enunciado, opcao_a, opcao_b, opcao_c, opcao_d, opcao_e)
   on questoes to anon, authenticated;
 
 grant execute on function public.buscar_turma_por_codigo(text) to anon, authenticated;
@@ -1361,8 +1394,8 @@ grant  update (nome, avatar_url) on usuarios to authenticated;
 -- where tgrelid = 'auth.users'::regclass and not tgisinternal;
 
 -- (e) O aluno não enxerga o gabarito.
---     Devem vir 8 colunas por grantee: cenario_id, enunciado, id,
---     nivel_etario e opcao_a..opcao_d. Se aparecer resposta_correta ou explicacao, o
+--     Devem vir 9 colunas por grantee: cenario_id, enunciado, id,
+--     nivel_etario e opcao_a..opcao_e. Se aparecer resposta_correta ou explicacao, o
 --     revoke da seção 5 não pegou.
 -- select grantee, column_name from information_schema.column_privileges
 -- where table_name = 'questoes' and privilege_type = 'SELECT'

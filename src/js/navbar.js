@@ -65,26 +65,6 @@
     sair: '<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>'
   };
 
-  /* As marcas dos avisos de recompensa.
-   *
-   * Eram emoji (✅ 🏅 ☀️) e tinham dois problemas. O desenho do emoji é
-   * do sistema operacional, então o mesmo aviso saía com cara diferente
-   * em cada máquina — e o conjunto todo tinha jeito de template pronto.
-   * Traçado desenhado aqui dentro fica igual em todo lugar e combina
-   * com os ícones que o menu de perfil já usa. */
-  const MARCAS = {
-    certo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" ' +
-           'stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 6.5"/></svg>',
-
-    insignia: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
-              'stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/>' +
-              '<path d="M8.5 14.5L7 22l5-2.5L17 22l-1.5-7.5"/></svg>',
-
-    dia: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
-         'stroke-linecap="round"><circle cx="12" cy="12" r="4"/>' +
-         '<path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>'
-  };
-
   const icone = (nome) =>
     `<svg class="perfil__icone" viewBox="0 0 24 24" fill="none" stroke="currentColor"
        stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
@@ -106,9 +86,7 @@
           <span class="perfil__avatar perfil__avatar--menu" id="perfil-avatar-menu"></span>
           <span class="perfil__cabeca-texto">
             <span class="perfil__nome" id="perfil-nome">…</span>
-            <span class="perfil__tipo">
-              <span id="perfil-tipo"></span><span class="perfil__patente" id="perfil-patente"></span>
-            </span>
+            <span class="perfil__tipo" id="perfil-tipo"></span>
           </span>
         </div>
 
@@ -289,9 +267,9 @@
       return `<li><a href="${i.href}"${classe}${marca}>${i.texto}</a></li>`;
     }).join('');
 
-    // O XP nasce escondido: só aparece depois que o servidor disser o
-    // número. Um "0 XP" piscando antes da resposta faria quem já jogou
-    // achar que perdeu o progresso.
+    // A barra nasce escondida: só aparece depois que o servidor disser o
+    // número. Uma barra zerada piscando antes da resposta faria quem já
+    // jogou achar que perdeu o progresso.
     nav.innerHTML = `
       <div class="topLine">
         <div class="navbar__inner">
@@ -302,7 +280,12 @@
 
           <div class="navbar__acoes">
             <ul class="navbar__links">${links}</ul>
-            <div class="xp-badge" id="nav-xp" hidden></div>
+
+            <!-- A patente em cima e a barra embaixo, sem número: o
+                 nível e o XP por extenso ficam no title e na tela
+                 "Meu progresso". -->
+            <div class="nivel-nav" data-nivel hidden></div>
+
             ${PERFIL}
           </div>
         </div>
@@ -362,22 +345,11 @@
       if (!nivel) return;
       ultimoNivel = { nivel, xp };
 
-      document.querySelectorAll('[data-nivel]').forEach(el => desenharNivel(el, nivel, xp));
-
-      // A patente no cabeçalho do menu, logo depois de ALUNO/PROFESSOR.
-      // É o mesmo par que aparece no perfil: o papel e a patente são as
-      // duas coisas que a pessoa É dentro do jogo.
-      const patente = document.getElementById('perfil-patente');
-      if (patente) patente.textContent = ` · ${nivel.patente}`;
-
-      const selo = document.getElementById('nav-xp');
-      if (!selo) return;
-
-      selo.textContent = `Nv ${nivel.nivel} · ${(xp ?? 0).toLocaleString('pt-BR')} XP`;
-      selo.title = nivel.maximo
-        ? `${nivel.patente} — nível máximo`
-        : `${nivel.patente} · faltam ${nivel.faltam} XP para o nível ${nivel.nivel + 1}`;
-      selo.hidden = false;
+      // Os modais de quiz e de questão usam data-nivel para outra coisa
+      // (o nível etário). Sem o :not, a barra seria desenhada por cima
+      // deles se um estivesse aberto quando a resposta chegasse.
+      document.querySelectorAll('[data-nivel]:not(.modal [data-nivel])')
+        .forEach(el => desenharNivel(el, nivel, xp));
     },
 
     atual: () => ultimoNivel
@@ -385,6 +357,16 @@
 
   function desenharNivel(el, nivel, xp) {
     el.classList.add('nivelzinho');
+
+    // Nasce escondida na barra de navegação: uma barra zerada piscando
+    // antes da resposta faria quem já jogou achar que perdeu o progresso.
+    el.hidden = false;
+
+    // Onde a barra aparece sozinha, sem as linhas de texto em volta (a
+    // da navbar), o título é o único lugar que explica o que ela mede.
+    el.title = nivel.maximo
+      ? `${nivel.patente} — nível máximo`
+      : `${nivel.patente} · faltam ${nivel.faltam} XP para o nível ${nivel.nivel + 1}`;
 
     const feito = (xp ?? 0) - nivel.xp_do_nivel;
     const trecho = nivel.maximo ? 0 : nivel.xp_do_proximo - nivel.xp_do_nivel;
@@ -423,85 +405,39 @@
    * Chamar em toda visita é seguro: quem decide se vale prêmio é a
    * chave (usuario_id, dia) do banco, não este código.
    *
-   * Falhou? O selo continua escondido. A barra de navegação não é lugar
-   * de mensagem de erro — a tela de progresso é que vai dizer o que houve.
+   * Falhou? A barrinha continua escondida. A barra de navegação não é
+   * lugar de mensagem de erro — a tela de progresso é que vai dizer o
+   * que houve.
    */
   async function mostrarProgresso() {
-    if (!window.API || !API.marcarPresenca) return;
+    // typeof, e não window.API: o api.js declara `const API`, e um const
+    // solto no arquivo NÃO vira window.API. O teste antigo dava sempre
+    // "não existe", esta função parava aqui em toda página, e a barrinha
+    // só aparecia no perfil — que chama NIVEL.atualizar por conta própria.
+    if (typeof API === 'undefined' || !API.marcarPresenca) {
+      console.warn('[navbar] API.marcarPresenca não existe — o api.js foi carregado antes deste arquivo?');
+      return;
+    }
 
     try {
       const r = await API.marcarPresenca();
 
-      // Preenche o selo da barra E toda <div data-nivel> da página.
+      // Preenche a barrinha da navbar E toda <div data-nivel> da página.
       window.NIVEL.atualizar(r.nivel, r.xp);
 
-      comemorar(r);
-    } catch (_) { /* sem selo na barra; a tela de progresso explica */ }
-  }
+      if (!r.nivel) {
+        console.warn('[navbar] /presenca respondeu sem "nivel"; a barrinha fica escondida.', r);
+      }
 
-  /**
-   * O momento da recompensa.
-   *
-   * Isto existe porque o jogo tinha um buraco: o aluno ganhava XP e
-   * insígnia sem NUNCA ver acontecer. O número só aparecia depois,
-   * parado, numa tela que ele podia nem abrir. Prêmio que ninguém vê
-   * chegar não premia.
-   *
-   * O aviso some sozinho. Nada aqui pede clique: é comemoração, não
-   * tarefa.
-   */
-  window.comemorarGanho = comemorar;
-
-  function comemorar(r) {
-    if (!r) return;
-    const avisos = [];
-
-    if (r.ganhou_hoje) {
-      const dias = r.streak_dias > 1 ? ` · ${r.streak_dias} dias seguidos` : '';
-      avisos.push({ marca: 'dia', titulo: `+${r.pontos_do_dia} XP por hoje`, texto: `Bom te ver de novo${dias}.` });
+    } catch (erro) {
+      // A barrinha continua escondida: ela não é lugar de mensagem de erro.
+      // Mas o motivo vai para o console — antes isto era engolido em
+      // silêncio, e "a barrinha não aparece" não tinha como ser
+      // investigado por quem estava olhando a tela.
+      console.warn(
+        `[navbar] não deu para carregar seu XP (${erro.status || 'sem resposta'}): ${erro.message}`
+      );
     }
-
-    // O marco do questionário. A taxa aparece porque é ela que explica o
-    // tamanho do prêmio — sem isso, dois alunos que concluíram o mesmo
-    // quiz veriam números diferentes sem entender por quê.
-    const c = r.conclusao;
-    if (c) {
-      avisos.push({
-        marca: 'certo',
-        titulo: `Questionário concluído · +${c.xp_aluno} XP`,
-        texto: `${c.perguntas} perguntas em ${c.respostas} respostas (${c.taxa}% de acerto). ` +
-               `Seu professor ganhou ${c.xp_professor} XP junto.`
-      });
-    }
-
-    for (const i of r.insignias_novas || []) {
-      avisos.push({ marca: 'insignia', titulo: i.nome, texto: i.xp ? `${i.descricao} +${i.xp} XP` : i.descricao });
-    }
-
-    if (!avisos.length) return;
-
-    const caixa = document.createElement('div');
-    caixa.className = 'brindes';
-
-    for (const a of avisos) {
-      const cartao = document.createElement('div');
-      cartao.className = `brinde brinde--${a.marca}`;
-      cartao.innerHTML = `
-        <span class="brinde__marca" aria-hidden="true">${MARCAS[a.marca] || MARCAS.certo}</span>
-        <span class="brinde__texto">
-          <strong class="brinde__titulo"></strong>
-          <span class="brinde__sub"></span>
-        </span>`;
-      cartao.querySelector('.brinde__titulo').textContent = a.titulo;
-      cartao.querySelector('.brinde__sub').textContent = a.texto;
-      caixa.appendChild(cartao);
-    }
-
-    document.body.appendChild(caixa);
-
-    // Tempo de ler, não de esperar: 5s por aviso, com teto para quem
-    // conquistou várias de uma vez não ficar com a tela ocupada.
-    setTimeout(() => caixa.remove(), Math.min(5000 + avisos.length * 1500, 11000));
   }
 
   /**
