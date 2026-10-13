@@ -306,8 +306,13 @@
       // parado e não ligava o número ao que acabou de fazer.
       if (r.nivel && window.NIVEL) window.NIVEL.atualizar(r.nivel, r.xp);
 
-      // Pelo mesmo motivo, a insígnia aparece no acerto que a deu.
-      if (typeof CONQUISTA_AVISO !== 'undefined') CONQUISTA_AVISO.mostrar(r.insignias_novas);
+      // Pelo mesmo motivo, as barras das áreas sobem no canto da tela no
+      // acerto que as mexeu, e a insígnia aparece no acerto que a deu.
+      // Primeiro as barras, depois a insígnia: é a ordem do que aconteceu.
+      if (typeof CONQUISTA_AVISO !== 'undefined') {
+        CONQUISTA_AVISO.progresso((r.barras || []).map(b => ({ ...b, cor: CORES[b.area] })));
+        CONQUISTA_AVISO.mostrar(r.insignias_novas);
+      }
 
       if (r.acertou) {
         botao.classList.add('quiz-option--correct');

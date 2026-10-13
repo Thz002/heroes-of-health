@@ -194,6 +194,35 @@ rotas.post('/responder', async (req, res) => {
     }
   }
 
+  // As barras que este acerto mexeu, para o aviso de progresso da tela
+  // da missão (conquista-aviso.js) encher cada uma do antes ao depois.
+  //
+  // Só o DEPOIS é lido: progresso_do_aluno já conta esta resposta. O
+  // antes é o depois menos o que acabou de ser ganho, e isso é exato
+  // porque a régua (pontos_possiveis) não mudou — a questão está num
+  // quiz da turma, então já fazia parte do universo do aluno antes de
+  // ser acertada. Por isso só para quiz da PRÓPRIA turma: o professor
+  // testando a tarefa dele não tem essa garantia, e para ele a conta
+  // mentiria.
+  let barras = [];
+
+  if (pontosGanhos.length && quiz.data.turma_id === req.usuario.turma_id) {
+    const prog = await admin.rpc('progresso_do_aluno', { p_usuario: req.usuario.id });
+
+    if (!prog.error) {
+      const ganho = new Map(pontosGanhos.map(p => [p.area, p.pontos]));
+
+      barras = (prog.data || [])
+        .filter(a => ganho.has(a.area))
+        .map(a => ({
+          area: a.area,
+          ganhou: ganho.get(a.area),
+          pontos: Number(a.pontos_ganhos) || 0,
+          possiveis: Number(a.pontos_possiveis) || 0
+        }));
+    }
+  }
+
   // Terminou o quiz com esta resposta? É o marco que premia os dois.
   const conclusao = acertou ? await PROG.registrarConclusao(req.usuario, quizId) : null;
 
@@ -215,6 +244,7 @@ rotas.post('/responder', async (req, res) => {
     acertou,
     explicacao: questao.data.explicacao,
     pontos: pontosGanhos,
+    barras,
     conclusao,
     xp,
     nivel: PROG.nivelDoXp(xp, 'ALUNO'),

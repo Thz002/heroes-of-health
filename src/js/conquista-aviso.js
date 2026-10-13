@@ -21,15 +21,36 @@
  * entram no máximo MAX_VISIVEIS juntos, empilhados, e o resto vira um
  * cartão "e mais N" que leva à estante.
  *
- * Global: CONQUISTA_AVISO.mostrar(lista). Carregado antes de navbar.js.
+ * O AVISO DE PROGRESSO. O outro cartão desta pilha: a cada acerto na
+ * missão, as barras das áreas que a questão alimenta enchem do antes
+ * ao depois, com a porcentagem contando junto. Mora aqui, e não em
+ * quiz.js, para dividir a MESMA pilha com as insígnias — dois avisos
+ * no mesmo canto, cada um com a sua pilha, se sobreporiam.
+ *
+ * Global: CONQUISTA_AVISO.mostrar(lista) e
+ *         CONQUISTA_AVISO.progresso(barras).
+ * Carregado antes de navbar.js.
  */
 const CONQUISTA_AVISO = (() => {
   'use strict';
 
   const PASTA = '../imgs/insignias/';
   const DURACAO = 6500;        // quanto cada aviso fica na tela
+  const DURACAO_PROGRESSO = 4500;  // menor: aparece a cada acerto
   const INTERVALO = 450;       // o atraso entre um aviso e o seguinte
   const MAX_VISIVEIS = 3;
+
+  // O enchimento da barra. A espera é o tempo de o cartão terminar de
+  // deslizar: encher enquanto ele ainda entra seria um movimento que
+  // ninguém vê.
+  const ESPERA_ENCHER = 450;
+  const TEMPO_ENCHER = 1100;
+
+  // Menor crescimento que ainda se enxerga, em % da barra. Um ganho de
+  // 0,4% seria meio pixel: a pessoa acertou e não veria nada se mexer.
+  const PISO = 3;
+
+  let cartaoDeProgresso = null;   // o que está na tela agora, se houver
 
   let pilha = null;
 
@@ -96,6 +117,118 @@ const CONQUISTA_AVISO = (() => {
     return el;
   }
 
+  /**
+   * O aviso de progresso de um acerto.
+   *
+   * `barras` vem de POST /api/responder:
+   *   [{ area, ganhou, pontos, possiveis, cor }]
+   * `pontos` já conta este acerto; o antes é pontos − ganhou. `cor` é
+   * posta por quem chama (quiz.js tem as cores das áreas).
+   *
+   * Um acerto novo SUBSTITUI o aviso anterior em vez de empilhar: quem
+   * responde rápido não pode ver o canto da tela virar uma coluna de
+   * cartões de progresso.
+   */
+  function progresso(barras) {
+    if (!Array.isArray(barras) || !barras.length) return;
+
+    if (cartaoDeProgresso) sair(cartaoDeProgresso, true);
+
+    const el = document.createElement('div');
+    el.className = 'conquista-aviso progresso-aviso';
+    el.innerHTML = `
+      <div class="progresso-aviso__topo">
+        <span class="conquista-aviso__rotulo progresso-aviso__rotulo">Resposta certa!</span>
+        <strong class="progresso-aviso__titulo"></strong>
+      </div>
+      <div class="progresso-aviso__barras"></div>
+    `;
+
+    el.querySelector('.progresso-aviso__titulo').textContent =
+      barras.length === 1 ? 'Sua barra subiu' : 'Suas barras subiram';
+
+    const lista = el.querySelector('.progresso-aviso__barras');
+    const animar = barras.map(b => {
+      const linha = linhaDeBarra(b);
+      lista.appendChild(linha.el);
+      return linha.encher;
+    });
+
+    entrar(el, DURACAO_PROGRESSO);
+    cartaoDeProgresso = el;
+
+    setTimeout(() => animar.forEach(encher => encher()), ESPERA_ENCHER);
+  }
+
+  /** Uma área: nome, +pontos, a barra e a porcentagem. */
+  function linhaDeBarra(b) {
+    const el = document.createElement('div');
+    el.className = 'progresso-aviso__linha';
+    el.style.setProperty('--cor', b.cor || 'var(--primary)');
+    el.innerHTML = `
+      <div class="progresso-aviso__cabeca">
+        <span class="progresso-aviso__area"></span>
+        <span class="progresso-aviso__ganho"></span>
+        <span class="progresso-aviso__pct"></span>
+      </div>
+      <span class="progresso-aviso__barra"><i class="progresso-aviso__antes"></i><i class="progresso-aviso__novo"></i></span>
+    `;
+
+    el.querySelector('.progresso-aviso__area').textContent = b.area;
+    el.querySelector('.progresso-aviso__ganho').textContent = `+${b.ganhou}`;
+
+    const pct = el.querySelector('.progresso-aviso__pct');
+
+    // Sem régua não há barra honesta: fica só o "+N".
+    if (!b.possiveis) {
+      el.querySelector('.progresso-aviso__barra').hidden = true;
+      return { el, encher() {} };
+    }
+
+    // As porcentagens escritas são arredondadas PARA BAIXO, como em
+    // /meu-progresso: 100% só aparece quando está tudo feito. As
+    // larguras usam o valor exato, para a barra crescer de verdade.
+    const exatoAntes = Math.min(100, Math.max(0, b.pontos - b.ganhou) * 100 / b.possiveis);
+    const exatoDepois = Math.min(100, b.pontos * 100 / b.possiveis);
+    const pctAntes = Math.floor(exatoAntes);
+    const pctDepois = Math.floor(exatoDepois);
+
+    el.querySelector('.progresso-aviso__antes').style.width = `${exatoAntes}%`;
+
+    const novo = el.querySelector('.progresso-aviso__novo');
+    const largura = Math.min(100 - exatoAntes, Math.max(PISO, exatoDepois - exatoAntes));
+    novo.style.width = '0%';
+
+    pct.textContent = `${pctAntes}%`;
+
+    return {
+      el,
+      encher() {
+        novo.style.width = `${largura}%`;
+        contar(pct, pctAntes, pctDepois);
+      }
+    };
+  }
+
+  /** A porcentagem sobe junto com a barra, de número em número. */
+  function contar(el, de, ate) {
+    if (de === ate || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el.textContent = `${ate}%`;
+      return;
+    }
+
+    const inicio = performance.now();
+    const passo = agora => {
+      const t = Math.min(1, (agora - inicio) / TEMPO_ENCHER);
+      // A mesma curva da barra (sai rápido, assenta devagar), para o
+      // número e a barra chegarem juntos.
+      const suave = 1 - Math.pow(1 - t, 3);
+      el.textContent = `${Math.round(de + (ate - de) * suave)}%`;
+      if (t < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+  }
+
   function cartaoDoResto(quantas) {
     const el = document.createElement('a');
     el.className = 'conquista-aviso conquista-aviso--resto';
@@ -104,14 +237,14 @@ const CONQUISTA_AVISO = (() => {
     return el;
   }
 
-  function entrar(el) {
+  function entrar(el, duracao = DURACAO) {
     obterPilha().appendChild(el);
 
     // Um quadro depois de entrar no DOM, senão o navegador pula a
     // transição e o cartão aparece já no lugar.
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('conquista-aviso--dentro')));
 
-    let restante = DURACAO;
+    let restante = duracao;
     let inicio = Date.now();
     let timer = setTimeout(() => sair(el), restante);
 
@@ -132,10 +265,21 @@ const CONQUISTA_AVISO = (() => {
     }
   }
 
-  function sair(el) {
+  /**
+   * `jaVaiOutro`: o cartão está saindo para um novo tomar o lugar. Aí
+   * ele sai do fluxo da pilha na hora, senão o novo entraria embaixo
+   * dele e depois daria um pulo para cima quando o velho sumisse.
+   */
+  function sair(el, jaVaiOutro = false) {
+    if (el === cartaoDeProgresso) cartaoDeProgresso = null;
     if (el.classList.contains('conquista-aviso--saindo')) return;
     el.classList.add('conquista-aviso--saindo');
     el.classList.remove('conquista-aviso--dentro');
+
+    if (jaVaiOutro) {
+      el.style.position = 'absolute';
+      el.style.top = `${el.offsetTop}px`;
+    }
 
     // Remove ao fim da transição; o timeout cobre quem desligou as
     // animações (prefers-reduced-motion), em que transitionend não vem.
@@ -144,5 +288,5 @@ const CONQUISTA_AVISO = (() => {
     setTimeout(remover, 600);
   }
 
-  return { mostrar };
+  return { mostrar, progresso };
 })();
