@@ -281,9 +281,10 @@
           <div class="navbar__acoes">
             <ul class="navbar__links">${links}</ul>
 
-            <!-- A patente em cima e a barra embaixo, sem número: o
-                 nível e o XP por extenso ficam no title e na tela
-                 "Meu progresso". -->
+            <!-- A patente em cima e, embaixo, "Nv. 5" ao lado da
+                 barra. O XP por extenso fica no title e na tela "Meu
+                 progresso"; cada ganho aparece como "+10 XP" logo
+                 abaixo (mostrarGanho). -->
             <div class="nivel-nav" data-nivel hidden></div>
 
             ${PERFIL}
@@ -350,10 +351,75 @@
       // deles se um estivesse aberto quando a resposta chegasse.
       document.querySelectorAll('[data-nivel]:not(.modal [data-nivel])')
         .forEach(el => desenharNivel(el, nivel, xp));
+
+      anunciarGanho(xp);
     },
 
     atual: () => ultimoNivel
   };
+
+  /* ── O "+10 XP" ao lado da barra ──────────────────────────────────────
+     QUALQUER ganho de XP passa por NIVEL.atualizar: o acerto (quiz.js),
+     a presença do dia e as insígnias (/presenca, logo abaixo), o perfil.
+     Então o ganho é medido AQUI, comparando com o último XP que esta
+     conta viu — e não em cada lugar que dá XP, onde um esquecido ficaria
+     sem animação.
+
+     O "último visto" fica no localStorage, por conta, e não só na
+     memória da página: o prêmio do dia e as insígnias da visita chegam
+     no carregamento, quando a página ainda não viu XP nenhum. Sem a
+     lembrança entre páginas, justamente esses ganhos passariam calados.
+
+     Só sobe, nunca desce. Duas respostas do servidor podem chegar fora
+     de ordem (/meu-resumo do perfil calculado um instante antes da
+     presença do dia ser gravada, por exemplo). Se a mais velha baixasse
+     o valor guardado, a página seguinte anunciaria o mesmo +50 de novo.
+     ────────────────────────────────────────────────────────────────── */
+
+  const CHAVE_XP = 'herois_xp_visto:';
+
+  async function anunciarGanho(xp) {
+    if (typeof xp !== 'number') return;
+
+    let conta = null;
+    try { conta = await AUTH.contaAtual(); } catch (_) { return; }
+    if (!conta) return;
+
+    let guardado = null;
+    try { guardado = localStorage.getItem(CHAVE_XP + conta.id); } catch (_) { return; }
+
+    // Nada guardado (primeira vez neste navegador): só guarda. Anunciar
+    // o XP inteiro como "ganho" seria mentira.
+    const visto = guardado === null ? NaN : Number(guardado);
+    const conhecido = Number.isFinite(visto);
+
+    if (conhecido && xp > visto) mostrarGanho(xp - visto);
+
+    if (!conhecido || xp > visto) {
+      try { localStorage.setItem(CHAVE_XP + conta.id, String(xp)); } catch (_) { /* segue sem lembrar */ }
+    }
+  }
+
+  /** O número que sobe e some, junto da barra da navbar. */
+  function mostrarGanho(ganho) {
+    document.querySelectorAll('.nivel-nav:not([hidden])').forEach(el => {
+      const numero = document.createElement('span');
+      numero.className = 'nivelzinho__ganho';
+      numero.textContent = `+${ganho.toLocaleString('pt-BR')} XP`;
+      numero.setAttribute('aria-hidden', 'true');   // o leitor de tela já ouve o aviso do quiz
+      el.appendChild(numero);
+
+      // O brilho da barra. Tirar e pôr a classe reinicia a animação
+      // quando dois ganhos chegam em sequência.
+      el.classList.remove('nivelzinho--ganhou');
+      void el.offsetWidth;
+      el.classList.add('nivelzinho--ganhou');
+
+      const sumir = () => numero.remove();
+      numero.addEventListener('animationend', sumir, { once: true });
+      setTimeout(sumir, 2600);   // quem desligou as animações não recebe animationend
+    });
+  }
 
   function desenharNivel(el, nivel, xp) {
     el.classList.add('nivelzinho');
@@ -371,19 +437,32 @@
     const feito = (xp ?? 0) - nivel.xp_do_nivel;
     const trecho = nivel.maximo ? 0 : nivel.xp_do_proximo - nivel.xp_do_nivel;
 
-    el.innerHTML = `
-      <div class="nivelzinho__topo">
-        <span class="nivelzinho__patente"></span>
-        <span class="nivelzinho__nv"></span>
-      </div>
-      <span class="nivelzinho__barra"><i></i></span>
-      <span class="nivelzinho__nota"></span>`;
+    // Montada UMA vez e depois só atualizada. Recriar a barra a cada
+    // chamada (era assim) fazia o traço nascer já no tamanho final, e a
+    // transição de largura do CSS nunca era vista: o acerto não fazia a
+    // barra crescer.
+    //
+    // "Nv. 5" fica ao lado da barra; o CSS só o mostra na navbar, porque
+    // a versão grande já tem "Nível 5/20" em cima.
+    if (!el.querySelector('.nivelzinho__barra')) {
+      el.innerHTML = `
+        <div class="nivelzinho__topo">
+          <span class="nivelzinho__patente"></span>
+          <span class="nivelzinho__nv"></span>
+        </div>
+        <div class="nivelzinho__linha">
+          <span class="nivelzinho__nv-curto"></span>
+          <span class="nivelzinho__barra"><i></i></span>
+        </div>
+        <span class="nivelzinho__nota"></span>`;
+    }
 
     el.querySelector('.nivelzinho__patente').textContent = nivel.patente;
     el.querySelector('.nivelzinho__nv').textContent =
       `Nível ${nivel.nivel}/${nivel.total_de_niveis || 20}`;
+    el.querySelector('.nivelzinho__nv-curto').textContent = `Nv. ${nivel.nivel}`;
 
-    el.querySelector('.nivelzinho__barra i').style.width = `${nivel.porcentagem}%`;
+    encherBarra(el, nivel);
 
     // Dois números concretos em vez de uma porcentagem: "190 de 300 XP"
     // diz o que falta fazer, "63%" não.
@@ -391,6 +470,43 @@
       ? `${(xp ?? 0).toLocaleString('pt-BR')} XP · nível máximo`
       : `${feito.toLocaleString('pt-BR')} de ${trecho.toLocaleString('pt-BR')} XP` +
         (nivel.proxima_patente ? ` · depois: ${nivel.proxima_patente}` : '');
+  }
+
+  /**
+   * Leva o traço até a porcentagem nova, pela transição do CSS.
+   *
+   * A barra é do TRECHO do nível, então subir de nível faria o traço
+   * ENCOLHER (de 90% do nível 5 para 10% do 6) — parecendo que a pessoa
+   * perdeu XP no momento em que ganhou. Por isso, na subida, ele enche
+   * até o fim, volta ao zero sem transição e cresce até o valor novo.
+   *
+   * `dataset.alvo` guarda sempre o último pedido: se outro ganho chegar
+   * no meio da subida, é ele que vale quando o traço recomeçar.
+   */
+  function encherBarra(el, nivel) {
+    const traco = el.querySelector('.nivelzinho__barra i');
+    const antes = Number(el.dataset.nivelDesenhado) || 0;
+    el.dataset.nivelDesenhado = nivel.nivel;
+    traco.dataset.alvo = nivel.porcentagem;
+
+    if (traco.dataset.subindo) return;   // a subida em curso usa o alvo novo
+
+    if (!antes || nivel.nivel <= antes) {
+      traco.style.width = `${nivel.porcentagem}%`;
+      return;
+    }
+
+    traco.dataset.subindo = '1';
+    traco.style.width = '100%';
+
+    setTimeout(() => {
+      traco.style.transition = 'none';
+      traco.style.width = '0%';
+      void traco.offsetWidth;           // o navegador precisa ver o zero
+      traco.style.transition = '';
+      traco.style.width = `${traco.dataset.alvo}%`;
+      delete traco.dataset.subindo;
+    }, 950);
   }
 
   /**
