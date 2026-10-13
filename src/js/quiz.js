@@ -24,6 +24,7 @@
   const foto = document.getElementById('missao-foto');
   const fotoInterior = document.getElementById('missao-interior');
   const fotoFigura = document.getElementById('missao-figura');
+  const fotoNome = document.getElementById('missao-familia-nome');
 
   const fim = document.getElementById('fim');
   const fimPlacar = document.getElementById('fim-placar');
@@ -378,7 +379,11 @@
     quiz.classList.toggle('missao-jogo--casa', familia);
     if (!familia) return;
 
-    fotoFigura.alt = 'Família que mora nesta casa';
+    // O sobrenome vem de familias.js, o mesmo que o mapa mostra.
+    const sobrenome = window.FAMILIAS && FAMILIAS[casa];
+    fotoNome.textContent = sobrenome ? `Família ${sobrenome}` : '';
+    fotoNome.hidden = !sobrenome;
+    fotoFigura.alt = sobrenome ? `Família ${sobrenome}` : 'Família que mora nesta casa';
     // Sem a imagem, volta ao layout dos outros lugares: uma coluna só
     // com botões pareceria erro.
     fotoFigura.onerror = () => {

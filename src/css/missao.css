@@ -141,9 +141,12 @@
   justify-content: flex-start;
 }
 
-/* A família da casa, solta sobre o painel, sem moldura. */
+/* A família da casa, solta sobre o painel, sem moldura, com o nome
+   dela embaixo. */
 .missao-lateral__foto {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
   align-items: center;
   justify-content: center;
   width: 100%;
@@ -164,6 +167,18 @@
     drop-shadow(0 2px 0 #fff)
     drop-shadow(0 -2px 0 #fff)
     drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+}
+
+.missao-lateral__familia {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--white);
+  text-align: center;
+}
+
+.missao-lateral__familia[hidden] {
+  display: none;
 }
 
 .missao-lateral__btn {

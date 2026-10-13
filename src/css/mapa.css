@@ -263,6 +263,22 @@
   transform: translate(0, -50%);
 }
 
+/* O espelho do de cima, para as casas rentes à borda direita. */
+.mapa-hotspot--label-left .mapa-hotspot__label {
+  left: auto;
+  right: 100%;
+  bottom: auto;
+  top: 50%;
+  margin-bottom: 0;
+  margin-right: 6px;
+  transform: translate(6px, -50%);
+}
+
+.mapa-hotspot--label-left:hover .mapa-hotspot__label,
+.mapa-hotspot--label-left.is-active .mapa-hotspot__label {
+  transform: translate(0, -50%);
+}
+
 /* ── Painel lateral de descrição ─────────────── */
 .mapa-sidebar {
   position: sticky;

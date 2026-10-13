@@ -153,6 +153,8 @@
     // `casa` é o número da casa, que vai na URL da missão e escolhe a
     // família mostrada lá (familia03.png). As laterais continuam a
     // contagem depois da Casa16: CasaLateral01 = 17 ... CasaLateral04 = 20.
+    // As laterais abrem o rótulo para dentro do mapa: "Casa da família
+    // Nascimento", centralizado em cima delas, sairia pela borda.
     { tipo: "casa", casa: 1, imagem: "Casa.png", x: 253, y: 230, w: 125, h: 126, interior: "Casa.jpeg" },
     { tipo: "casa", casa: 3, imagem: "Casa03.png", x:465, y: 387, w: 85, h: 110, interior: "Casa03.jpg" },
     { tipo: "casa", casa: 13, imagem: "Casa013.png", x: 372, y: 390, w: 85, h: 105, interior: "Casa13.jpg" },
@@ -170,10 +172,10 @@
     { tipo: "casa", casa: 4, imagem: "Casa04.png", x: 1041, y: 515, w: 85, h: 105, tooltipPos: "bottom", interior: "Casa04.jpg" },
     { tipo: "casa", casa: 16, imagem: "Casa016.png", x: 1182, y: 8, w: 150, h: 100, tooltipPos: "bottom", interior: "Casa16.jpg" },
 
-    { tipo: "casa", casa: 19, imagem: "CasaLateral03.png", x: 15, y: 200, w: 68, h: 112, interior: "CasaLateral03.jpg" },
-    { tipo: "casa", casa: 17, imagem: "CasaLateral01.png", x: 15, y: 442, w: 80, h: 105, interior: "CasaLateral01.jpg" },
-    { tipo: "casa", casa: 18, imagem: "CasaLateral02.png", x: 1335, y: 200, w: 70, h: 112, interior: "CasaLateral02.jpg" },
-    { tipo: "casa", casa: 20, imagem: "CasaLateral04.png", x: 1335, y: 430, w: 73, h: 113, interior: "CasaLateral04.jpg" },
+    { tipo: "casa", casa: 19, imagem: "CasaLateral03.png", x: 15, y: 200, w: 68, h: 112, tooltipPos: "right", interior: "CasaLateral03.jpg" },
+    { tipo: "casa", casa: 17, imagem: "CasaLateral01.png", x: 15, y: 442, w: 80, h: 105, tooltipPos: "right", interior: "CasaLateral01.jpg" },
+    { tipo: "casa", casa: 18, imagem: "CasaLateral02.png", x: 1335, y: 200, w: 70, h: 112, tooltipPos: "left", interior: "CasaLateral02.jpg" },
+    { tipo: "casa", casa: 20, imagem: "CasaLateral04.png", x: 1335, y: 430, w: 73, h: 113, tooltipPos: "left", interior: "CasaLateral04.jpg" },
   ];
 
 
@@ -349,6 +351,13 @@
     }
   }
 
+  // O nome de um ponto do mapa. As casas levam o sobrenome de quem mora
+  // nelas (familias.js); os outros lugares, o nome do tipo.
+  function nomeDoPonto(h) {
+    const familia = h.tipo === "casa" && window.FAMILIAS && FAMILIAS[h.casa];
+    return familia ? `Casa da família ${familia}` : CENARIOS[h.tipo].nome;
+  }
+
   // ── Painel lateral: o que o hover mostra ──────────────────────────
   function mostrarCenario(h) {
     const cenario = CENARIOS[h.tipo];
@@ -356,8 +365,8 @@
 
     hotspotAtual = h;
     sidebarThumb.src = `../imgs/${h.imagem || cenario.imagem}`;
-    sidebarThumb.alt = cenario.nome;
-    sidebarNome.textContent = cenario.nome;
+    sidebarThumb.alt = nomeDoPonto(h);
+    sidebarNome.textContent = nomeDoPonto(h);
     sidebarSub.textContent = "Seu progresso nas áreas deste lugar";
 
     desenharAreas(sidebarAreas, areasDoCenario(h.tipo));
@@ -487,8 +496,8 @@
 
     hotspotDoModal = h;
     modalThumb.src = `../imgs/${h.imagem || cenario.imagem}`;
-    modalThumb.alt = cenario.nome;
-    modalNome.textContent = cenario.nome;
+    modalThumb.alt = nomeDoPonto(h);
+    modalNome.textContent = nomeDoPonto(h);
     modalDesc.textContent = cenario.descricao;
 
     // A foto do interior vem do hotspot quando ele tem a sua (cada casa
@@ -501,7 +510,7 @@
     // própria página como imagem e o alt ficaria piscando por trás do aviso.
     if (interior) {
       modalInterior.src = `../imgs/Interiores/${interior}`;
-      modalInterior.alt = `Interior — ${cenario.nome}`;
+      modalInterior.alt = `Interior — ${nomeDoPonto(h)}`;
     }
 
     missaoEscolhida = null;
@@ -553,6 +562,7 @@
       el.className = "mapa-hotspot";
       if (h.tooltipPos === "bottom") el.classList.add("mapa-hotspot--label-bottom");
       if (h.tooltipPos === "right") el.classList.add("mapa-hotspot--label-right");
+      if (h.tooltipPos === "left") el.classList.add("mapa-hotspot--label-left");
       el.style.left = (h.x / MAPA_W) * 100 + "%";
       el.style.top = (h.y / MAPA_H) * 100 + "%";
       el.style.width = (h.w / MAPA_W) * 100 + "%";
@@ -561,13 +571,13 @@
 
       const img = document.createElement("img");
       img.src = `../imgs/${h.imagemHotspot || h.imagem || cenario.imagem}`;
-      img.alt = cenario.nome;
+      img.alt = nomeDoPonto(h);
       img.draggable = false;
       el.appendChild(img);
 
       const label = document.createElement("span");
       label.className = "mapa-hotspot__label";
-      label.textContent = cenario.nome;
+      label.textContent = nomeDoPonto(h);
       el.appendChild(label);
 
       el.addEventListener("mouseenter", () => {
