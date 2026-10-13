@@ -23,7 +23,7 @@
 
   const foto = document.getElementById('missao-foto');
   const fotoInterior = document.getElementById('missao-interior');
-  const fotoFamilia = document.getElementById('missao-familia');
+  const fotoFigura = document.getElementById('missao-figura');
 
   const fim = document.getElementById('fim');
   const fimPlacar = document.getElementById('fim-placar');
@@ -361,8 +361,10 @@
     opcoes.querySelectorAll('.quiz-option').forEach(b => { b.disabled = travar; });
   }
 
-  // A foto quadrada da lateral. Numa casa conhecida, o interior fica
-  // desfocado ao fundo e a família daquela casa aparece na frente.
+  // O interior do lugar vira o fundo das perguntas. Numa casa conhecida, a
+  // família daquela casa, contornada, ganha a coluna da direita com os
+  // botões embaixo dela. Nos outros lugares não há coluna: os botões
+  // ficam numa linha centralizada abaixo das perguntas.
   function mostrarFoto(slug, casa) {
     const interiorCasa = slug === 'casa' ? INTERIORES_CASAS[casa] : null;
     const interior = interiorCasa || INTERIORES[slug];
@@ -371,17 +373,19 @@
     fotoInterior.src = `../imgs/Interiores/${interior}`;
     fotoInterior.hidden = false;
 
-    foto.classList.toggle('missao-lateral__foto--casa', Boolean(interiorCasa));
-    if (interiorCasa) {
-      fotoFamilia.src = `../imgs/familias/familia${String(casa).padStart(2, '0')}.png`;
-      fotoFamilia.alt = 'Família que mora nesta casa';
-      fotoFamilia.hidden = false;
-      // Sem a imagem da família, volta a mostrar o interior nítido.
-      fotoFamilia.onerror = () => {
-        fotoFamilia.hidden = true;
-        foto.classList.remove('missao-lateral__foto--casa');
-      };
-    }
+    const familia = Boolean(interiorCasa);
+    foto.hidden = !familia;
+    quiz.classList.toggle('missao-jogo--casa', familia);
+    if (!familia) return;
+
+    fotoFigura.alt = 'Família que mora nesta casa';
+    // Sem a imagem, volta ao layout dos outros lugares: uma coluna só
+    // com botões pareceria erro.
+    fotoFigura.onerror = () => {
+      foto.hidden = true;
+      quiz.classList.remove('missao-jogo--casa');
+    };
+    fotoFigura.src = `../imgs/familias/familia${String(casa).padStart(2, '0')}.png`;
   }
 
   function resumirPontos(pontos) {

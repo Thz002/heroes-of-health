@@ -1,12 +1,17 @@
 /* missao.css — tela de perguntas (src/pages/missao.html)
    Uma moldura só, na cor da barra de navegação, como a caixa de diálogo
-   de um jogo: dentro dela, as perguntas à esquerda e a foto do lugar com
-   as ações à direita, os dois num tom mais claro. As alternativas
-   mantêm o estilo do style.css. */
+   de um jogo: dentro dela, as perguntas, com a foto do lugar de fundo.
+   Enunciado e alternativas são caixas translúcidas por cima da foto.
+
+   Dois layouts, escolhidos pelo quiz.js:
+     - casa (.missao-jogo--casa): coluna à direita com a família
+       contornada e os botões embaixo dela;
+     - os outros lugares: uma coluna só, com os dois botões lado a lado,
+       centralizados, abaixo das perguntas. */
 
 .missao-jogo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   align-items: stretch;
   margin: 0;
@@ -17,21 +22,26 @@
   box-shadow: var(--shadow-card), inset 0 0 0 3px rgba(0, 0, 0, 0.25);
 }
 
+.missao-jogo--casa {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
 /* O display:grid acima venceria o atributo hidden. */
 .missao-jogo[hidden] {
   display: none;
 }
 
 /* O `img { display: block }` do style.css vence o [hidden] do navegador:
-   sem isto a imagem da família, vazia fora das casas, era desenhada como
-   um retângulo claro por cima da foto. */
-.missao-lateral__foto img[hidden] {
+   sem isto a foto vazia, antes de carregar, era desenhada como um
+   retângulo claro. O mesmo vale para o display da moldura da família. */
+.missao-perguntas__fundo[hidden],
+.missao-lateral__foto[hidden] {
   display: none;
 }
 
 /* Os dois painéis de dentro: mesmo tom, mais claro que a moldura. */
 .quiz-card.missao-perguntas,
-.missao-lateral {
+.missao-jogo--casa .missao-lateral {
   background: #0d5c63;
   border: 2px solid rgba(0, 0, 0, 0.25);
   border-radius: var(--radius-lg);
@@ -41,51 +51,124 @@
 .quiz-card.missao-perguntas {
   max-width: none;
   margin: 0;
-}
-
-.missao-lateral {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Quadrada: a foto do interior é cortada para caber, sem distorcer. */
-.missao-lateral__foto {
+  /* Fundo e véu ficam atrás do conteúdo sem precisar de z-index em
+     cada filho: o isolation cria a pilha só deste painel. */
   position: relative;
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  border-radius: var(--radius-md);
+  isolation: isolate;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
-  margin-bottom: 6px;
 }
 
-.missao-lateral__interior {
+/* A foto do interior do lugar, cobrindo o painel inteiro. */
+.missao-perguntas__fundo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
-/* Nas casas o interior vira fundo desfocado e a família fica na frente.
-   O scale esconde a borda clara que o blur cria nas beiradas. */
-.missao-lateral__foto--casa .missao-lateral__interior {
-  filter: blur(2.5px) brightness(0.9);
-  transform: scale(1.04);
-}
-
-.missao-lateral__familia {
+/* Véu escuro por cima da foto: a foto aparece, mas não briga com o texto.
+   ::after (e não ::before) porque vem depois da <img> e por isso é
+   pintado por cima dela. */
+.missao-perguntas::after {
+  content: "";
   position: absolute;
   inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(7, 55, 62, 0.25) 0%, rgba(7, 55, 62, 0.5) 100%);
+  pointer-events: none;
+}
+
+/* Enunciado, alternativas e explicação: caixas parcialmente
+   transparentes por cima da foto. O blur deixa o texto legível mesmo
+   sobre partes claras da imagem. */
+.missao-perguntas .quiz-question,
+.missao-perguntas .quiz-option,
+.missao-perguntas #quiz-retorno {
+  background: rgba(7, 55, 62, 0.68);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-md);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.missao-perguntas .quiz-question {
+  padding: 16px 20px;
+  background: rgba(7, 55, 62, 0.8);
+}
+
+.missao-perguntas #quiz-retorno {
+  padding: 16px 20px;
+}
+
+/* O trilho do cronômetro é quase transparente; sobre a foto, escurece. */
+.missao-perguntas .quiz-tempo {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Os estados das alternativas, refeitos com mais opacidade: os tons
+   do style.css são quase transparentes e sumiriam em cima da foto. */
+.missao-perguntas .quiz-option:hover:not(:disabled) {
+  background: rgba(13, 92, 99, 0.85);
+}
+
+.missao-perguntas .quiz-option--selecionada {
+  border-color: var(--accent);
+  background: rgba(20, 105, 95, 0.9);
+}
+
+.missao-perguntas .quiz-option--correct {
+  background: rgba(16, 90, 72, 0.9) !important;
+}
+
+.missao-perguntas .quiz-option--wrong {
+  background: rgba(105, 28, 34, 0.88) !important;
+}
+
+/* Fora das casas: só a linha dos botões, sem painel, centralizada. */
+.missao-lateral {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.missao-jogo--casa .missao-lateral {
+  padding: 20px;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
+/* A família da casa, solta sobre o painel, sem moldura. */
+.missao-lateral__foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
   padding: 8px;
+  margin-bottom: 6px;
+}
+
+/* O contorno segue a silhueta do PNG (o fundo é transparente): quatro
+   sombras sem desfoque, uma para cada lado, formam a borda branca; a
+   última, desfocada, descola a figura do painel. */
+.missao-lateral__figura {
+  max-width: 100%;
+  max-height: 460px;
+  object-fit: contain;
+  filter:
+    drop-shadow(2px 0 0 #fff)
+    drop-shadow(-2px 0 0 #fff)
+    drop-shadow(0 2px 0 #fff)
+    drop-shadow(0 -2px 0 #fff)
+    drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
 }
 
 .missao-lateral__btn {
-  width: 100%;
+  width: 240px;
+  max-width: 100%;
   padding: 12px;
   font-family: var(--font-display);
   font-weight: 800;
@@ -93,6 +176,10 @@
   text-align: center;
   text-decoration: none;
   display: block;
+}
+
+.missao-jogo--casa .missao-lateral__btn {
+  width: 100%;
 }
 
 /* Todas as alternativas do mesmo tamanho, seja qual for o texto: a
@@ -117,13 +204,12 @@
 }
 
 @media (max-width: 860px) {
-  .missao-jogo {
+  .missao-jogo--casa {
     grid-template-columns: 1fr;
   }
 
-  .missao-lateral__foto {
-    max-width: 320px;
-    margin: 0 auto 6px;
+  .missao-lateral__figura {
+    max-height: 320px;
   }
 }
 

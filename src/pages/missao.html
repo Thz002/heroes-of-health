@@ -64,6 +64,9 @@
       <!-- A questão da vez, com o lugar e as ações ao lado -->
       <div class="missao-jogo" id="quiz" hidden>
         <section class="quiz-card missao-perguntas">
+          <!-- A foto do lugar é o fundo das perguntas -->
+          <img class="missao-perguntas__fundo" id="missao-interior" alt="" hidden>
+
           <div class="quiz-tempo" id="quiz-tempo-barra" hidden><i></i></div>
 
           <p class="quiz-question" id="quiz-enunciado"></p>
@@ -79,9 +82,9 @@
         </section>
 
         <aside class="missao-lateral">
-          <div class="missao-lateral__foto" id="missao-foto">
-            <img class="missao-lateral__interior" id="missao-interior" alt="" hidden>
-            <img class="missao-lateral__familia" id="missao-familia" alt="" hidden>
+          <!-- A família da casa, ou a miniatura do prédio no mapa -->
+          <div class="missao-lateral__foto" id="missao-foto" hidden>
+            <img class="missao-lateral__figura" id="missao-figura" alt="">
           </div>
 
           <a class="btn-ghost missao-lateral__btn" href="mapa.html">Voltar ao mapa</a>
