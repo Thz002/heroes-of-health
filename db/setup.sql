@@ -478,7 +478,11 @@ create table if not exists xp_diario (
 --   ACERTOS         questões distintas que a pessoa acertou
 --   ACERTOS_CENARIO as mesmas, só as do lugar em `cenario_slug`
 --   DIAS            dias de sequência (o prêmio diário)
---   MISSOES         quizzes concluídos
+--   MISSOES         quizzes concluídos — SEM USO desde outubro de 2026,
+--                   quando as insígnias de tarefas do professor foram
+--                   excluídas. Continua aceita: tirá-la do check faria
+--                   este arquivo falhar num banco que ainda tenha as
+--                   linhas antigas, e não ganharia nada
 --   MISSOES_CENARIO pares (quiz concluído × lugar das questões dele):
 --                   um quiz com perguntas da UBS, da Escola e do
 --                   Mercado vale 3 quando é concluído
@@ -599,7 +603,7 @@ create index if not exists conclusoes_por_professor
 
 -- ── A estante de hoje ────────────────────────────────────────────────
 --
--- As linhas NÃO moram aqui: o catálogo inteiro (63 insígnias, com a
+-- As linhas NÃO moram aqui: o catálogo inteiro (60 insígnias, com a
 -- arte de cada uma) está em db/insignias.sql, que roda depois deste
 -- arquivo. Ficou separado porque é conteúdo do jogo que muda com
 -- frequência — um alvo calibrado, uma arte trocada — e não esquema.

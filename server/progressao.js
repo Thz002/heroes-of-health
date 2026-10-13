@@ -370,7 +370,7 @@ async function xpDoAluno(usuarioId, respostas = null) {
  * Confere a estante inteira e grava o que acabou de ser conquistado.
  *
  * `medidas` é o placar da pessoa por tipo de regra:
- *   { ACERTOS: 62, DIAS: 4, MISSOES: 2 }
+ *   { ACERTOS: 62, DIAS: 4, MISSOES_CENARIO: 5, 'ACERTOS_CENARIO:ubs': 12 }
  *
  * Uma regra que não estiver em `medidas` é simplesmente pulada — é
  * assim que o professor não ganha insígnia de aluno e vice-versa, mesmo
@@ -502,13 +502,16 @@ async function lugarDasQuestoes(ids) {
 /**
  * O placar de um aluno, no formato que `conquistar` espera.
  *
- * MISSOES conta quizzes da turma em que todas as questões já foram
- * acertadas — a mesma conta da lista do mapa e da tela de progresso.
- * Se as três discordassem, o aluno veria três números para a mesma
- * coisa.
+ * MISSOES_CENARIO parte dos quizzes da turma em que todas as questões
+ * já foram acertadas — a mesma conta de "concluído" da lista do mapa e
+ * da tela de progresso; se discordassem, o aluno veria números
+ * diferentes para a mesma coisa. De cada quiz concluído, conta os
+ * lugares distintos das questões: um quiz da UBS e da Escola vale 2.
  *
- * MISSOES_CENARIO conta, nesses mesmos quizzes concluídos, os lugares
- * distintos das questões de cada um: um quiz da UBS e da Escola vale 2.
+ * (Não há mais placar MISSOES, de quizzes inteiros: as insígnias de
+ * tarefas do professor foram excluídas por repetir estas. A tabela
+ * ainda aceita a regra, mas nenhuma linha a usa.)
+ *
  * Vem das questões, e não de quizzes_professores.cenarios, porque no
  * sorteio automático um lugar escolhido pode não ter rendido pergunta
  * nenhuma — e missão sem pergunta não foi cumprida.
@@ -522,8 +525,7 @@ async function lugarDasQuestoes(ids) {
 async function medirAluno(usuarioId, turmaId, retrato) {
   const medidas = {
     ACERTOS: retrato.acertos_unicos,
-    DIAS: retrato.streak_dias,
-    MISSOES: 0
+    DIAS: retrato.streak_dias
   };
 
   const certas = [...new Set(retrato.respostas.filter(r => r.acertou).map(r => r.questao_id))];
@@ -563,8 +565,6 @@ async function medirAluno(usuarioId, turmaId, retrato) {
 
   const concluidos = ids.filter(id =>
     (total.get(id) || 0) > 0 && (prontas.get(id) || new Set()).size >= total.get(id));
-
-  medidas.MISSOES = concluidos.length;
 
   // Toda questão de um quiz concluído foi acertada, então o lugar dela
   // já está no mapa `lugar` lido acima — não precisa de outra viagem.

@@ -25,7 +25,6 @@ inicial do nome no lugar da arte.
 |---|---|---|---|
 | `perguntas1..5.png` | Primeiros Passos, Pé na Estrada, Meio Caminho, Centurião, Enciclopédia | perguntas certas, em qualquer lugar | 10, 25, 50, 100, 200 |
 | `diaria1..3.png` | De Volta, Semana Cheia, Presença de Ouro | dias seguidos de entrada | 3, 7, 30 |
-| `professor1..3.png` | Primeira Missão, Mão na Massa, Missão Cumprida | tarefas (quizzes) do professor concluídas | 1, 5, 10 |
 | `missoes1..4.png` | Primeira Parada, Volta no Quarteirão, Conhece Cada Esquina, Mapa na Cabeça | missões concluídas pelos lugares | 1, 5, 25, 50 |
 | `<lugar>1..3.png` | três por lugar, tabela abaixo | perguntas certas naquele lugar | 5, 25, 50 |
 

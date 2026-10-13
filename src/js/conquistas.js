@@ -30,14 +30,13 @@
     ACERTOS:         ['pergunta certa', 'perguntas certas'],
     ACERTOS_CENARIO: ['pergunta certa aqui', 'perguntas certas aqui'],
     DIAS:            ['dia seguido', 'dias seguidos'],
-    MISSOES:         ['tarefa concluída', 'tarefas concluídas'],
     MISSOES_CENARIO: ['missão concluída', 'missões concluídas'],
     QUIZZES:       ['quiz criado', 'quizzes criados'],
     ACERTOS_TURMA: ['acerto da turma', 'acertos da turma']
   };
 
   // O "Como conquistar" do modal. As descrições do banco estão no
-  // passado ("Concluiu cinco tarefas"), boas para quem já tem a
+  // passado ("Jogou três dias seguidos"), boas para quem já tem a
   // insígnia; quem ainda não tem precisa de uma instrução, e ela sai da
   // regra e do alvo — que são o critério de verdade do servidor.
   const COMO = {
@@ -47,9 +46,6 @@
       `Acerte ${n} ${n === 1 ? 'pergunta diferente' : 'perguntas diferentes'} nas missões deste lugar do bairro.`,
     DIAS: n =>
       `Entre no jogo ${n} dias seguidos. Se pular um dia, a contagem recomeça.`,
-    MISSOES: n => n === 1
-      ? 'Conclua uma tarefa do professor: acerte todas as perguntas de um quiz da sua turma.'
-      : `Conclua ${n} tarefas do professor. Em cada uma, acerte todas as perguntas do quiz.`,
     MISSOES_CENARIO: n =>
       `Conclua ${n} ${n === 1 ? 'missão' : 'missões'} pelos lugares do bairro. Cada lugar de um quiz terminado conta uma: um quiz com perguntas da UBS e da Escola vale duas.`,
     QUIZZES: n =>

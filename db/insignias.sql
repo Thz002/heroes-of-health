@@ -1,11 +1,10 @@
 -- =====================================================================
 --  O CATÁLOGO DE INSÍGNIAS — Heróis da Saúde
 --
---  Todas as insígnias do jogo, com a arte de cada uma (63 linhas):
+--  Todas as insígnias do jogo, com a arte de cada uma (60 linhas):
 --
 --     5  perguntas certas em qualquer lugar      perguntas1..5.png
 --     3  dias seguidos de entrada                diaria1..3.png
---     3  tarefas do professor concluídas         professor1..3.png
 --     4  missões concluídas pelos lugares        missoes1..4.png
 --    48  acertos em cada lugar: 16 × 3 degraus   <lugar>1..3.png
 --
@@ -44,9 +43,6 @@ end $$;
 --
 -- DIÁRIAS (DIAS): dias SEGUIDOS de entrada — o prêmio diário.
 --
--- PROFESSOR (MISSOES): quizzes inteiros concluídos, como a lista de
--- missões do mapa e a tela de progresso contam.
---
 -- MISSÕES (MISSOES_CENARIO): cada lugar de um quiz concluído conta 1.
 -- Um quiz com perguntas da UBS, da Escola e do Mercado vale 3 — é a
 -- missão como o aluno a vê no mapa, um lugar de cada vez.
@@ -62,10 +58,8 @@ insert into insignias (codigo, nome, descricao, publico, regra, alvo, xp, ordem,
   ('semana-cheia',         'Semana Cheia',         'Sete dias seguidos cuidando do bairro.',                       'ALUNO', 'DIAS',              7, 150,  7, 'diaria2.png'),
   ('presenca-de-ouro',     'Presença de Ouro',     'Trinta dias seguidos.',                                        'ALUNO', 'DIAS',             30, 600,  8, 'diaria3.png'),
 
-  ('primeira-missao',      'Primeira Missão',      'Concluiu a primeira tarefa do professor.',                     'ALUNO', 'MISSOES',           1,  50,  9, 'professor1.png'),
-  ('mao-na-massa',         'Mão na Massa',         'Concluiu cinco tarefas do professor.',                         'ALUNO', 'MISSOES',           5, 150, 10, 'professor2.png'),
-  ('missao-cumprida',      'Missão Cumprida',      'Concluiu dez tarefas do professor.',                           'ALUNO', 'MISSOES',          10, 300, 11, 'professor3.png'),
-
+  -- ordem 9 a 11 ficou vaga: era das insígnias de tarefas do professor,
+  -- excluídas (ver o fim deste arquivo).
   ('primeira-parada',      'Primeira Parada',      'Concluiu a primeira missão num lugar do bairro.',              'ALUNO', 'MISSOES_CENARIO',   1,  50, 12, 'missoes1.png'),
   ('volta-no-quarteirao',  'Volta no Quarteirão',  'Cinco missões concluídas pelos lugares do bairro.',            'ALUNO', 'MISSOES_CENARIO',   5, 100, 13, 'missoes2.png'),
   ('conhece-cada-esquina', 'Conhece Cada Esquina', 'Vinte e cinco missões concluídas. O bairro inteiro sabe seu nome.', 'ALUNO', 'MISSOES_CENARIO', 25, 250, 14, 'missoes3.png'),
@@ -163,8 +157,28 @@ on conflict (codigo) do update set
   grupo        = excluded.grupo;
 
 
+-- ── Insígnias excluídas ──────────────────────────────────────────────
+--
+-- Tirar uma linha daqui NÃO a apaga do banco: os inserts acima só
+-- criam e atualizam. Quem sai do catálogo sai por um delete explícito,
+-- que fica registrado aqui para qualquer banco que tenha rodado uma
+-- versão antiga deste arquivo.
+--
+-- Tarefas do professor (Primeira Missão, Mão na Massa, Missão
+-- Cumprida — regra MISSOES, alvos 1, 5 e 10), excluídas em outubro de
+-- 2026 por serem redundantes com as de missões nos lugares: todo quiz
+-- concluído já conta para as duas.
+--
+-- ATENÇÃO: o delete leva junto, pelo "on delete cascade", o registro de
+-- quem já tinha ganhado essas insígnias em insignias_usuarios, e com
+-- ele o XP delas. Quando foram excluídas, só 1 aluno tinha 1 delas.
+-- Rode `npm run backup` antes.
+
+delete from insignias where codigo in ('primeira-missao', 'mao-na-massa', 'missao-cumprida');
+
+
 -- ── Conferir ─────────────────────────────────────────────────────────
--- Deve devolver 63 linhas, todas com imagem preenchida.
+-- Deve devolver 60 linhas, todas com imagem preenchida.
 
 -- select codigo, nome, regra, alvo, xp, ordem, imagem, cenario_slug, grupo
 --   from insignias order by publico, ordem;
