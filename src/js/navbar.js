@@ -425,6 +425,10 @@
       // Preenche a barrinha da navbar E toda <div data-nivel> da página.
       window.NIVEL.atualizar(r.nivel, r.xp);
 
+      // A sequência de dias fecha aqui (3, 7, 30), e também caem aqui as
+      // insígnias que o catálogo ganhou desde a última visita.
+      if (typeof CONQUISTA_AVISO !== 'undefined') CONQUISTA_AVISO.mostrar(r.insignias_novas);
+
       if (!r.nivel) {
         console.warn('[navbar] /presenca respondeu sem "nivel"; a barrinha fica escondida.', r);
       }

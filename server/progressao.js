@@ -382,7 +382,7 @@ async function xpDoAluno(usuarioId, respostas = null) {
 async function conquistar(usuarioId, publico, medidas) {
   const catalogo = ouVazio(await admin
     .from('insignias')
-    .select('codigo, nome, descricao, regra, alvo, xp, imagem, ordem')
+    .select('codigo, nome, descricao, regra, alvo, xp, imagem, ordem, cenario_slug, grupo')
     .eq('publico', publico)
     .order('ordem'));
 
@@ -399,8 +399,8 @@ async function conquistar(usuarioId, publico, medidas) {
 
   const merecidas = catalogo.data.filter(i =>
     !tenho.has(i.codigo) &&
-    medidas[i.regra] !== undefined &&
-    medidas[i.regra] >= i.alvo
+    medidaDe(medidas, i) !== undefined &&
+    medidaDe(medidas, i) >= i.alvo
   );
 
   if (!merecidas.length) return [];
@@ -425,12 +425,99 @@ async function conquistar(usuarioId, publico, medidas) {
 }
 
 /**
+ * As insígnias recém-conquistadas, no formato do aviso da tela
+ * (src/js/conquista-aviso.js).
+ *
+ * Degraus do mesmo grupo que caem JUNTOS — 5 e 25 acertos na Escola
+ * numa resposta só, ou na primeira visita depois que o catálogo
+ * cresceu — viram um aviso só: o do degrau mais alto, com o XP de todos
+ * somado. É a mesma regra da estante, onde o degrau novo se sobrepõe ao
+ * anterior. As conquistas continuam gravadas uma a uma; só o aviso
+ * junta.
+ */
+function paraAviso(novas) {
+  const avisos = [];
+  const doGrupo = new Map();
+
+  for (const i of novas) {
+    const aviso = { codigo: i.codigo, nome: i.nome, descricao: i.descricao, xp: i.xp || 0, imagem: i.imagem || null };
+
+    if (!i.grupo) { avisos.push(aviso); continue; }
+
+    const ja = doGrupo.get(i.grupo);
+    if (!ja) {
+      doGrupo.set(i.grupo, { ...aviso, alvo: i.alvo });
+      avisos.push(doGrupo.get(i.grupo));
+      continue;
+    }
+
+    const xp = ja.xp + aviso.xp;
+    if (i.alvo > ja.alvo) Object.assign(ja, aviso, { alvo: i.alvo });
+    ja.xp = xp;
+  }
+
+  return avisos.map(({ alvo, ...aviso }) => aviso);
+}
+
+/**
+ * O número de uma insígnia dentro do placar.
+ *
+ * As regras de lugar (ACERTOS_CENARIO) têm um número POR LUGAR, e a
+ * chave junta os dois: 'ACERTOS_CENARIO:ubs'. As outras são uma chave
+ * só. Devolve undefined para regra que a pessoa não tem — quem chama
+ * decide se isso é "pula" (conquistar) ou "zero" (a estante).
+ */
+function medidaDe(medidas, insignia) {
+  return medidas[insignia.cenario_slug
+    ? `${insignia.regra}:${insignia.cenario_slug}`
+    : insignia.regra];
+}
+
+/**
+ * questao_id -> slug do lugar dela, só para as questões pedidas.
+ *
+ * Em fatias, porque `.in()` vira a URL da requisição: as centenas de
+ * acertos de um aluno dedicado num pedaço só passariam do tamanho que
+ * o servidor aceita.
+ */
+async function lugarDasQuestoes(ids) {
+  const lugar = new Map();
+
+  for (let i = 0; i < ids.length; i += 200) {
+    const r = await admin
+      .from('questoes')
+      .select('id, cenarios(slug)')
+      .in('id', ids.slice(i, i + 200));
+
+    if (r.error) return { erro: r.error };
+
+    for (const q of r.data || []) {
+      if (q.cenarios?.slug) lugar.set(q.id, q.cenarios.slug);
+    }
+  }
+
+  return { lugar };
+}
+
+/**
  * O placar de um aluno, no formato que `conquistar` espera.
  *
  * MISSOES conta quizzes da turma em que todas as questões já foram
  * acertadas — a mesma conta da lista do mapa e da tela de progresso.
  * Se as três discordassem, o aluno veria três números para a mesma
  * coisa.
+ *
+ * MISSOES_CENARIO conta, nesses mesmos quizzes concluídos, os lugares
+ * distintos das questões de cada um: um quiz da UBS e da Escola vale 2.
+ * Vem das questões, e não de quizzes_professores.cenarios, porque no
+ * sorteio automático um lugar escolhido pode não ter rendido pergunta
+ * nenhuma — e missão sem pergunta não foi cumprida.
+ *
+ * ACERTOS_CENARIO:<slug> é ACERTOS repartido por lugar.
+ *
+ * Se a leitura dos lugares falhar, as regras de lugar ficam de fora do
+ * placar (e `conquistar` as pula): melhor adiar uma insígnia do que
+ * derrubar a resposta do aluno por causa dela.
  */
 async function medirAluno(usuarioId, turmaId, retrato) {
   const medidas = {
@@ -438,6 +525,18 @@ async function medirAluno(usuarioId, turmaId, retrato) {
     DIAS: retrato.streak_dias,
     MISSOES: 0
   };
+
+  const certas = [...new Set(retrato.respostas.filter(r => r.acertou).map(r => r.questao_id))];
+  const { lugar } = await lugarDasQuestoes(certas);
+
+  if (lugar) {
+    medidas.MISSOES_CENARIO = 0;
+
+    for (const id of certas) {
+      const slug = lugar.get(id);
+      if (slug) medidas[`ACERTOS_CENARIO:${slug}`] = (medidas[`ACERTOS_CENARIO:${slug}`] || 0) + 1;
+    }
+  }
 
   if (!turmaId) return medidas;
 
@@ -462,8 +561,22 @@ async function medirAluno(usuarioId, turmaId, retrato) {
     prontas.get(r.quiz_id).add(r.questao_id);
   }
 
-  medidas.MISSOES = ids.filter(id =>
-    (total.get(id) || 0) > 0 && (prontas.get(id) || new Set()).size >= total.get(id)).length;
+  const concluidos = ids.filter(id =>
+    (total.get(id) || 0) > 0 && (prontas.get(id) || new Set()).size >= total.get(id));
+
+  medidas.MISSOES = concluidos.length;
+
+  // Toda questão de um quiz concluído foi acertada, então o lugar dela
+  // já está no mapa `lugar` lido acima — não precisa de outra viagem.
+  if (lugar) {
+    for (const id of concluidos) {
+      const lugares = new Set();
+      for (const questao of prontas.get(id)) {
+        if (lugar.has(questao)) lugares.add(lugar.get(questao));
+      }
+      medidas.MISSOES_CENARIO += lugares.size;
+    }
+  }
 
   return medidas;
 }
@@ -771,5 +884,5 @@ module.exports = {
   nivelDoXp, patenteDe, diaLocal, sequenciaDeDias, marcarPresenca,
   acertosUnicosPorAluno, xpDoAluno, xpDoProfessor, xpDeVarios,
   premioDeConclusao, registrarConclusao,
-  conquistar, medirAluno
+  conquistar, medirAluno, medidaDe, paraAviso
 };

@@ -1203,3 +1203,181 @@ img { max-width: 100%; display: block; }
 
 .aviso-missoes__ir:hover,
 .aviso-missoes__ok:hover { transform: translateY(-1px); opacity: 1; }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   O AVISO DE CONQUISTA (src/js/conquista-aviso.js)
+
+   O cartão de "conquista desbloqueada" dos videogames: entra pela
+   direita no canto superior, com a medalha, o nome, a descrição e o
+   XP, e sai sozinho. Fica por cima de tudo, inclusive dos modais
+   (z-index 9999/10000 em dashboard.css): ganhar uma insígnia com um
+   modal aberto não pode passar despercebido.
+
+   O topo é 84px e não 0 porque a barra de navegação não é fixa, e o
+   aviso não deve tampar o nível e o avatar quando a página está no
+   começo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.conquista-pilha {
+  position: fixed;
+  top: 84px;
+  right: 20px;
+  z-index: 10050;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.conquista-aviso {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px 14px 12px;
+  overflow: hidden;
+
+  background: linear-gradient(135deg, rgba(7, 55, 62, 0.97), rgba(13, 92, 99, 0.97));
+  border: 1px solid rgba(249, 199, 79, 0.55);
+  border-left: 4px solid var(--gold);
+  border-radius: var(--radius-md);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(249, 199, 79, 0.18);
+  color: var(--white);
+  cursor: pointer;
+  pointer-events: auto;
+
+  opacity: 0;
+  transform: translateX(calc(100% + 40px));
+  transition: transform 0.55s cubic-bezier(0.22, 1.4, 0.36, 1), opacity 0.35s ease;
+}
+
+.conquista-aviso--dentro {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.conquista-aviso--saindo {
+  opacity: 0;
+  transform: translateX(calc(100% + 40px));
+  transition: transform 0.4s ease-in, opacity 0.4s ease-in;
+}
+
+/* O brilho que atravessa o cartão uma vez, logo que ele chega. */
+.conquista-aviso--dentro::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: conquista-brilho 1.1s 0.45s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes conquista-brilho {
+  to { transform: translateX(100%); }
+}
+
+.conquista-aviso__arte {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+}
+
+.conquista-aviso__arte img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(249, 199, 79, 0.55));
+  animation: conquista-medalha 0.7s 0.3s cubic-bezier(0.22, 1.6, 0.36, 1) both;
+}
+
+/* A medalha chega um instante depois do cartão, com um quique. */
+@keyframes conquista-medalha {
+  from { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.conquista-aviso__arte--letra {
+  border-radius: 50%;
+  background: rgba(249, 199, 79, 0.18);
+  border: 2px solid var(--gold);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 24px;
+  color: var(--gold);
+}
+
+.conquista-aviso__texto {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.conquista-aviso__rotulo {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.conquista-aviso__nome {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.conquista-aviso__descricao {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.conquista-aviso__xp {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  padding: 4px 9px;
+  border-radius: 99px;
+  background: var(--gold);
+  color: #2b1d00;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* "E mais N conquistas": um link discreto para a estante. */
+.conquista-aviso--resto {
+  justify-content: center;
+  padding: 10px 16px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--gold);
+  text-decoration: none;
+}
+
+.conquista-aviso--resto:hover { text-decoration: underline; }
+
+@media (max-width: 600px) {
+  .conquista-pilha { top: 72px; right: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conquista-aviso,
+  .conquista-aviso--saindo { transform: none; transition: opacity 0.2s; }
+  .conquista-aviso--dentro::after,
+  .conquista-aviso__arte img { animation: none; }
+}

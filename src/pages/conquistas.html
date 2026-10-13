@@ -11,6 +11,7 @@
   <script src="/vendor/supabase.js"></script>
   <script src="../js/supabase.js" defer></script>
   <script src="../js/api.js" defer></script>
+  <script src="../js/conquista-aviso.js" defer></script>
   <script src="../js/navbar.js" defer></script>
   <script src="../js/conquistas.js" defer></script>
 </head>
@@ -84,6 +85,37 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- O detalhe de uma insígnia, aberto ao clicar numa peça da estante.
+       Preenchido por conquistas.js. -->
+  <div class="modal" id="modal-insignia" hidden>
+    <div class="modal__caixa modal__caixa--estreita detalhe-insignia" role="dialog" aria-modal="true"
+      aria-labelledby="detalhe-nome">
+      <div class="modal-header">
+        <span class="detalhe-insignia__estado" id="detalhe-estado"></span>
+        <button type="button" class="modal__fechar" id="detalhe-fechar" aria-label="Fechar">&times;</button>
+      </div>
+
+      <div class="detalhe-insignia__topo">
+        <div class="detalhe-insignia__arte" id="detalhe-arte"></div>
+        <h3 class="detalhe-insignia__nome" id="detalhe-nome"></h3>
+        <p class="detalhe-insignia__descricao" id="detalhe-descricao"></p>
+        <span class="detalhe-insignia__xp" id="detalhe-xp"></span>
+      </div>
+
+      <div class="detalhe-insignia__como">
+        <h4>Como conquistar</h4>
+        <p id="detalhe-como"></p>
+
+        <div class="detalhe-insignia__progresso" id="detalhe-progresso" hidden>
+          <span class="detalhe-insignia__barra"><i id="detalhe-barra"></i></span>
+          <span class="detalhe-insignia__conta" id="detalhe-conta"></span>
+        </div>
+      </div>
+
+      <ol class="detalhe-insignia__escada" id="detalhe-escada" hidden></ol>
+    </div>
   </div>
 </body>
 

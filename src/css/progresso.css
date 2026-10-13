@@ -386,14 +386,15 @@
 
 .insignia:hover .insignia__disco { transform: translateY(-4px) scale(1.04); }
 
+/* Sem recorte circular: as artes são medalhas com fita, mais altas que
+   largas, e um círculo cortaria a fita. object-fit: contain encaixa a
+   medalha inteira no quadrado, sem esticar. */
 .insignia__arte {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 74px;
   height: 74px;
-  border-radius: 50%;
-  overflow: hidden;
 }
 
 .insignia__arte img {
@@ -457,6 +458,26 @@
 
 .insignia--presa .insignia__nome { color: rgba(255, 255, 255, 0.5); }
 
+/* Os degraus de uma peça de lugar: um ponto por degrau, aceso em
+   dourado quando caiu. */
+.insignia__degraus {
+  display: flex;
+  gap: 5px;
+  margin-top: -4px;
+}
+
+.insignia__degraus span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.insignia__degraus span.aceso {
+  background: var(--gold);
+  box-shadow: 0 0 6px rgba(249, 199, 79, 0.6);
+}
+
 .insignia__dica {
   margin: 0;
   font-size: 11.5px;
@@ -469,6 +490,239 @@
 @media (prefers-reduced-motion: reduce) {
   .insignia { animation: none; }
   .insignia:hover .insignia__disco { transform: none; }
+}
+
+/* Na estante, a peça abre o detalhe (conquistas.js). No perfil ela não
+   é clicável, e por isso o cursor só muda onde há role="button". */
+.insignia[role="button"] { cursor: pointer; border-radius: var(--radius-md); }
+
+.insignia[role="button"]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 6px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   O DETALHE DE UMA INSÍGNIA (o modal de conquistas.html)
+
+   A caixa, o fundo escuro e o botão de fechar são os .modal de
+   dashboard.css; aqui fica só o miolo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* O .modal padrão não tem respiro nas bordas: no celular a caixa
+   encostaria na tela. E a escada de degraus pode passar da altura de
+   um celular deitado, então a caixa rola. */
+#modal-insignia { padding: 16px; }
+
+.detalhe-insignia {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.detalhe-insignia .modal-header { margin-bottom: 4px; }
+
+.detalhe-insignia__estado {
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.detalhe-insignia__estado--feita {
+  background: rgba(249, 199, 79, 0.16);
+  color: var(--gold);
+}
+
+.detalhe-insignia__estado--presa {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.detalhe-insignia__topo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.detalhe-insignia__arte {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 6px;
+}
+
+.detalhe-insignia__arte img,
+.detalhe-insignia__mini img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.detalhe-insignia__arte:not(.arte--presa) img {
+  filter: drop-shadow(0 0 14px rgba(249, 199, 79, 0.45));
+}
+
+/* A mesma silhueta da estante: bloqueada não entrega as cores. */
+.arte--presa img {
+  filter: grayscale(1) brightness(0.4);
+  opacity: 0.85;
+}
+
+.arte--letra {
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 40px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.detalhe-insignia__nome {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.detalhe-insignia__descricao {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.detalhe-insignia__xp {
+  margin-top: 4px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: var(--gold);
+  color: #2b1d00;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.detalhe-insignia__xp:empty { display: none; }
+
+.detalhe-insignia__como {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detalhe-insignia__como h4 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.detalhe-insignia__como p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.detalhe-insignia__progresso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.detalhe-insignia__barra {
+  flex: 1;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.detalhe-insignia__barra i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  transition: width 0.4s ease;
+}
+
+.detalhe-insignia__conta {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+/* Os três degraus de um lugar, lado a lado. */
+.detalhe-insignia__escada {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.detalhe-insignia__degrau {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.detalhe-insignia__degrau--feito {
+  border-color: rgba(249, 199, 79, 0.45);
+  background: rgba(249, 199, 79, 0.07);
+}
+
+.detalhe-insignia__mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+}
+
+.detalhe-insignia__mini.arte--letra { font-size: 18px; }
+
+.detalhe-insignia__degrau-nome {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.detalhe-insignia__degrau-alvo {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.detalhe-insignia__degrau--feito .detalhe-insignia__degrau-alvo { color: var(--gold); }
+
+/* A caixa padrão tem 30px de respiro; no celular isso come a escada. */
+@media (max-width: 480px) {
+  .detalhe-insignia { padding: 22px 18px; }
+  .detalhe-insignia__escada { gap: 6px; }
 }
 
 

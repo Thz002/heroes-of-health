@@ -306,6 +306,9 @@
       // parado e não ligava o número ao que acabou de fazer.
       if (r.nivel && window.NIVEL) window.NIVEL.atualizar(r.nivel, r.xp);
 
+      // Pelo mesmo motivo, a insígnia aparece no acerto que a deu.
+      if (typeof CONQUISTA_AVISO !== 'undefined') CONQUISTA_AVISO.mostrar(r.insignias_novas);
+
       if (r.acertou) {
         botao.classList.add('quiz-option--correct');
         acertos++;

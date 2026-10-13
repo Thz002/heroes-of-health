@@ -465,9 +465,9 @@ create table if not exists xp_diario (
 -- ── As insígnias ─────────────────────────────────────────────────────
 --
 -- A ESTANTE É DIRIGIDA POR DADO, não por código. Cada insígnia é uma
--- LINHA: para criar uma nova, ninguém abre o servidor — insere aqui.
--- É o que permite o outro desenvolvedor desenhar as artes e ligá-las
--- sem tocar em JavaScript nenhum.
+-- LINHA: para criar uma nova, ninguém abre o servidor — insere uma
+-- linha em db/insignias.sql. É o que permite desenhar as artes e
+-- ligá-las sem tocar em JavaScript nenhum.
 --
 -- POR QUE NÃO HÁ REGRA DE PORCENTAGEM: a quantidade de quizzes muda o
 -- tempo todo, porque o professor cria e apaga. "Acertou 80% do que foi
@@ -475,11 +475,15 @@ create table if not exists xp_diario (
 -- conquistada poderia deixar de valer. Toda regra aqui é de CONTAGEM
 -- ABSOLUTA — 50 acertos são 50 acertos para sempre.
 --
---   ACERTOS       questões distintas que a pessoa acertou
---   DIAS          dias de sequência (o prêmio diário)
---   MISSOES       quizzes concluídos
---   QUIZZES       quizzes criados          (professor)
---   ACERTOS_TURMA acertos dos alunos dele  (professor)
+--   ACERTOS         questões distintas que a pessoa acertou
+--   ACERTOS_CENARIO as mesmas, só as do lugar em `cenario_slug`
+--   DIAS            dias de sequência (o prêmio diário)
+--   MISSOES         quizzes concluídos
+--   MISSOES_CENARIO pares (quiz concluído × lugar das questões dele):
+--                   um quiz com perguntas da UBS, da Escola e do
+--                   Mercado vale 3 quando é concluído
+--   QUIZZES         quizzes criados          (professor)
+--   ACERTOS_TURMA   acertos dos alunos dele  (professor)
 create table if not exists insignias (
   codigo varchar(40) primary key,
   nome varchar(60) not null,
@@ -488,16 +492,51 @@ create table if not exists insignias (
   publico varchar(10) not null check (publico in ('ALUNO', 'PROFESSOR')),
 
   regra varchar(20) not null
-        check (regra in ('ACERTOS', 'DIAS', 'MISSOES', 'QUIZZES', 'ACERTOS_TURMA')),
+        check (regra in ('ACERTOS', 'ACERTOS_CENARIO', 'DIAS', 'MISSOES',
+                         'MISSOES_CENARIO', 'QUIZZES', 'ACERTOS_TURMA')),
   alvo int not null check (alvo > 0),
 
   xp int not null default 0 check (xp >= 0),
   ordem int not null,
 
-  -- O nome do arquivo da arte, dentro de src/img/insignias/.
+  -- O nome do arquivo da arte, dentro de src/imgs/insignias/.
   -- Nulo = ainda sem arte: a estante desenha o lugar vazio dela.
   imagem varchar(120)
 );
+
+-- A lista de regras cresceu depois que a tabela já existia. O check
+-- de cima só vale para um projeto novo; num banco com dados, o
+-- "create table if not exists" não faz nada, então a trava é refeita
+-- aqui. Apagar e recriar é o que deixa isto seguro de rodar de novo.
+alter table insignias drop constraint if exists insignias_regra_check;
+alter table insignias add constraint insignias_regra_check
+  check (regra in ('ACERTOS', 'ACERTOS_CENARIO', 'DIAS', 'MISSOES',
+                   'MISSOES_CENARIO', 'QUIZZES', 'ACERTOS_TURMA'));
+
+-- Para qual lugar do bairro a insígnia conta. Só ACERTOS_CENARIO usa.
+--
+-- É o slug do MAPA (src/js/mapa.js), não uma chave estrangeira para
+-- cenarios, DE PROPÓSITO: banca, igreja, rio e ruas estão no mapa mas
+-- ainda não têm linha em cenarios. As insígnias deles já existem e
+-- ficam inalcançáveis até o lugar virar cenário com o MESMO slug.
+alter table insignias add column if not exists cenario_slug varchar(40);
+
+alter table insignias drop constraint if exists insignias_cenario_coerente;
+alter table insignias add constraint insignias_cenario_coerente
+  check ((regra = 'ACERTOS_CENARIO') = (cenario_slug is not null));
+
+-- Insígnias com o mesmo `grupo` são DEGRAUS de uma peça só (5, 25 e
+-- 50 acertos na UBS, por exemplo). A estante mostra uma por grupo: o
+-- degrau mais alto já conquistado, ou o primeiro se nenhum foi. O
+-- degrau novo se sobrepõe ao anterior em vez de ocupar outro lugar.
+--
+-- Cada degrau continua sendo uma linha própria, com a própria arte, o
+-- próprio XP e a própria data em insignias_usuarios: a regra
+-- "conquista não se perde" vale para cada um, e o XP de quem chegou a
+-- 50 inclui o de 5 e o de 25.
+--
+-- Nulo = peça avulsa. Quem junta os degraus é GET /minha-estante.
+alter table insignias add column if not exists grupo varchar(40);
 
 
 -- ── O que cada pessoa já conquistou ──────────────────────────────────
@@ -560,40 +599,10 @@ create index if not exists conclusoes_por_professor
 
 -- ── A estante de hoje ────────────────────────────────────────────────
 --
--- `do update` e não `do nothing`: ajustar o alvo de uma insígnia é algo
--- que vai acontecer (os números abaixo são um primeiro chute e vão ser
--- calibrados quando houver turma jogando de verdade). Quem já conquistou
--- não perde — a conquista mora na outra tabela e não é recalculada.
---
--- `imagem` fica de fora do update DE PROPÓSITO: quando o outro
--- desenvolvedor preencher o nome do arquivo da arte, rodar este setup
--- de novo não pode apagar o trabalho dele.
---
--- OS NÚMEROS: 225 questões existem hoje, então "Enciclopédia" (200) é
--- quase tudo o que há. As duas do meio — 50 e 100 — são as que foram
--- combinadas; o resto é a escada que dá sentido a elas, porque uma
--- primeira insígnia a 50 acertos deixa a estante vazia tempo demais.
-insert into insignias (codigo, nome, descricao, publico, regra, alvo, xp, ordem) values
-  ('primeiros-passos', 'Primeiros Passos', 'Acertou as 10 primeiras perguntas do bairro.',        'ALUNO', 'ACERTOS',  10,  50, 1),
-  ('pe-na-estrada',    'Pé na Estrada',     'Vinte e cinco perguntas certas. O bairro já conhece você.', 'ALUNO', 'ACERTOS',  25, 100, 2),
-  ('meio-caminho',     'Meio Caminho',      'Cinquenta perguntas certas.',                          'ALUNO', 'ACERTOS',  50, 200, 3),
-  ('centuriao',        'Centurião',         'Cem perguntas certas. Pouca gente chega aqui.',        'ALUNO', 'ACERTOS', 100, 400, 4),
-  ('enciclopedia',     'Enciclopédia',      'Duzentas perguntas certas.',                           'ALUNO', 'ACERTOS', 200, 800, 5),
-
-  ('de-volta',         'De Volta',          'Jogou três dias seguidos.',                            'ALUNO', 'DIAS',      3,  50, 6),
-  ('semana-cheia',     'Semana Cheia',      'Sete dias seguidos cuidando do bairro.',               'ALUNO', 'DIAS',      7, 150, 7),
-  ('presenca-de-ouro', 'Presença de Ouro',  'Trinta dias seguidos.',                                'ALUNO', 'DIAS',     30, 600, 8),
-
-  ('primeira-missao',  'Primeira Missão',   'Concluiu a primeira tarefa do professor.',             'ALUNO', 'MISSOES',   1,  50, 9),
-  ('missao-cumprida',  'Missão Cumprida',   'Concluiu dez tarefas do professor.',                   'ALUNO', 'MISSOES',  10, 300, 10)
-on conflict (codigo) do update set
-  nome      = excluded.nome,
-  descricao = excluded.descricao,
-  publico   = excluded.publico,
-  regra     = excluded.regra,
-  alvo      = excluded.alvo,
-  xp        = excluded.xp,
-  ordem     = excluded.ordem;
+-- As linhas NÃO moram aqui: o catálogo inteiro (63 insígnias, com a
+-- arte de cada uma) está em db/insignias.sql, que roda depois deste
+-- arquivo. Ficou separado porque é conteúdo do jogo que muda com
+-- frequência — um alvo calibrado, uma arte trocada — e não esquema.
 
 -- A estante do PROFESSOR existe e está vazia, de propósito. As regras
 -- dele (QUIZZES e ACERTOS_TURMA) já são aceitas pela tabela; faltam as

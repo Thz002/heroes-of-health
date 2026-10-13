@@ -218,9 +218,7 @@ rotas.post('/responder', async (req, res) => {
     conclusao,
     xp,
     nivel: PROG.nivelDoXp(xp, 'ALUNO'),
-    insignias_novas: novas.map(i => ({
-      codigo: i.codigo, nome: i.nome, descricao: i.descricao, xp: i.xp, imagem: i.imagem
-    }))
+    insignias_novas: PROG.paraAviso(novas)
   });
 });
 rotas.get('/meus-quizzes', async (req, res) => {
@@ -807,9 +805,7 @@ rotas.post('/presenca', async (req, res) => {
     nivel: PROG.nivelDoXp(xp, sou),
     streak_dias: retrato.streak_dias,
     dias_jogados: retrato.dias_jogados,
-    insignias_novas: novas.map(i => ({
-      codigo: i.codigo, nome: i.nome, descricao: i.descricao, xp: i.xp, imagem: i.imagem
-    }))
+    insignias_novas: PROG.paraAviso(novas)
   });
 });
 
@@ -824,7 +820,45 @@ rotas.post('/presenca', async (req, res) => {
    O professor recebe a estante dele, que hoje está vazia porque as
    regras ainda não foram combinadas. A tela trata isso como estado
    normal — a estante existe, as peças é que não.
+
+   OS DEGRAUS. Insígnias com o mesmo `grupo` (os 5/25/50 acertos de
+   cada lugar) viram UMA peça, no lugar do primeiro degrau: o mais alto
+   já conquistado, ou o primeiro se nenhum foi. Juntar aqui, e não na
+   tela, é o que faz a estante e o perfil mostrarem a mesma coisa.
+
+   `conquistadas` e `total` contam DEGRAUS, não peças: cada degrau é uma
+   conquista com o próprio XP. A peça leva `degraus` e `degraus_feitos`
+   para a tela desenhar quantos já caíram.
    ═══════════════════════════════════════════════════════════════════ */
+
+/**
+ * A peça de um grupo de degraus. `proximo` é o degrau seguinte ao
+ * mostrado, para a peça já conquistada continuar dizendo quanto falta.
+ * `escada` são todos os degraus, para o modal da estante mostrar o
+ * caminho inteiro do lugar.
+ */
+function pecaDoGrupo(degraus) {
+  const escada = [...degraus].sort((a, b) => a.alvo - b.alvo);
+
+  let feitos = 0;
+  escada.forEach((d, n) => { if (d.conquistada) feitos = n + 1; });
+
+  const mostrado = escada[Math.max(feitos - 1, 0)];
+  const seguinte = feitos > 0 ? escada[feitos] : null;
+
+  return {
+    ...mostrado,
+    degraus: escada.length,
+    degraus_feitos: feitos,
+    proximo: seguinte
+      ? { nome: seguinte.nome, alvo: seguinte.alvo, progresso: seguinte.progresso, porcentagem: seguinte.porcentagem }
+      : null,
+    escada: escada.map(d => ({
+      nome: d.nome, alvo: d.alvo, xp: d.xp, imagem: d.imagem,
+      conquistada: d.conquistada, conquistada_em: d.conquistada_em
+    }))
+  };
+}
 
 rotas.get('/minha-estante', async (req, res) => {
   const eu = req.usuario.id;
@@ -835,7 +869,7 @@ rotas.get('/minha-estante', async (req, res) => {
   // sem peça — é o estado do professor hoje.
   const [bruto1, bruto2] = await Promise.all([
     admin.from('insignias')
-      .select('codigo, nome, descricao, regra, alvo, xp, imagem, ordem')
+      .select('codigo, nome, descricao, regra, alvo, xp, imagem, ordem, cenario_slug, grupo')
       .eq('publico', sou).order('ordem'),
     admin.from('insignias_usuarios')
       .select('insignia_codigo, conquistada_em').eq('usuario_id', eu)
@@ -865,9 +899,9 @@ rotas.get('/minha-estante', async (req, res) => {
     ? retrato.medidas
     : await PROG.medirAluno(eu, req.usuario.turma_id, retrato);
 
-  const insignias = (catalogo.data || []).map(i => {
+  const degraus = (catalogo.data || []).map(i => {
     const tenho = quando.has(i.codigo);
-    const agora = medidas[i.regra] ?? 0;
+    const agora = PROG.medidaDe(medidas, i) ?? 0;
 
     return {
       codigo: i.codigo,
@@ -877,6 +911,7 @@ rotas.get('/minha-estante', async (req, res) => {
       imagem: i.imagem || null,
       regra: i.regra,
       alvo: i.alvo,
+      grupo: i.grupo || null,
       conquistada: tenho,
       conquistada_em: quando.get(i.codigo) || null,
       // Quanto falta, para a insígnia bloqueada virar objetivo e não
@@ -886,10 +921,25 @@ rotas.get('/minha-estante', async (req, res) => {
     };
   });
 
+  const porGrupo = new Map();
+  for (const d of degraus) {
+    if (!d.grupo) continue;
+    if (!porGrupo.has(d.grupo)) porGrupo.set(d.grupo, []);
+    porGrupo.get(d.grupo).push(d);
+  }
+
+  // Na ordem do catálogo: a peça de um grupo ocupa o lugar do primeiro
+  // degrau dele, e os outros degraus não abrem lugar próprio.
+  const insignias = [];
+  for (const d of degraus) {
+    if (!d.grupo) insignias.push(d);
+    else if (porGrupo.get(d.grupo)[0] === d) insignias.push(pecaDoGrupo(porGrupo.get(d.grupo)));
+  }
+
   res.json({
     publico: sou,
-    conquistadas: insignias.filter(i => i.conquistada).length,
-    total: insignias.length,
+    conquistadas: degraus.filter(i => i.conquistada).length,
+    total: degraus.length,
     xp: retrato.total,
     nivel: retrato.nivel,
     insignias
