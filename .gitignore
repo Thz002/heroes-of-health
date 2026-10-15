@@ -5,3 +5,6 @@ pages/painel.html
 pages/teste-supabase.html
 # Backups do banco (db/fazer-backup.js): têm nome, idade e e-mail de alunos.
 backups/
+
+# Cache do Python, gerado pelas ferramentas em db/ferramentas/
+__pycache__/

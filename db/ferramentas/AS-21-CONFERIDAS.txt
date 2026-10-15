@@ -1,0 +1,119 @@
+AS 21 LINHAS QUE NÃO CASARAM COM O CONSOLIDADO
+========================================================================
+
+Conclusão: NENHUMA é questão. O arquivo 'todas as questões.docx' É,
+sim, a junção completa dos outros — nada se perdeu no caminho.
+
+Estas 21 linhas são o que o meu leitor confundiu com enunciado ao
+varrer os arquivos individuais: referências, separadores e pedaços
+de alternativa. Ficam listadas aqui para você poder conferir.
+
+========================================================================
+
+ 1. [referência bibliográfica]
+    arquivo : 11 ate 14 anos.docx
+    texto   : AMABIS, José Mariano; MARTHO, Gilberto Rodrigues.
+
+ 2. [endereço de referência]
+    arquivo : 11 ate 14 anos.docx
+    texto   : https://bvsms.saude.gov.br/bvs/publicacoes/protocolo_clinico_atecao_integral_ist.pdf — base para as questões 1 a 5 do Tema 1, especialmente o caráter 
+
+ 3. [endereço de referência]
+    arquivo : 11 ate 14 anos.docx
+    texto   : https://bvsms.saude.gov.br/bvs/publicacoes/cartilha_tratamento_emergencia_queimaduras.pdf — base para a questão 12 do Tema 1.
+
+ 4. [endereço de referência]
+    arquivo : 11 ate 14 anos.docx
+    texto   : br/assuntos/servicosdesaude/prevencao-e-controle-de-infeccao-e-resistencia-microbiana/CartazAzulA3_LogosAtualizadas22.pdf — material visual sugerido p
+
+ 5. [referência bibliográfica]
+    arquivo : 11 ate 14 anos.docx
+    texto   : BRASIL. Lei nº 12.305, de 2 de agosto de 2010. Institui a Política Nacional de Resíduos Sólidos — fundamenta a logística reversa de pilhas, baterias e
+
+ 6. [referência bibliográfica]
+    arquivo : 11-14.docx
+    texto   : AGÊNCIA NACIONAL DE VIGILÂNCIA
+    parecida (0.50) com, no consolidado:
+              que significa abuso contra uma criança?
+
+ 7. [referência bibliográfica]
+    arquivo : 11-14.docx
+    texto   : WORLD HEALTH ORGANIZATION (WHO).
+
+ 8. [FRAGMENTO — conferir]
+    arquivo : Cópia de Perguntas 7 a 10 anos.docx
+    texto   : Não é necessário chamar ajuda se a pessoa estiver acordada.
+    parecida (0.50) com, no consolidado:
+              É necessário estar doente para procurar uma UBS?
+
+ 9. [rótulo "Verdadeiro ou Falso" solto]
+    arquivo : Cópia de Perguntas 7 a 10 anos.docx
+    texto   : Verdadeiro ou Falso
+
+10. [FRAGMENTO — conferir]
+    arquivo : Cópia de Perguntas 7 a 10 anos.docx
+    texto   : É quando um professor pede para o aluno fazer a lição de casa.
+    parecida (0.48) com, no consolidado:
+              Qual é a melhor forma de evitar escorpiões perto de casa?
+
+11. [FRAGMENTO — conferir]
+    arquivo : Cópia de Perguntas 7 a 10 anos.docx
+    texto   : Resolver todos os seus problemas perigosos sozinha.
+
+12. [rótulo "Verdadeiro ou Falso" solto]
+    arquivo : MAIS Questões Jogos 11 e 14.docx
+    texto   : Verdadeiro ou falso
+
+13. [rótulo "Verdadeiro ou Falso" solto]
+    arquivo : MAIS Questões Jogos 11 e 14.docx
+    texto   : Verdadeiro ou falso
+
+14. [FRAGMENTO — conferir]
+    arquivo : MAIS Questões Jogos 11 e 14.docx
+    texto   : Saúde Mental”, reforçando a importância desses assuntos para as ações escolares. (Serviços e Informações do Brasil)
+
+15. [FRAGMENTO — conferir]
+    arquivo : Perguntas Jogo 7 a 10 ubs, upa e famacia.docx
+    texto   : Você sabe diferenciar quando Ir na UBS ou UPA?
+    parecida (0.50) com, no consolidado:
+              Qual situação mostra melhor a diferença entre a UBS e a UPA?
+
+16. [separador]
+    arquivo : Questões N3 prontas.docx
+    texto   : ——————————————————————————————————————————
+
+17. [separador]
+    arquivo : Questões N3 prontas.docx
+    texto   : ——————————————————————————————————————————
+
+18. [separador]
+    arquivo : Questões N3 prontas.docx
+    texto   : ——————————————————————————————————————————
+
+19. [separador]
+    arquivo : Questões N3 prontas.docx
+    texto   : ——————————————————————————————————————————
+
+20. [referência bibliográfica]
+    arquivo : Questões N3 prontas.docx
+    texto   : Referências Bibliográficas
+
+21. [alternativa solta]
+    arquivo : qst de alimentação.docx
+    texto   : b) Alimentos in natura e minimamente processados
+    parecida (0.60) com, no consolidado:
+              O que são alimentos ultraprocessados?
+
+========================================================================
+
+UM CASO QUE MERECE EXPLICAÇÃO — o nº 15 da lista
+
+  "Você sabe diferenciar quando Ir na UBS ou UPA?"
+
+  Parecia faltar, mas ESTÁ no consolidado. Lá ela vem com o caso
+  junto, numa linha só, e por isso o texto não bateu:
+
+  "Você sabe diferenciar quando ir na UBS ou UPA? João está com dor
+   de garganta leve há alguns dias, sem dificuldade para respirar..."
+
+  Tem feedback de acerto e de erro, como todas as outras.

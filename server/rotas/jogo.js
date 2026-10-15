@@ -138,11 +138,19 @@ rotas.post('/responder', async (req, res) => {
     return res.status(403).json({ message: 'Essa questão não faz parte de uma missão sua.' });
   }
 
-  const questao = await admin
+  // Ponte enquanto houver banco sem a coluna do feedback de erro. Some
+  // quando todos tiverem rodado db/feedback-questoes.sql.
+  const CAMPOS = 'id, resposta_correta, explicacao';
+
+  let questao = await admin
     .from('questoes')
-    .select('id, resposta_correta, explicacao')
+    .select(CAMPOS + ', explicacao_erro')
     .eq('id', questaoId)
     .maybeSingle();
+
+  if (questao.error && /explicacao_erro/.test(questao.error.message || '')) {
+    questao = await admin.from('questoes').select(CAMPOS).eq('id', questaoId).maybeSingle();
+  }
 
   if (questao.error || !questao.data) {
     return res.status(404).json({ message: 'Essa questão não existe.' });
@@ -242,7 +250,17 @@ rotas.post('/responder', async (req, res) => {
   // conteúdo em mãos, e não que copie a resposta.
   res.json({
     acertou,
-    explicacao: questao.data.explicacao,
+    // DOIS TEXTOS DIFERENTES, escolhidos aqui e não na tela.
+    //
+    // Quem acerta recebe a confirmação, que aprofunda o que ele já
+    // sabia. Quem erra recebe a pista — e a pista nunca entrega a letra
+    // certa, porque a ideia é que a pessoa tente de novo sabendo mais,
+    // não que copie a resposta.
+    //
+    // Banco antigo, sem o texto de erro: cai no de acerto, que é o que
+    // sempre aparecia antes. Pior do que a pista, melhor do que nada.
+    explicacao: (acertou ? questao.data.explicacao
+                         : questao.data.explicacao_erro || questao.data.explicacao),
     pontos: pontosGanhos,
     barras,
     conclusao,
