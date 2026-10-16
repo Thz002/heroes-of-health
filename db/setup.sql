@@ -614,6 +614,63 @@ create index if not exists conclusoes_por_professor
 -- estado normal, não como erro.
 
 
+-- ── Recuperação de senha ─────────────────────────────────────────────
+--
+-- Quem esquece a senha recebe no e-mail um código de 5 caracteres. Esta
+-- tabela é a memória desse código enquanto ele vale.
+--
+-- O código NÃO fica guardado aqui. Fica o hash dele, pelo mesmo motivo
+-- que senha não se guarda em texto: quem puser os olhos nesta tabela —
+-- um backup esquecido, um dump no grupo da turma — não pode sair
+-- trocando a senha dos outros. Conferir é hashear de novo e comparar.
+--
+-- `tentativas` é o que torna o código de 5 caracteres seguro. São
+-- 36^5 = 60.466.176 combinações, muita coisa para adivinhar à mão, mas
+-- pouca para um script. Com no máximo 5 erros antes de o código morrer,
+-- a chance de acertar chutando é de 1 em 12 milhões.
+--
+-- `ticket_hash` é o segundo portão. Acertar o código não troca a senha:
+-- devolve um ticket, e é o ticket que a terceira tela apresenta. Sem
+-- ele, bastaria chamar a rota de trocar senha direto, pulando o código.
+create table if not exists codigos_recuperacao (
+  id bigint primary key generated always as identity,
+  email text not null,
+  codigo_hash text not null,
+  tentativas int not null default 0,
+  expira_em timestamptz not null,
+  ticket_hash text,
+  ticket_expira_em timestamptz,
+  usado_em timestamptz,
+  criado_em timestamptz not null default now()
+);
+
+-- O servidor busca sempre o código mais novo de um e-mail, e conta
+-- quantos foram pedidos na última hora para limitar o abuso.
+--
+-- Sem `lower()` aqui de propósito: o e-mail já chega em minúsculas, o
+-- servidor normaliza antes de gravar e antes de procurar. Um índice
+-- sobre `lower(email)` não seria usado por uma busca em `email`, e
+-- ficaria ocupando espaço sem servir a ninguém.
+create index if not exists codigos_por_email
+  on codigos_recuperacao (email, criado_em desc);
+
+
+-- ── Achar a conta pelo e-mail ────────────────────────────────────────
+--
+-- As contas vivem em `auth.users`, que é do Supabase e não é exposta
+-- pela API. Esta função é a única porta, e ela devolve só o id: nada de
+-- nome, data de criação ou metadado.
+--
+-- O `revoke` embaixo é o que importa. Sem ele, qualquer visitante com a
+-- chave publishable chamaria a função e descobriria, um e-mail por vez,
+-- quem tem conta no jogo. Só a chave secreta do servidor entra.
+create or replace function public.conta_por_email(p_email text)
+returns uuid
+language sql stable security definer set search_path = auth, public as $$
+  select id from auth.users where lower(email) = lower(trim(p_email)) limit 1;
+$$;
+
+
 -- #####################################################################
 --  2. FUNÇÕES AUXILIARES
 --
@@ -1266,6 +1323,23 @@ alter table xp_diario          enable row level security;
 alter table insignias          enable row level security;
 alter table insignias_usuarios enable row level security;
 alter table quiz_concluidos    enable row level security;
+
+
+-- ── Códigos de recuperação ───────────────────────────────────────────
+--
+-- RLS ligado e NENHUMA policy. Não é esquecimento: é a configuração
+-- mais fechada que existe. Sem policy, ninguém que chegue pela chave
+-- publishable lê ou escreve uma linha aqui — nem anônimo, nem logado,
+-- nem o dono do próprio e-mail. Quem entra é só o servidor, que usa a
+-- chave secreta e passa por cima do RLS.
+--
+-- Precisa ser assim: um aluno que conseguisse ler esta tabela veria o
+-- momento em que cada colega pediu recuperação, e um que conseguisse
+-- escrever criaria um código válido para o e-mail de qualquer um.
+alter table codigos_recuperacao enable row level security;
+
+revoke execute on function public.conta_por_email(text) from public;
+revoke execute on function public.conta_por_email(text) from anon, authenticated;
 
 drop policy if exists "le as proprias conclusoes"           on quiz_concluidos;
 drop policy if exists "professor le as conclusoes da turma" on quiz_concluidos;

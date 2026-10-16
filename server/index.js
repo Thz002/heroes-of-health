@@ -22,8 +22,9 @@
 const express = require('express');
 const path    = require('path');
 
-const rotasJogo      = require('./rotas/jogo');
-const rotasProfessor = require('./rotas/professor');
+const rotasJogo       = require('./rotas/jogo');
+const rotasProfessor  = require('./rotas/professor');
+const rotasRecuperacao = require('./rotas/recuperacao');
 
 const app   = express();
 const PORTA = process.env.PORT || 3000;
@@ -71,6 +72,11 @@ app.get('/', (_req, res) => res.redirect('/pages/index.html'));
 app.get('/api/saude', (_req, res) => {
   res.json({ ok: true, servico: 'herois-da-saude', hora: new Date().toISOString() });
 });
+
+// Esqueci minha senha. Única parte da API aberta a quem NÃO está
+// logado — quem perdeu a senha não tem token para apresentar. O limite
+// de tentativas e o prazo do código ficam dentro da própria rota.
+app.use('/api/auth', rotasRecuperacao);
 
 app.use('/api', rotasJogo);
 app.use('/api/professor', rotasProfessor);

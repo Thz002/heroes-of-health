@@ -99,9 +99,14 @@
       margin-top: 14px;
     }
 
+    /* O traço é desenhado da esquerda para a direita, como num monitor.
+       O número é o comprimento da linha: 447 unidades, medidas somando
+       os segmentos retos e amostrando as duas curvas. Arredondado para
+       cima, porque se ficar CURTO o fim do traçado nunca aparece — era
+       o que acontecia antes, com 400 para uma linha de ~450. */
     .ecg-path {
-      stroke-dasharray: 400;
-      stroke-dashoffset: 400;
+      stroke-dasharray: 460;
+      stroke-dashoffset: 460;
       animation: ecg-draw 2.6s ease-out forwards 0.7s;
     }
 
@@ -236,13 +241,6 @@
     .btn-submit:active { transform: translateY(0); }
     .btn-submit:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
 
-    /* ── XP badge ── */
-    .xp-row {
-      display: flex;
-      justify-content: center;
-      margin-top: 18px;
-    }
-
     /* ── Register link ── */
     .register-row {
       text-align: center;
@@ -275,7 +273,11 @@
       gap: 8px;
       animation: slide-up 0.3s ease-out;
     }
-    .form-alert.show { display: flex; }
+    /* A margem só existe quando o alerta aparece — escondido ele é
+       `display: none` e não ocupa nada. Sem ela a caixa da mensagem
+       encosta no que vier abaixo, que na tela de recuperação é a
+       setinha de voltar. */
+    .form-alert.show { display: flex; margin-bottom: 18px; }
     .form-alert.error   { background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.3); color: #ff8080; }
     .form-alert.success { background: rgba(107,223,184,0.14); border: 1px solid rgba(107,223,184,0.3); color: #6bdfb8; }
 
@@ -368,6 +370,128 @@
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
+    /* ── Recuperação de senha ── */
+    .recuperar { display: flex; flex-direction: column; gap: 18px; }
+
+    /* Cada passo é uma coluna com o mesmo respiro do formulário de
+       login — sem isto os campos encostariam uns nos outros. */
+    #rec-passo-codigo,
+    #rec-passo-senha { display: flex; flex-direction: column; gap: 16px; }
+
+    /* A setinha ocupa a própria linha, no canto esquerdo.
+       Ela já foi `position: absolute`, e isso dava dois problemas: o
+       título precisava de margem dos dois lados para desviar dela, o
+       que o deixava torto, e quando o alerta verde aparecia acima do
+       painel a setinha subia por cima dele. Fora do absolute, os dois
+       somem — ninguém colide com quem está no fluxo. */
+    .rec-voltar {
+      align-self: flex-start;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 50%;
+      color: rgba(255,255,255,0.75);
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, transform 0.2s;
+    }
+    .rec-voltar:hover {
+      background: rgba(255,255,255,0.16);
+      color: #fff;
+      transform: translateX(-3px);
+    }
+    .rec-voltar:focus-visible { outline: 2px solid #6bdfb8; outline-offset: 2px; }
+
+    /* Largura inteira do cartão: o título é a frase principal da tela
+       e agora não divide a linha com nada. */
+    .rec-titulo {
+      font-size: 15.5px;
+      font-weight: 600;
+      color: #fff;
+      text-align: center;
+      margin: 0;
+      padding: 0 4px;
+      line-height: 1.5;
+    }
+
+    /* Encosta no título de propósito: as duas frases são um bloco só,
+       e o `gap` de 18px do painel as separaria demais. */
+    .rec-sub {
+      font-size: 12.5px;
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      margin: -10px 0 0;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .rec-sub strong { color: #6bdfb8; font-weight: 600; }
+
+    /* ── Os cinco quadradinhos ── */
+    .code-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 4px 0 2px;
+    }
+
+    .code-box {
+      width: 52px;
+      height: 60px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0;
+      font-family: var(--font-body);
+      text-transform: uppercase;
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+    .code-box:focus {
+      border-color: #6bdfb8;
+      background: rgba(255,255,255,0.14);
+      box-shadow: 0 0 0 3px rgba(107,223,184,0.18);
+      transform: translateY(-2px);
+    }
+    /* Caixa preenchida fica acesa: a pessoa enxerga de relance quanto falta. */
+    .code-box.cheia { border-color: rgba(107,223,184,0.55); background: rgba(107,223,184,0.10); }
+
+    /* Código recusado: as cinco tremem juntas e voltam ao lugar. */
+    .code-row.errou { animation: tremer 0.4s; }
+    @keyframes tremer {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-7px); }
+      40% { transform: translateX(7px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    .rec-link {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.6);
+      font-size: 12.5px;
+      font-family: var(--font-body);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      padding: 2px;
+      align-self: center;
+    }
+    .rec-link:hover:not(:disabled) { color: #6bdfb8; }
+    .rec-link:disabled { opacity: 0.45; cursor: default; text-decoration: none; }
+
+    @media (max-width: 420px) {
+      .code-box { width: 46px; height: 54px; font-size: 21px; }
+      .code-row { gap: 7px; }
+    }
+
     /* ── Responsive ── */
     @media (max-width: 480px) {
       .login-card { padding: 32px 22px 28px; }
@@ -443,12 +567,31 @@
         <h1 class="logo-title">HERÓIS DA SAÚDE</h1>
         <p class="logo-sub" id="logo-sub">Sua missão de saúde começa aqui</p>
 
-        <!-- ECG animado -->
+        <!-- ECG animado — ritmo sinusal normal
+             Este traçado já foi uma linha reta com espetos soltos, e a
+             equipe de Medicina reconheceu nele um ritmo agônico: sem
+             onda P, sem onda T e com os batimentos em intervalos
+             desiguais. Era o eletro de quem está morrendo, na tela de
+             abertura de um jogo sobre cuidar da saúde.
+
+             Agora cada batimento tem as cinco partes, na proporção
+             certa — P pequena, QRS alto e estreito, T arredondada e
+             maior que a P — e os três vêm de 88 em 88 unidades, que é
+             o que faz um ritmo ser "regular". -->
         <div class="ecg-wrap">
           <svg viewBox="0 0 280 40" fill="none" width="100%" preserveAspectRatio="none">
-            <polyline
+            <path
               class="ecg-path"
-              points="0,20 30,20 40,6 52,34 62,20 74,20 88,3 100,37 112,20 122,20 152,20 162,11 172,29 182,20 210,20 222,8 234,32 244,20 280,20"
+              d="M 0,20 L 6,20
+                 L 14,20  Q 20,12 26,20   L 32,20
+                 L 34,23  L 38,2  L 42,28 L 45,20
+                 L 51,20  Q 60,6 69,20    L 94,20
+                 L 102,20 Q 108,12 114,20 L 120,20
+                 L 122,23 L 126,2 L 130,28 L 133,20
+                 L 139,20 Q 148,6 157,20  L 182,20
+                 L 190,20 Q 196,12 202,20 L 208,20
+                 L 210,23 L 214,2 L 218,28 L 221,20
+                 L 227,20 Q 236,6 245,20  L 280,20"
               stroke="#6bdfb8"
               stroke-width="2"
               stroke-linecap="round"
@@ -511,6 +654,7 @@
               </svg>
             </span>
           </div>
+          <p class="field-hint hidden" id="email-hint"></p>
         </div>
 
         <!-- Senha -->
@@ -651,21 +795,97 @@
 
       </form>
 
+      <!-- ── Recuperação de senha ──────────────────────────────────
+           Três telas no mesmo lugar, trocadas pelo auth.js: pedir o
+           código, digitar os cinco caracteres, escolher a nova senha.
+           O formulário de login fica escondido enquanto isto aparece. -->
+      <div class="recuperar hidden" id="recuperar">
+
+        <button type="button" class="rec-voltar" id="rec-voltar" aria-label="Voltar">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+
+        <!-- Passo 1 de 2: o código -->
+        <div id="rec-passo-codigo" class="hidden">
+          <p class="rec-titulo">Insira o código de 5 dígitos enviado para seu e-mail</p>
+          <p class="rec-sub">Enviamos para <strong id="rec-email"></strong>. Ele vale por 10 minutos.</p>
+
+          <div class="code-row" id="code-row" role="group"
+               aria-label="Código de cinco caracteres">
+            <input class="code-box" type="text" inputmode="text" maxlength="1"
+                   autocomplete="one-time-code" autocapitalize="characters"
+                   spellcheck="false" aria-label="Caractere 1 de 5" />
+            <input class="code-box" type="text" inputmode="text" maxlength="1"
+                   autocomplete="off" autocapitalize="characters"
+                   spellcheck="false" aria-label="Caractere 2 de 5" />
+            <input class="code-box" type="text" inputmode="text" maxlength="1"
+                   autocomplete="off" autocapitalize="characters"
+                   spellcheck="false" aria-label="Caractere 3 de 5" />
+            <input class="code-box" type="text" inputmode="text" maxlength="1"
+                   autocomplete="off" autocapitalize="characters"
+                   spellcheck="false" aria-label="Caractere 4 de 5" />
+            <input class="code-box" type="text" inputmode="text" maxlength="1"
+                   autocomplete="off" autocapitalize="characters"
+                   spellcheck="false" aria-label="Caractere 5 de 5" />
+          </div>
+
+          <button type="button" class="btn-submit" id="rec-conferir">
+            <span id="rec-conferir-label">Confirmar código</span>
+            <span class="spin" id="rec-conferir-spin"></span>
+          </button>
+
+          <button type="button" class="rec-link" id="rec-reenviar">Enviar outro código</button>
+        </div>
+
+        <!-- Passo 2 de 2: a nova senha -->
+        <div id="rec-passo-senha" class="hidden">
+          <p class="rec-titulo">Escolha sua nova senha</p>
+
+          <div>
+            <label class="field-label" for="rec-senha">Nova senha</label>
+            <div class="field-wrap">
+              <input class="field-input" type="password" id="rec-senha"
+                     placeholder="Pelo menos 6 caracteres" autocomplete="new-password" />
+              <span class="field-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label class="field-label" for="rec-senha2">Confirmação de senha</label>
+            <div class="field-wrap">
+              <input class="field-input" type="password" id="rec-senha2"
+                     placeholder="Digite de novo" autocomplete="new-password" />
+              <span class="field-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <button type="button" class="btn-submit" id="rec-alterar">
+            <span id="rec-alterar-label">Alterar</span>
+            <span class="spin" id="rec-alterar-spin"></span>
+          </button>
+        </div>
+
+      </div>
+
       <!-- Divisor -->
-      <div class="divider" style="margin:20px 0 16px"><span>ou</span></div>
+      <div class="divider" id="login-divider" style="margin:20px 0 16px"><span>ou</span></div>
 
       <!-- Alterna entre login e cadastro -->
       <p class="register-row">
         <span id="toggle-text">Novo herói?</span>
         <button type="button" class="register-link" id="register-btn">Criar conta gratuita</button>
       </p>
-
-      <!-- XP badge -->
-      <div class="xp-row" id="xp-row">
-        <div class="xp-badge">
-          ⭐ Ganhe +50 XP ao fazer login hoje!
-        </div>
-      </div>
 
     </div>
   </main>

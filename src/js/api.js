@@ -354,6 +354,43 @@ const API = (() => {
   const excluirTurma = (turmaId) => del(`/professor/turmas/${turmaId}`);
 
   // ── API pública ─────────────────────────────
+  // =====================================================================
+  //  ESQUECI MINHA SENHA — pelo servidor, e sem token
+  //
+  //  São as únicas chamadas da API que não levam crachá: quem perdeu a
+  //  senha não consegue entrar, então não tem sessão para apresentar.
+  //
+  //  O que NÃO está aqui também importa. O código não é conferido neste
+  //  arquivo, nem o prazo, nem o número de tentativas — tudo isso mora
+  //  no servidor. Qualquer verificação escrita aqui seria enfeite: está
+  //  ao alcance de quem abrir o console.
+  // =====================================================================
+
+  /**
+   * O e-mail é real? Confere o formato e se o domínio recebe mensagem.
+   *
+   * Devolve { ok, motivo }. Não diz se a CAIXA existe — isso não se
+   * descobre de fora, e quem prova é o código chegando lá.
+   */
+  async function conferirEmail(email) {
+    return post('/auth/conferir-email', { email });
+  }
+
+  /** Pede o envio de um código de 5 caracteres para o e-mail. */
+  async function pedirCodigoDeSenha(email) {
+    return post('/auth/recuperar', { email });
+  }
+
+  /** Confere o código. Devolve { ticket } — o passe para a tela seguinte. */
+  async function conferirCodigoDeSenha(email, codigo) {
+    return post('/auth/conferir-codigo', { email, codigo });
+  }
+
+  /** Grava a nova senha. Só funciona com o ticket que a conferência deu. */
+  async function trocarSenhaComTicket(email, ticket, senha) {
+    return post('/auth/nova-senha', { email, ticket, senha });
+  }
+
   return {
     get, post, patch, delete: del,
 
@@ -361,6 +398,12 @@ const API = (() => {
     getEscolas,
     getTurmasPorEscola,
     getTurmaPorCodigo,
+
+    // Recuperação de senha (pelo servidor, sem login)
+    conferirEmail,
+    pedirCodigoDeSenha,
+    conferirCodigoDeSenha,
+    trocarSenhaComTicket,
 
     // Jogo (pelo servidor)
     getCenarios,
