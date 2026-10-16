@@ -116,7 +116,9 @@
     }
 
     escrever('prof-nome', prof.nome || 'Professor');
-    escrever('prof-patente', prof.nivel ? `Nv ${prof.nivel.nivel} · ${prof.nivel.patente}` : '');
+    const seloProf = document.getElementById('prof-patente');
+    if (seloProf && window.PATENTE) window.PATENTE.pintar(seloProf, prof.nivel, true);
+    else escrever('prof-patente', prof.nivel ? `Nv ${prof.nivel.nivel} · ${prof.nivel.patente}` : '');
     escrever('prof-xp', `${(prof.xp || 0).toLocaleString('pt-BR')} XP`);
 
     const barra = document.getElementById('prof-barra');
@@ -180,9 +182,16 @@
     // Nível e patente ao lado do nome: é a mesma régua do perfil, então
     // o aluno reconhece o próprio número quando se vê na lista.
     const patente = li.querySelector('.colega__patente');
-    patente.textContent = colega.nivel
-      ? `Nv ${colega.nivel.nivel} · ${colega.nivel.patente}`
-      : '';
+    if (colega.nivel && window.PATENTE) {
+      // A etiqueta é montada por PATENTE.html, que escapa o nome dela.
+      patente.innerHTML = window.PATENTE.html(colega.nivel, true) +
+        '<span class="colega__nv"></span>';
+      patente.querySelector('.colega__nv').textContent = `Nv ${colega.nivel.nivel}`;
+    } else {
+      patente.textContent = colega.nivel
+        ? `Nv ${colega.nivel.nivel} · ${colega.nivel.patente}`
+        : '';
+    }
 
     li.querySelector('.colega__barra i').style.width = `${Math.round((colega.xp / teto) * 100)}%`;
     li.querySelector('.colega__xp').textContent = `${colega.xp.toLocaleString('pt-BR')} XP`;

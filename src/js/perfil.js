@@ -51,6 +51,7 @@
     atual = perfil;
     mostrarIdentidade(perfil);
     ligarEditor();
+    if (perfil.tipo === 'ADMIN') ligarEquipe(perfil);
 
     try {
       if (perfil.tipo === 'PROFESSOR') await comoProfessor(perfil);
@@ -58,6 +59,83 @@
     } catch (err) {
       mostrarErro(err.message);
     }
+  }
+
+  /* ── A patente, para quem é da equipe ──────────────────────────── */
+
+  /**
+   * Trocar a própria patente, aqui mesmo no perfil.
+   *
+   * Quem pode é só ADMIN, e quem confere isso é o servidor — esconder a
+   * seção é conveniência, não trava. O caminho é o mesmo do painel:
+   * `adminDefinirNivel` lança um ajuste em `xp_ajustes` com o motivo
+   * registrado, em vez de escrever um número solto em cima do progresso.
+   */
+  async function ligarEquipe(perfil) {
+    const bloco = document.getElementById('bloco-equipe');
+    const escolha = document.getElementById('equipe-patente');
+    const campo = document.getElementById('equipe-nivel');
+    const botao = document.getElementById('equipe-aplicar');
+    const aviso = document.getElementById('equipe-aviso');
+    if (!bloco) return;
+
+    const dizer = (texto, ok) => {
+      aviso.textContent = texto;
+      aviso.hidden = false;
+      aviso.classList.toggle('editor__aviso--ok', !!ok);
+    };
+
+    let faixas = [];
+    try {
+      const r = await API.adminPatentes();
+      let de = 1;
+      faixas = (r.patentes || [])
+        .filter(p => p.tipo === perfil.tipo)
+        .sort((a, b) => a.ate - b.ate)
+        .map(p => { const f = { ...p, de }; de = p.ate + 1; return f; });
+    } catch (_) {
+      return;   // sem as patentes não há o que oferecer; a seção fica fora
+    }
+
+    if (!faixas.length) return;
+
+    escolha.innerHTML =
+      '<option value="">— escolher pela patente —</option>' +
+      faixas.map(f => `<option value="${f.de}">${f.nome} · níveis ${f.de} a ${f.ate}</option>`).join('');
+
+    // O nível de agora, para o campo não começar em branco.
+    try {
+      const u = await API.adminUsuario(perfil.id);
+      const n = u.xp && u.xp.nivel ? u.xp.nivel.nivel : 1;
+      campo.value = n;
+      const atualFaixa = faixas.find(f => n >= f.de && n <= f.ate);
+      if (atualFaixa) escolha.value = String(atualFaixa.de);
+    } catch (_) {
+      campo.value = 1;
+    }
+
+    escolha.addEventListener('change', () => {
+      if (escolha.value) campo.value = escolha.value;
+    });
+
+    botao.addEventListener('click', async () => {
+      const nivel = Number(campo.value);
+      if (!(nivel >= 1 && nivel <= 100)) return dizer('O nível vai de 1 a 100.');
+
+      botao.disabled = true;
+      try {
+        const r = await API.adminDefinirNivel(perfil.id, nivel);
+        const patente = r.xp && r.xp.nivel ? r.xp.nivel.patente : '';
+        dizer(patente ? `Agora: ${patente} · nível ${nivel}.` : `Nível ${nivel} aplicado.`, true);
+        mostrarPatente(r.xp && r.xp.nivel, r.xp);
+      } catch (err) {
+        dizer(err.message || 'Não foi possível trocar a patente.');
+      } finally {
+        botao.disabled = false;
+      }
+    });
+
+    bloco.hidden = false;
   }
 
   /* ── O cartão de cima ──────────────────────────────────────────── */
@@ -101,6 +179,13 @@
 
     const selo = document.getElementById('dado-patente');
     if (selo) {
+      // Só a classe de cor: o selo tem um ícone dentro, e trocar o
+      // innerHTML dele levaria o ícone junto.
+      for (const c of [...selo.classList]) {
+        if (c.startsWith('patente-cor--')) selo.classList.remove(c);
+      }
+      if (nivel.faixa) selo.classList.add(`patente-cor--${nivel.faixa}`);
+
       escrever('dado-patente-txt', `${nivel.patente} · Nível ${nivel.nivel}`);
       selo.hidden = false;
     }

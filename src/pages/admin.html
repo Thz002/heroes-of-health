@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Equipe — Heróis da Saúde</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+
+  <style>
+    .adm { max-width: 1100px; margin: 0 auto; padding: 26px 20px 64px; }
+
+    .adm__titulo {
+      font-family: var(--font-display);
+      font-size: 26px; font-weight: 900; color: var(--white); margin: 0 0 4px;
+    }
+    .adm__sub { font-size: 13px; color: var(--text-muted); margin: 0 0 26px; }
+
+    /* ── As abas ── */
+    .adm__abas { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 22px; }
+    .adm__aba {
+      padding: 9px 16px; border-radius: 999px; cursor: pointer;
+      background: rgba(255,255,255,.06); border: 1px solid var(--glass-border);
+      color: var(--text-muted); font-family: var(--font-body);
+      font-size: 13px; font-weight: 600; transition: all .18s;
+    }
+    .adm__aba:hover { color: var(--white); background: rgba(255,255,255,.11); }
+    .adm__aba[aria-selected="true"] {
+      background: var(--primary); border-color: transparent; color: #05201d;
+    }
+
+    /* ── Cartões de número ── */
+    .adm__numeros {
+      display: grid; gap: 12px; margin-bottom: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(146px, 1fr));
+    }
+    .num {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md); padding: 16px 18px;
+    }
+    .num__valor {
+      font-family: var(--font-display); font-size: 27px;
+      font-weight: 900; color: var(--white); line-height: 1;
+    }
+    .num__rot {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--text-muted); margin-top: 7px;
+    }
+
+    /* ── Tabelas ── */
+    .adm__tabela { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .adm__tabela th {
+      text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .adm__tabela td {
+      padding: 11px 12px; color: rgba(255,255,255,.82);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .adm__tabela tbody tr { cursor: pointer; transition: background .15s; }
+    .adm__tabela tbody tr:hover { background: rgba(255,255,255,.05); }
+
+    .etiq {
+      display: inline-block; padding: 2px 9px; border-radius: 999px;
+      font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .etiq--ALUNO     { background: rgba(107,223,184,.16); color: #6bdfb8; }
+    .etiq--PROFESSOR { background: rgba(249,199,79,.16);  color: #f9c74f; }
+    .etiq--ADMIN     { background: rgba(167,139,250,.18); color: #c4b5fd; }
+    .etiq--susp      { background: rgba(255,107,107,.16); color: #ff8080; }
+
+    /* ── Busca ── */
+    .adm__busca { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .adm__campo {
+      flex: 1 1 220px; padding: 11px 14px; border-radius: var(--radius-md);
+      background: var(--input-bg); border: 1.5px solid var(--input-border);
+      color: var(--white); font-family: var(--font-body); font-size: 14px; outline: none;
+    }
+    .adm__campo:focus { border-color: var(--accent); }
+    select.adm__campo { flex: 0 0 160px; }
+    select.adm__campo option { background: #1a2332; }
+
+    /* ── A ficha ── */
+    .ficha {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg); padding: 22px; margin-top: 18px;
+    }
+    .ficha__topo { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .ficha__nome {
+      font-family: var(--font-display); font-size: 20px; font-weight: 800;
+      color: var(--white); margin: 0 0 4px;
+    }
+    .ficha__email { font-size: 12.5px; color: var(--text-muted); margin: 0; }
+
+    .ficha__grade {
+      display: grid; gap: 10px; margin: 18px 0;
+      grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    }
+    .ficha__item {
+      background: rgba(46,196,169,.09); border: 1px solid rgba(107,223,184,.11);
+      border-radius: var(--radius-sm); padding: 11px 13px;
+    }
+    .ficha__rot { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
+    .ficha__val { font-size: 15px; font-weight: 700; color: var(--white); margin-top: 3px; }
+
+    .ficha__acoes { display: flex; gap: 9px; flex-wrap: wrap; align-items: flex-end; }
+    .ficha__bloco {
+      display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap;
+      background: rgba(46,196,169,.07); border: 1px solid rgba(107,223,184,.09);
+      border-radius: var(--radius-md);
+      padding: 13px; margin-top: 12px;
+    }
+    .ficha__bloco label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 5px; }
+
+    .bt {
+      padding: 10px 16px; border-radius: var(--radius-md); cursor: pointer;
+      border: 1px solid var(--glass-border); background: rgba(255,255,255,.07);
+      color: var(--white); font-family: var(--font-body); font-size: 13px; font-weight: 600;
+      transition: all .16s;
+    }
+    .bt:hover:not(:disabled) { background: rgba(255,255,255,.14); transform: translateY(-1px); }
+    .bt:disabled { opacity: .5; cursor: not-allowed; }
+    .bt--acao    { background: var(--primary); border-color: transparent; color: #05201d; }
+    .bt--perigo  { background: rgba(255,107,107,.15); border-color: rgba(255,107,107,.4); color: #ff8080; }
+    .bt--perigo:hover:not(:disabled) { background: rgba(255,107,107,.26); }
+
+    .aviso {
+      padding: 11px 15px; border-radius: var(--radius-md);
+      font-size: 13px; margin: 14px 0; display: none;
+    }
+    .aviso.mostrar { display: block; }
+    .aviso--ok  { background: rgba(107,223,184,.14); border: 1px solid rgba(107,223,184,.3); color: #6bdfb8; }
+    .aviso--err { background: rgba(255,107,107,.12); border: 1px solid rgba(255,107,107,.3); color: #ff8080; }
+
+    .vazio { padding: 30px; text-align: center; color: var(--text-faint); font-size: 13.5px; }
+
+    /* ── Os cartõezinhos de perfil ── */
+    .fichinhas { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); }
+
+    .fichinha {
+      display: flex; gap: 12px; align-items: center; text-align: left;
+      padding: 13px 15px; cursor: pointer; width: 100%;
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md); color: inherit; font: inherit;
+      transition: transform .16s, border-color .16s, background .16s;
+    }
+    .fichinha:hover { transform: translateY(-2px); border-color: var(--accent); background: rgba(255,255,255,.14); }
+    .fichinha:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+    .fichinha__foto {
+      width: 42px; height: 42px; flex: none; border-radius: 50%;
+      display: grid; place-items: center; overflow: hidden;
+      background: rgba(46,196,169,.22); color: var(--white);
+      font-family: var(--font-display); font-weight: 800; font-size: 15px;
+    }
+    .fichinha__foto img { width: 100%; height: 100%; object-fit: cover; }
+    .fichinha__meio { min-width: 0; flex: 1; display: block; }
+    /* [ERUDITO] Ana Clara — a etiqueta não encolhe, o nome é que corta. */
+    .fichinha__linha { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .fichinha__nome {
+      display: block;
+      font-weight: 700; color: var(--white); font-size: 14px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .fichinha__sub {
+      display: block;
+      font-size: 11.5px; color: var(--text-muted); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* ── O modal ──
+       A caixa, o fundo escuro e o ✕ já existem no dashboard.css e são os
+       mesmos do resto do site; aqui vai só o que a ficha pede a mais. */
+    .modal { padding: 20px; }
+    .modal__caixa {
+      max-height: 88vh; overflow-y: auto;
+      background: linear-gradient(168deg, #114b4d 0%, #0b383d 100%);
+      border: 1px solid rgba(107,223,184,.16);
+      box-shadow: 0 30px 80px rgba(0,0,0,.45);
+    }
+    .modal__topo { display: flex; gap: 14px; align-items: flex-start; }
+    .modal__fechar { margin-left: auto; flex: none; }
+
+    /* As quatro portas da ficha. Cada uma abre um painel abaixo; nenhuma
+       leva a outra página — era o pedido, e também evita perder de vista
+       de quem é a ficha aberta. */
+    .modal__portas { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin: 18px 0 4px; }
+    .porta {
+      padding: 12px 14px; text-align: left; cursor: pointer;
+      background: rgba(46,196,169,.10); border: 1px solid rgba(107,223,184,.18);
+      border-radius: var(--radius-md); color: var(--white);
+      font-family: var(--font-body); font-size: 13px; font-weight: 600;
+      transition: all .16s;
+    }
+    .porta:hover { background: rgba(46,196,169,.22); border-color: rgba(107,223,184,.34); }
+    .porta[aria-pressed="true"] { background: var(--primary); border-color: transparent; color: #05201d; }
+    .porta small { display: block; font-weight: 500; font-size: 11px; opacity: .72; margin-top: 2px; }
+    .porta--perigo { border-color: rgba(255,107,107,.35); color: #ff8080; }
+    .porta--perigo:hover { background: rgba(255,107,107,.2); }
+
+    .painel { margin-top: 14px; }
+    .painel label { font-size: 11px; color: var(--text-muted); display: block; margin: 10px 0 5px; }
+
+    .faixa-linha { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .faixa-linha input[type="number"] { width: 84px; }
+    .faixa-linha input[type="text"] { flex: 1; }
+
+    @media (max-width: 640px) {
+      .adm__tabela th:nth-child(3), .adm__tabela td:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <nav class="nav_bar" data-navbar></nav>
+
+  <main class="adm">
+    <h1 class="adm__titulo">Painel da equipe</h1>
+    <p class="adm__sub" id="adm-sub">Carregando…</p>
+
+    <div class="adm__abas" role="tablist">
+      <button class="adm__aba" role="tab" data-aba="panorama"   aria-selected="true">Panorama</button>
+      <button class="adm__aba" role="tab" data-aba="usuarios"   aria-selected="false">Usuários</button>
+      <button class="adm__aba" role="tab" data-aba="professores" aria-selected="false">Professores</button>
+      <button class="adm__aba" role="tab" data-aba="patentes"   aria-selected="false">Patentes</button>
+    </div>
+
+    <div class="aviso" id="adm-aviso" role="alert"></div>
+
+    <!-- ── Panorama ── -->
+    <section data-painel="panorama">
+      <div class="adm__numeros" id="panorama-numeros"></div>
+    </section>
+
+    <!-- ── Usuários ── -->
+    <section data-painel="usuarios" hidden>
+      <div class="adm__busca">
+        <input class="adm__campo" id="busca-q" type="search"
+               placeholder="Nome, e-mail ou o id do Supabase…" autocomplete="off">
+        <select class="adm__campo" id="busca-tipo">
+          <option value="">Todos os papéis</option>
+          <option value="ALUNO">Alunos</option>
+          <option value="PROFESSOR">Professores</option>
+          <option value="ADMIN">Equipe</option>
+        </select>
+        <button class="bt bt--acao" id="busca-btn">Procurar</button>
+        <button class="bt" id="busca-eu" title="Abrir a sua própria ficha">Minha conta</button>
+      </div>
+
+      <div class="fichinhas" id="busca-lista"></div>
+    </section>
+
+    <!-- ── Professores ── -->
+    <section data-painel="professores" hidden>
+      <table class="adm__tabela">
+        <thead>
+          <tr><th>Professor</th><th>Turmas</th><th>Alunos</th><th>Quizes</th><th>Último quiz</th></tr>
+        </thead>
+        <tbody id="prof-lista"></tbody>
+      </table>
+    </section>
+
+    <!-- ── Patentes ── -->
+    <section data-painel="patentes" hidden>
+      <p class="adm__sub">
+        Os títulos de cada faixa de dez níveis. A régua de XP continua no código,
+        de propósito: renomear não machuca ninguém, mexer na régua rebaixaria todo mundo de uma vez.
+      </p>
+      <div id="patentes-corpo"></div>
+    </section>
+  </main>
+
+  <!-- O modal vive aqui, vazio, e o admin.js o preenche. -->
+  <div id="modal-lugar"></div>
+
+  <script src="/vendor/supabase.js"></script>
+  <script src="../js/supabase.js" defer></script>
+  <script src="../js/api.js"      defer></script>
+  <script src="../js/navbar.js"   defer></script>
+  <script src="../js/admin.js"    defer></script>
+</body>
+
+</html>

@@ -103,6 +103,44 @@ function daquiA(minutos) {
 }
 
 
+/**
+ * Sorteia o código, grava o hash e manda o e-mail.
+ *
+ * Extraída da rota porque o painel do admin precisa exatamente disto:
+ * disparar uma recuperação para alguém que pediu ajuda. O que ela NÃO
+ * faz é conferir limite de tentativa nem domínio — essas são decisões
+ * da rota pública, que atende visitante anônimo. Chamada pelo admin,
+ * que já provou quem é, elas só atrapalhariam.
+ *
+ * Repare no que continua impossível: nem esta função nem o admin
+ * escolhem a senha de ninguém. O código vai para o e-mail da PESSOA, e
+ * só ela o lê. Um admin que pudesse definir senha alheia poderia entrar
+ * na conta de um aluno sem deixar diferença entre ele e o aluno.
+ */
+async function criarEEnviarCodigo(email) {
+  // Códigos antigos do mesmo e-mail morrem agora. Dois códigos vivos ao
+  // mesmo tempo dobram a chance de alguém acertar um deles no chute.
+  await admin
+    .from('codigos_recuperacao')
+    .update({ usado_em: new Date().toISOString() })
+    .eq('email', email)
+    .is('usado_em', null);
+
+  const codigo = sortearCodigo();
+
+  const gravou = await admin.from('codigos_recuperacao').insert({
+    email,
+    codigo_hash: embaralhar(codigo),
+    expira_em: daquiA(VALIDADE_MIN),
+  });
+
+  if (gravou.error) throw new Error(gravou.error.message);
+
+  await enviarCodigo(email, codigo);
+  return true;
+}
+
+
 // ── 0. O e-mail é real? ──────────────────────────────────────────────
 //
 // Usada pela tela de CADASTRO, antes de criar a conta. Vale a pena
@@ -201,34 +239,13 @@ rotas.post('/recuperar', async (req, res) => {
   const ontem = new Date(Date.now() - 86_400_000).toISOString();
   await admin.from('codigos_recuperacao').delete().lt('criado_em', ontem);
 
-  // Códigos antigos do mesmo e-mail morrem agora. Dois códigos vivos ao
-  // mesmo tempo dobram a chance de alguém acertar um deles no chute.
-  await admin
-    .from('codigos_recuperacao')
-    .update({ usado_em: new Date().toISOString() })
-    .eq('email', email)
-    .is('usado_em', null);
-
-  const codigo = sortearCodigo();
-
-  const gravou = await admin.from('codigos_recuperacao').insert({
-    email,
-    codigo_hash: embaralhar(codigo),
-    expira_em: daquiA(VALIDADE_MIN),
-  });
-
-  if (gravou.error) {
-    return falhou(res, 500, 'Não foi possível enviar o código agora.',
-                  gravou.error, 'POST /auth/recuperar (insert)');
-  }
-
   try {
-    await enviarCodigo(email, codigo);
+    await criarEEnviarCodigo(email);
   } catch (erro) {
-    // O e-mail não saiu, mas o código está gravado. Dizer "deu erro" aqui
-    // revelaria que a conta existe — quem não tem conta recebeu a frase
-    // neutra alguns passos acima. O detalhe fica no terminal.
-    console.error('  ✖ falha ao enviar e-mail de recuperação:', erro.message);
+    // O e-mail pode não ter saído, mas o código está gravado. Dizer
+    // "deu erro" aqui revelaria que a conta existe — quem não tem conta
+    // recebeu a frase neutra alguns passos acima. Detalhe no terminal.
+    console.error('  ✖ recuperação:', erro.message);
   }
 
   res.json({ message: RESPOSTA_NEUTRA, validade_minutos: VALIDADE_MIN });
@@ -380,4 +397,9 @@ rotas.post('/nova-senha', async (req, res) => {
 });
 
 
+/* O router é o que o index.js monta. A função vai de carona como
+   propriedade dele para o painel do admin poder reaproveitar o mesmo
+   caminho de recuperação, sem um segundo lugar que saiba gerar código
+   — dois geradores é um a mais do que deveria existir. */
 module.exports = rotas;
+module.exports.criarEEnviarCodigo = criarEEnviarCodigo;

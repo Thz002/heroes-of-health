@@ -40,7 +40,10 @@
 
     { texto: 'Mapa',          href: 'mapa.html',        perfil: ['ALUNO'] },
     { texto: 'Minha turma',   href: 'minha-turma.html', perfil: ['ALUNO'] },
-    { texto: 'Meu progresso', href: 'progresso.html',   perfil: ['ALUNO'] }
+    { texto: 'Meu progresso', href: 'progresso.html',   perfil: ['ALUNO'] },
+
+    // O único item que o ADMIN vê por ser citado, e não por ver tudo.
+    { texto: 'Equipe',        href: 'admin.html',       perfil: ['ADMIN'] }
   ];
 
   const LOGO = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
@@ -58,6 +61,73 @@
      sozinha no dia em que a coluna aparecer.
      ────────────────────────────────────────────────────────────────── */
   const ROTULO_TIPO = { ALUNO: 'Aluno', PROFESSOR: 'Professor', ADMIN: 'Equipe' };
+
+  /* ── A etiqueta de patente, para todas as telas ──────────────────
+     Mora aqui porque o navbar.js é o único arquivo que TODA tela com
+     patente já carrega, e porque a ordem das tags <script> é contrato:
+     um arquivo novo significaria mexer em sete HTMLs.
+
+     A cor vem de `nivel.faixa` (1 a 10), que o servidor manda junto —
+     e não do nome da patente, que o admin renomeia pelo painel. */
+  window.PATENTE = {
+    /** A classe da faixa, ou '' quando o servidor é antigo e não a manda. */
+    classe(nivel) {
+      const n = nivel && Number(nivel.faixa);
+      return n >= 1 && n <= 10 ? ` patente-tag--${n}` : '';
+    },
+
+    /**
+     * Transforma um <span> em etiqueta. Sem innerHTML: nome é texto.
+     *
+     * A classe original do elemento é preservada — ela costuma carregar
+     * o tamanho e o lugar dele no layout, e jogá-la fora desmonta a
+     * tela em volta.
+     */
+    pintar(elemento, nivel, mini) {
+      if (!elemento) return;
+      const base = this.base(elemento);
+
+      if (!nivel || !nivel.patente) { elemento.textContent = ''; elemento.hidden = true; return; }
+
+      elemento.className =
+        `${base} patente-tag${mini ? ' patente-tag--mini' : ''}${this.classe(nivel)}`.trim();
+      elemento.textContent = nivel.patente;
+      elemento.title = `Nível ${nivel.nivel} de ${nivel.total_de_niveis || 100}`;
+      elemento.hidden = false;
+    },
+
+    /**
+     * Só a cor, para um texto que já tem lugar e tamanho próprios.
+     *
+     * É o caso da barrinha da navbar: ela é estreita, e um chip com
+     * borda ali dentro empurraria o "Nível 7/100" para fora.
+     */
+    tingir(elemento, nivel) {
+      if (!elemento) return;
+      const base = this.base(elemento);
+      const n = nivel && Number(nivel.faixa);
+
+      elemento.className = n >= 1 && n <= 10 ? `${base} patente-cor--${n}` : base;
+      elemento.textContent = (nivel && nivel.patente) || '';
+    },
+
+    /** A classe que o elemento tinha antes de nós, guardada na primeira vez. */
+    base(elemento) {
+      if (elemento.dataset.classeBase === undefined) {
+        elemento.dataset.classeBase = (elemento.className || '')
+          .split(/\s+/).filter(c => c && !/^patente-(tag|cor)/.test(c)).join(' ');
+      }
+      return elemento.dataset.classeBase;
+    },
+
+    /** O mesmo, em texto, para quem monta HTML por template. */
+    html(nivel, mini) {
+      if (!nivel || !nivel.patente) return '';
+      const nome = String(nivel.patente).replace(/[&<>"']/g,
+        c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      return `<span class="patente-tag${mini ? ' patente-tag--mini' : ''}${this.classe(nivel)}">${nome}</span>`;
+    }
+  };
 
   const ICONES = {
     perfil: '<path d="M12 12a4 4 0 100-8 4 4 0 000 8z"/><path d="M4 20c0-3.3 3.6-5.5 8-5.5s8 2.2 8 5.5"/>',
@@ -457,7 +527,7 @@
         <span class="nivelzinho__nota"></span>`;
     }
 
-    el.querySelector('.nivelzinho__patente').textContent = nivel.patente;
+    window.PATENTE.tingir(el.querySelector('.nivelzinho__patente'), nivel);
     el.querySelector('.nivelzinho__nv').textContent =
       `Nível ${nivel.nivel}/${nivel.total_de_niveis || 100}`;
     el.querySelector('.nivelzinho__nv-curto').textContent = `Nv. ${nivel.nivel}`;

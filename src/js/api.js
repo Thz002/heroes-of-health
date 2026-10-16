@@ -358,8 +358,44 @@ const API = (() => {
     return post('/auth/nova-senha', { email, ticket, senha });
   }
 
+  // =====================================================================
+  //  PAINEL DA EQUIPE (ADMIN)
+  //
+  //  Tudo pelo servidor, que confere o tipo ADMIN antes de qualquer
+  //  coisa. Nada aqui fala direto com o Supabase: apagar conta e dar XP
+  //  pelo navegador seria entregar a chave do jogo a quem abrir o console.
+  // =====================================================================
+
+  const adminResumo      = ()   => get('/admin/resumo');
+  const adminProfessores = ()   => get('/admin/professores');
+  const adminPatentes    = ()   => get('/admin/patentes');
+
+  /** Busca por nome, por e-mail (com @) ou pelo id que o Supabase mostra. */
+  const adminUsuarios = (q = '', tipo = '') => {
+    const p = new URLSearchParams();
+    if (q) p.set('q', q);
+    if (tipo) p.set('tipo', tipo);
+    const cauda = p.toString();
+    return get('/admin/usuarios' + (cauda ? `?${cauda}` : ''));
+  };
+
+  const adminUsuario        = (id)         => get(`/admin/usuarios/${id}`);
+  const adminAjustarXp      = (id, pontos, motivo) => post(`/admin/usuarios/${id}/xp`, { pontos, motivo });
+  const adminDefinirNivel   = (id, nivel)  => post(`/admin/usuarios/${id}/nivel`, { nivel });
+  const adminAlterar        = (id, campos) => patch(`/admin/usuarios/${id}`, campos);
+  const adminRecuperarSenha = (id)         => post(`/admin/usuarios/${id}/recuperar-senha`, {});
+  const adminApagar         = (id)         => del(`/admin/usuarios/${id}`);
+  const adminDefinirSenha   = (id, senha)  => post(`/admin/usuarios/${id}/senha`, { senha });
+  const adminSalvarPatentes = (tipo, faixas) => request('PUT', '/admin/patentes', { tipo, faixas });
+
   return {
     get, post, patch, delete: del,
+
+    // Painel da equipe (ADMIN)
+    adminResumo, adminProfessores, adminUsuarios, adminUsuario,
+    adminAjustarXp, adminDefinirNivel, adminAlterar,
+    adminRecuperarSenha, adminDefinirSenha, adminApagar,
+    adminPatentes, adminSalvarPatentes,
 
     // Escolas e turmas (direto no Supabase)
     getTurmaPorCodigo,

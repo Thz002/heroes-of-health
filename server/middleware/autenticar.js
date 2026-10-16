@@ -34,7 +34,7 @@ async function autenticar(req, res, next) {
   // afirmou, que é informação que a própria pessoa controla.
   const { data: perfil, error: erroPerfil } = await admin
     .from('usuarios')
-    .select('id, nome, tipo, idade, turma_id')
+    .select('id, nome, tipo, idade, turma_id, suspenso, suspenso_motivo')
     .eq('id', data.user.id)
     .maybeSingle();
 
@@ -46,6 +46,21 @@ async function autenticar(req, res, next) {
     // O gatilho da migração 03 deveria tornar isto impossível.
     return res.status(403).json({
       message: 'Sua conta existe, mas o cadastro do jogo não foi criado. Avise o professor.'
+    });
+  }
+
+  // Conta suspensa para aqui.
+  //
+  // Sem esta checagem a suspensão era enfeite: a coluna mudava no banco
+  // e a pessoa continuava jogando normalmente. Bloquear no login não
+  // bastaria — o token já emitido continua válido por uma hora —, então
+  // a porta é esta, que toda chamada atravessa.
+  if (perfil.suspenso) {
+    return res.status(403).json({
+      message: perfil.suspenso_motivo
+        ? `Sua conta está suspensa: ${perfil.suspenso_motivo}`
+        : 'Sua conta está suspensa. Fale com a equipe.',
+      suspenso: true,
     });
   }
 

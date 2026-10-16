@@ -691,6 +691,74 @@ language sql stable security definer set search_path = auth, public as $$
 $$;
 
 
+-- ── O que o ADMIN mexe ───────────────────────────────────────────────
+--
+-- Três coisas que antes só existiam no código ou em lugar nenhum.
+
+-- 1. SUSPENDER em vez de apagar.
+--
+-- Apagar uma conta leva junto o progresso, as respostas e o lugar da
+-- pessoa no ranking da turma — e isso não volta. Suspender resolve o
+-- caso real (alguém usando mal a conta) sem destruir o histórico de
+-- quem talvez volte na semana seguinte.
+alter table usuarios add column if not exists suspenso boolean not null default false;
+alter table usuarios add column if not exists suspenso_em timestamptz;
+alter table usuarios add column if not exists suspenso_motivo varchar(200);
+
+
+-- 2. XP dado à mão, com assinatura.
+--
+-- O admin pode somar ou tirar XP de alguém. A linha aqui é o que
+-- separa "corrigi uma inconsistência" de "me dei mil pontos": todo
+-- ajuste guarda quem fez, quanto e por quê, e o total do usuário passa
+-- a ser `o que ele ganhou jogando` + `a soma destas linhas`.
+--
+-- Nada é editado no lugar: ajustar duas vezes grava duas linhas. Um
+-- registro que pode ser reescrito não é registro.
+create table if not exists xp_ajustes (
+  id bigint primary key generated always as identity,
+  usuario_id uuid not null references usuarios(id) on delete cascade,
+  pontos int not null,                      -- pode ser negativo
+  motivo varchar(200),
+  feito_por uuid references usuarios(id) on delete set null,
+  criado_em timestamptz not null default now()
+);
+
+create index if not exists ajustes_por_usuario on xp_ajustes (usuario_id);
+
+
+-- 3. As patentes saem do código e viram dado.
+--
+-- Os nomes das dez faixas estavam escritos em server/progressao.js. Na
+-- tabela, o admin renomeia, acrescenta e remove faixa sem deploy.
+--
+-- O que NÃO virou dado foi a escada de XP. Ela continua no código, e é
+-- de propósito: um erro de digitação num campo de nível rebaixaria
+-- todo mundo de uma vez, e perder nível por engano alheio é a pior
+-- coisa que este jogo pode fazer com quem joga. Trocar um título não
+-- machuca ninguém; mexer na régua machuca todo mundo ao mesmo tempo.
+create table if not exists patentes (
+  id bigint primary key generated always as identity,
+  tipo varchar(20) not null check (tipo in ('ALUNO', 'PROFESSOR')),
+  ate int not null check (ate between 1 and 100),   -- último nível da faixa
+  nome varchar(60) not null,
+  unique (tipo, ate)
+);
+
+insert into patentes (tipo, ate, nome) values
+  ('ALUNO',      10, 'Pequeno Aprendiz'),       ('PROFESSOR',  10, 'Monitor'),
+  ('ALUNO',      20, 'Estudante'),              ('PROFESSOR',  20, 'Mentor Iniciante'),
+  ('ALUNO',      30, 'Discípulo'),              ('PROFESSOR',  30, 'Instrutor'),
+  ('ALUNO',      40, 'Buscador'),               ('PROFESSOR',  40, 'Preceptor'),
+  ('ALUNO',      50, 'Erudito'),                ('PROFESSOR',  50, 'Mestre do Saber'),
+  ('ALUNO',      60, 'Prodígio'),               ('PROFESSOR',  60, 'Arquimestre'),
+  ('ALUNO',      70, 'Visionário'),             ('PROFESSOR',  70, 'Grão-Mestre'),
+  ('ALUNO',      80, 'Polímata'),               ('PROFESSOR',  80, 'Venerável'),
+  ('ALUNO',      90, 'Luminar'),                ('PROFESSOR',  90, 'Oráculo'),
+  ('ALUNO',     100, 'Herdeiro do Saber'),      ('PROFESSOR', 100, 'Patrono do Conhecimento')
+on conflict (tipo, ate) do nothing;
+
+
 -- #####################################################################
 --  2. FUNÇÕES AUXILIARES
 --
@@ -1349,6 +1417,38 @@ alter table quiz_concluidos    enable row level security;
 -- momento em que cada colega pediu recuperação, e um que conseguisse
 -- escrever criaria um código válido para o e-mail de qualquer um.
 alter table codigos_recuperacao enable row level security;
+
+
+-- ── O que o admin mexe ───────────────────────────────────────────────
+--
+-- `xp_ajustes` segue a regra de toda pontuação neste banco: ninguém
+-- escreve pelo navegador, nem o próprio admin. A tela dele fala com o
+-- servidor, e é o servidor, com a chave secreta, que grava. Uma policy
+-- de insert aqui — mesmo restrita a admin — significaria que bastaria
+-- a sessão de um admin vazar para alguém se dar XP pelo console.
+--
+-- LER é diferente: o histórico de ajustes precisa aparecer na ficha do
+-- usuário, e quem abre essa ficha já é admin.
+alter table xp_ajustes enable row level security;
+
+drop policy if exists "admin le os ajustes" on xp_ajustes;
+
+create policy "admin le os ajustes"
+  on xp_ajustes for select to authenticated using (public.eh_admin());
+
+-- As patentes são lidas por qualquer pessoa logada: o nome da faixa
+-- aparece no perfil e no ranking de todo mundo. Escrever, só admin.
+alter table patentes enable row level security;
+
+drop policy if exists "todos leem as patentes" on patentes;
+drop policy if exists "admin cuida das patentes" on patentes;
+
+create policy "todos leem as patentes"
+  on patentes for select to authenticated using (true);
+
+create policy "admin cuida das patentes"
+  on patentes for all to authenticated
+  using (public.eh_admin()) with check (public.eh_admin());
 
 revoke execute on function public.conta_por_email(text) from public;
 revoke execute on function public.conta_por_email(text) from anon, authenticated;

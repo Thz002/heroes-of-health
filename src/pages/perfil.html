@@ -119,6 +119,36 @@
             </form>
           </section>
 
+          <!-- Só a equipe vê. O perfil é onde a pessoa procura a própria
+               patente, então é aqui que trocar a dela faz sentido. -->
+          <section class="editor" id="bloco-equipe" hidden>
+            <h3 class="editor__titulo">Patente · equipe do projeto</h3>
+
+            <p class="editor__ajuda">
+              Para testar o jogo em qualquer ponto da progressão sem ter de
+              jogar até lá. A patente vem do nível: escolher uma leva ao
+              primeiro nível da faixa, e o campo ao lado afina depois.
+            </p>
+
+            <div class="editor__linha">
+              <label class="editor__rot" for="equipe-patente">Patente</label>
+              <select class="editor__campo" id="equipe-patente"></select>
+            </div>
+
+            <div class="editor__linha">
+              <label class="editor__rot" for="equipe-nivel">Nível (1 a 100)</label>
+              <input class="editor__campo" id="equipe-nivel" type="number"
+                     min="1" max="100" step="1">
+            </div>
+
+            <p class="editor__aviso" id="equipe-aviso" hidden></p>
+
+            <div class="editor__botoes">
+              <button type="button" class="btn btn--sm" id="equipe-aplicar">Aplicar</button>
+              <a class="btn btn--sm btn--ghost" href="admin.html">Painel da equipe</a>
+            </div>
+          </section>
+
           <section class="dashboard-section" id="titulo-numeros" hidden>
             <h3 id="numeros-titulo">Seus números</h3>
           </section>

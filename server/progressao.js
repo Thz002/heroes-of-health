@@ -197,9 +197,57 @@ const PATENTES = {
   ]
 };
 
+/* As faixas acima são o PADRÃO. Se a tabela `patentes` existir e tiver
+   linhas, é ela que manda — é por lá que o admin renomeia, acrescenta e
+   remove faixa sem precisar de deploy.
+
+   O cache evita uma consulta por chamada: patenteDe() é usada em todo
+   ranking, e um ranking de 30 alunos faria 30 idas ao banco para ler
+   dez linhas que ninguém muda duas vezes no mesmo minuto. */
+let patentesDoBanco = null;
+let patentesLidasEm = 0;
+const VALIDADE_DO_CACHE = 60_000;
+
+async function carregarPatentes() {
+  if (patentesDoBanco && Date.now() - patentesLidasEm < VALIDADE_DO_CACHE) return;
+
+  const r = await admin.from('patentes').select('tipo, ate, nome').order('ate');
+
+  // Banco sem a tabela continua funcionando com as faixas do código.
+  // É o mesmo princípio de faltaTabela() lá em cima: coisa que falta
+  // vira silêncio, não erro de tela.
+  if (r.error || !r.data?.length) { patentesDoBanco = null; return; }
+
+  const mapa = { ALUNO: [], PROFESSOR: [] };
+  for (const f of r.data) if (mapa[f.tipo]) mapa[f.tipo].push({ ate: f.ate, nome: f.nome });
+  patentesDoBanco = (mapa.ALUNO.length && mapa.PROFESSOR.length) ? mapa : null;
+  patentesLidasEm = Date.now();
+}
+
+/** Esquece o cache. Chamada pela rota que grava as patentes. */
+function esquecerPatentes() { patentesDoBanco = null; patentesLidasEm = 0; }
+
+/**
+ * A faixa inteira: o nome e a POSIÇÃO dela na escada (1 a 10).
+ *
+ * A posição existe por causa da cor. Cada faixa tem a sua, e a primeira
+ * faixa do aluno e a primeira do professor compartilham a mesma — são o
+ * mesmo degrau, com nomes diferentes. Mandar a posição junto evita que
+ * cada tela tenha de adivinhar a cor pelo nome da patente, que o admin
+ * pode renomear a qualquer momento pelo painel.
+ */
+function faixaDe(nivel, tipo) {
+  const chave = tipo === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO';
+  const faixas = (patentesDoBanco && patentesDoBanco[chave]) || PATENTES[chave];
+
+  let i = faixas.findIndex(f => nivel <= f.ate);
+  if (i < 0) i = faixas.length - 1;
+
+  return { nome: faixas[i].nome, indice: i + 1, de: faixas.length };
+}
+
 function patenteDe(nivel, tipo) {
-  const faixas = PATENTES[tipo === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO'];
-  return (faixas.find(f => nivel <= f.ate) || faixas[faixas.length - 1]).nome;
+  return faixaDe(nivel, tipo).nome;
 }
 
 /**
@@ -216,13 +264,15 @@ function nivelDoXp(xp, tipo = 'ALUNO') {
   for (const degrau of NIVEIS) if (total >= degrau.xp) atual = degrau;
 
   const proximo = NIVEIS.find(d => d.nivel === atual.nivel + 1) || null;
-  const patente = patenteDe(atual.nivel, tipo);
+  const faixa = faixaDe(atual.nivel, tipo);
+  const patente = faixa.nome;
 
   // No último nível a barra fica cheia: não há mais degrau, e mostrar
   // uma barra pela metade sugeriria que falta algo que não existe.
   if (!proximo) {
     return {
       nivel: atual.nivel, patente, titulo: patente, xp: total,
+      faixa: faixa.indice, faixas: faixa.de,
       xp_do_nivel: atual.xp, xp_do_proximo: null,
       faltam: 0, porcentagem: 100, maximo: true,
       total_de_niveis: TOTAL_DE_NIVEIS, proxima_patente: null
@@ -240,6 +290,8 @@ function nivelDoXp(xp, tipo = 'ALUNO') {
     nivel: atual.nivel,
     patente,
     titulo: patente,                // nome antigo, mantido para não quebrar telas
+    faixa: faixa.indice,            // 1 a 10 — é o que escolhe a cor da patente
+    faixas: faixa.de,
     xp: total,
     xp_do_nivel: atual.xp,
     xp_do_proximo: proximo.xp,
@@ -360,18 +412,21 @@ async function xpDoAluno(usuarioId, respostas = null) {
   const certas = respostas.filter(r => r.acertou);
   const distintas = new Set(certas.map(r => r.questao_id));
 
-  const [bruto1, bruto2, bruto3] = await Promise.all([
+  const [bruto1, bruto2, bruto3, bruto4] = await Promise.all([
     admin.from('xp_diario').select('dia, pontos').eq('usuario_id', usuarioId),
     admin.from('insignias_usuarios')
       .select('insignia_codigo, conquistada_em, insignias(nome, descricao, xp, imagem, ordem)')
       .eq('usuario_id', usuarioId),
     admin.from('quiz_concluidos')
-      .select('xp_aluno, taxa, perguntas, concluido_em').eq('usuario_id', usuarioId)
+      .select('xp_aluno, taxa, perguntas, concluido_em').eq('usuario_id', usuarioId),
+    admin.from('xp_ajustes')
+      .select('pontos, motivo, criado_em').eq('usuario_id', usuarioId)
   ]);
 
   const dias = ouVazio(bruto1);
   const ganhas = ouVazio(bruto2);
   const conclusoes = ouVazio(bruto3);
+  const ajustes = ouVazio(bruto4);
 
   if (dias.error) return { erro: dias.error };
   if (ganhas.error) return { erro: ganhas.error };
@@ -384,7 +439,12 @@ async function xpDoAluno(usuarioId, respostas = null) {
   const deInsignias = (ganhas.data || []).reduce((s, i) => s + (i.insignias?.xp || 0), 0);
   const deConclusoes = feitos.reduce((s, c) => s + (c.xp_aluno || 0), 0);
 
-  const total = deQuestoes + deDias + deInsignias + deConclusoes;
+  // O ajuste manual do admin entra na soma como qualquer outra fonte,
+  // e pode ser negativo. `Math.max(0)` no fim porque nível negativo não
+  // existe: tirar mais do que a pessoa tem a deixa no zero, não em dívida.
+  const deAjustes = (ajustes.data || []).reduce((s, a) => s + (a.pontos || 0), 0);
+
+  const total = Math.max(0, deQuestoes + deDias + deInsignias + deConclusoes + deAjustes);
 
   // Os dias que contam para a SEQUÊNCIA são os de presença, não os de
   // resposta: a pessoa que entra todo dia mantém a sequência mesmo nos
@@ -397,6 +457,8 @@ async function xpDoAluno(usuarioId, respostas = null) {
     de_dias: deDias,
     de_insignias: deInsignias,
     de_conclusoes: deConclusoes,
+    de_ajustes: deAjustes,
+    ajustes: ajustes.data || [],
     acertos_unicos: distintas.size,
     conclusoes: feitos.length,
     nivel: nivelDoXp(total, 'ALUNO'),
@@ -845,12 +907,13 @@ async function xpDeVarios(ids) {
   const vazio = new Map(ids.map(id => [id, 0]));
   if (!ids.length) return vazio;
 
-  const [certas, dias, insignias, conclusoes] = await Promise.all([
+  const [certas, dias, insignias, conclusoes, ajustes] = await Promise.all([
     lerTudo(() => admin.from('respostas_alunos').select('usuario_id, questao_id')
       .eq('acertou', true).in('usuario_id', ids).order('usuario_id').order('questao_id')),
     admin.from('xp_diario').select('usuario_id, pontos').in('usuario_id', ids),
     admin.from('insignias_usuarios').select('usuario_id, insignias(xp)').in('usuario_id', ids),
-    admin.from('quiz_concluidos').select('usuario_id, xp_aluno').in('usuario_id', ids)
+    admin.from('quiz_concluidos').select('usuario_id, xp_aluno').in('usuario_id', ids),
+    admin.from('xp_ajustes').select('usuario_id, pontos').in('usuario_id', ids)
   ]);
 
   const total = new Map(ids.map(id => [id, 0]));
@@ -862,6 +925,16 @@ async function xpDeVarios(ids) {
   for (const d of ouVazio(dias).data || []) soma(d.usuario_id, d.pontos || 0);
   for (const i of ouVazio(insignias).data || []) soma(i.usuario_id, i.insignias?.xp || 0);
   for (const c of ouVazio(conclusoes).data || []) soma(c.usuario_id, c.xp_aluno || 0);
+
+  // O ajuste do admin tem de entrar aqui também, e não só em
+  // xpDoAluno(). Sem isto a mesma pessoa aparecia com 13.480 XP na
+  // ficha e com 100 na lista da turma — dois números para a mesma
+  // coisa, que é exatamente o que esta função existe para evitar.
+  for (const a of ouVazio(ajustes).data || []) soma(a.usuario_id, a.pontos || 0);
+
+  // Ajuste negativo pode passar do que a pessoa tem; nível negativo não
+  // existe. Mesma regra do xpDoAluno().
+  for (const [id, quanto] of total) if (quanto < 0) total.set(id, 0);
 
   return total;
 }
@@ -944,6 +1017,7 @@ module.exports = {
   XP_POR_QUESTAO, XP_DIARIO, XP_POR_ACERTO_DA_TURMA,
   XP_CONCLUSAO_ALUNO, XP_CONCLUSAO_PROFESSOR,
   NIVEIS, TOTAL_DE_NIVEIS, PATENTES, FUSO,
+  carregarPatentes, esquecerPatentes, patenteDe, faixaDe,
   faltaTabela, ouVazio,
   nivelDoXp, patenteDe, diaLocal, sequenciaDeDias, marcarPresenca,
   acertosUnicosPorAluno, xpDoAluno, xpDoProfessor, xpDeVarios,

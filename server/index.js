@@ -25,6 +25,7 @@ const path    = require('path');
 const rotasJogo       = require('./rotas/jogo');
 const rotasProfessor  = require('./rotas/professor');
 const rotasRecuperacao = require('./rotas/recuperacao');
+const rotasAdmin       = require('./rotas/admin');
 
 const app   = express();
 const PORTA = process.env.PORT || 3000;
@@ -80,6 +81,10 @@ app.use('/api/auth', rotasRecuperacao);
 
 app.use('/api', rotasJogo);
 app.use('/api/professor', rotasProfessor);
+
+// O painel de quem mantém o jogo. A rota inteira exige tipo ADMIN, e
+// daqui se apaga conta e se dá XP — é a parte mais perigosa da API.
+app.use('/api/admin', rotasAdmin);
 
 app.use((req, res) => {
   res.status(404).json({ message: `Rota não encontrada: ${req.method} ${req.path}` });
