@@ -99,19 +99,44 @@
       margin-top: 14px;
     }
 
-    /* O traço é desenhado da esquerda para a direita, como num monitor.
-       O número é o comprimento da linha: 447 unidades, medidas somando
-       os segmentos retos e amostrando as duas curvas. Arredondado para
-       cima, porque se ficar CURTO o fim do traçado nunca aparece — era
-       o que acontecia antes, com 400 para uma linha de ~450. */
+    /* A caneta anda, o papel fica parado.
+
+       `stroke-dasharray: 460` divide a linha em um traço de 460 e um
+       vazio de 460 — e o traçado inteiro mede 447, então em qualquer
+       instante a tela mostra um pedaço de um ou do outro. Mexer no
+       `stroke-dashoffset` é deslizar esse par ao longo do caminho:
+
+         offset  460   o vazio está sobre o traçado    -> tela limpa
+         offset    0   o traço está sobre o traçado    -> linha inteira
+         offset -460   o vazio voltou                  -> tela limpa
+
+       Indo de 460 a -460 sem pausa, a linha é escrita da esquerda
+       para a direita e depois sai pela esquerda, igual ao papel
+       passando embaixo da caneta. E como começo e fim do ciclo são o
+       mesmo estado (tela limpa), a volta ao início não pisca.
+
+       Os 3 batimentos levam 2,7s para serem escritos — 0,9s cada, que
+       dá ~67 por minuto, um coração em repouso. A limpeza é mais
+       rápida, 1,8s, porque nela não acontece nada de novo e esticá-la
+       só deixaria a tela vazia por mais tempo. */
     .ecg-path {
       stroke-dasharray: 460;
       stroke-dashoffset: 460;
-      animation: ecg-draw 2.6s ease-out forwards 0.7s;
+      animation: ecg-traco 4.5s linear infinite 0.5s;
     }
 
-    @keyframes ecg-draw {
-      to { stroke-dashoffset: 0; }
+    @keyframes ecg-traco {
+      0%   { stroke-dashoffset:  460; }   /* limpo */
+      60%  { stroke-dashoffset:    0; }   /* escrito */
+      100% { stroke-dashoffset: -460; }   /* limpo de novo */
+    }
+
+    /* Quem pede menos movimento no sistema recebe o traçado parado e
+       inteiro. Animação que não para é a que mais incomoda quem tem
+       sensibilidade vestibular, e esta ficaria rodando o tempo todo
+       atrás de um formulário de login. */
+    @media (prefers-reduced-motion: reduce) {
+      .ecg-path { animation: none; stroke-dashoffset: 0; }
     }
 
     /* ── Login card ── */
@@ -567,17 +592,20 @@
         <h1 class="logo-title">HERÓIS DA SAÚDE</h1>
         <p class="logo-sub" id="logo-sub">Sua missão de saúde começa aqui</p>
 
-        <!-- ECG animado — ritmo sinusal normal
+        <!-- ECG animado — ritmo sinusal normal, redesenhado sem parar
              Este traçado já foi uma linha reta com espetos soltos, e a
              equipe de Medicina reconheceu nele um ritmo agônico: sem
              onda P, sem onda T e com os batimentos em intervalos
              desiguais. Era o eletro de quem está morrendo, na tela de
              abertura de um jogo sobre cuidar da saúde.
 
-             Agora cada batimento tem as cinco partes, na proporção
+             Cada batimento agora tem as cinco partes, na proporção
              certa — P pequena, QRS alto e estreito, T arredondada e
-             maior que a P — e os três vêm de 88 em 88 unidades, que é
-             o que faz um ritmo ser "regular". -->
+             maior que a P — e os três saem de 88 em 88 unidades, que
+             é o que faz um ritmo ser "regular".
+
+             O desenho cabe inteiro na janela de propósito: quem se
+             move aqui é a caneta, não o papel. Ver o CSS de .ecg-path. -->
         <div class="ecg-wrap">
           <svg viewBox="0 0 280 40" fill="none" width="100%" preserveAspectRatio="none">
             <path
