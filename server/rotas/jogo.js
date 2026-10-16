@@ -498,15 +498,14 @@ rotas.get('/meu-progresso', async (req, res) => {
 async function turmaComColegas(eu, turmaId) {
   const turma = await admin
     .from('turmas')
-    .select('id, nome, cor, ano_escolar, escola_id, professor_id')
+    .select('id, nome, cor, ano_escolar, professor_id')
     .eq('id', turmaId)
     .maybeSingle();
 
   if (turma.error) return { erro: turma.error };
   if (!turma.data) return { turma: null, colegas: [], posicao: null };
 
-  const [escola, professor, matriculados] = await Promise.all([
-    admin.from('escolas').select('nome').eq('id', turma.data.escola_id).maybeSingle(),
+  const [professor, matriculados] = await Promise.all([
     admin.from('usuarios').select('id, nome, avatar_url').eq('id', turma.data.professor_id).maybeSingle(),
     admin.from('usuarios').select('id, nome, avatar_url').eq('turma_id', turmaId).eq('tipo', 'ALUNO')
   ]);
@@ -538,7 +537,6 @@ async function turmaComColegas(eu, turmaId) {
     nome: turma.data.nome,
     cor: turma.data.cor || null,
     ano_escolar: turma.data.ano_escolar || null,
-    escola: escola.data?.nome || null,
     professor: dadosProfessor?.nome || null,
     professor_perfil: dadosProfessor,
     total_alunos: alunos.length

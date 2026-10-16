@@ -84,7 +84,7 @@ function nivelDoAnoEscolar(ano) {
 rotas.get('/turmas', async (req, res) => {
   const { data, error } = await admin
     .from('turmas')
-    .select('id, nome, codigo, escola_id, cor, ano_escolar')
+    .select('id, nome, codigo, cor, ano_escolar')
     .eq('professor_id', req.usuario.id)
     .order('nome');
 
@@ -119,10 +119,6 @@ rotas.post('/turmas', async (req, res) => {
   if (nome.length < 2) {
     return res.status(400).json({ message: 'Dê um nome à turma. Ex: 7º Ano B' });
   }
-  if (!req.usuario.escola_id) {
-    return res.status(400).json({ message: 'Seu cadastro não tem escola. Avise o administrador.' });
-  }
-
   // Cor e ano vêm do navegador, então são conferidos contra uma lista
   // fechada antes de gravar — o mesmo dado inválido também cairia no
   // check do banco, mas é melhor barrar aqui com uma mensagem clara.
@@ -138,18 +134,17 @@ rotas.post('/turmas', async (req, res) => {
     .from('turmas')
     .insert({
       nome,
-      escola_id: req.usuario.escola_id,
       professor_id: req.usuario.id,
       codigo,
       cor,
       ano_escolar
     })
-    .select('id, nome, codigo, escola_id, cor, ano_escolar')
+    .select('id, nome, codigo, cor, ano_escolar')
     .single();
 
   if (error) {
     if (error.message.includes('duplicate') || error.code === '23505') {
-      return res.status(409).json({ message: 'Você já tem uma turma com esse nome nesta escola.' });
+      return res.status(409).json({ message: 'Você já tem uma turma com esse nome.' });
     }
     return falhou(res, 500, 'Não foi possível criar a turma.', error, 'POST /professor/turmas');
   }

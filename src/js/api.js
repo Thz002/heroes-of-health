@@ -109,40 +109,7 @@ const API = (() => {
     return typeof SUPA !== 'undefined' && SUPA !== null;
   }
 
-  /** Lista todas as escolas cadastradas, para preencher a lista suspensa */
-  async function getEscolas() {
-    if (!temSupabase()) throw buildError(0, 'Supabase não está carregado.');
 
-    const { data, error } = await SUPA
-      .from('escolas')
-      .select('id, nome')
-      .order('nome');
-
-    if (error) throw buildError(500, error.message, error);
-    return data;
-  }
-
-  /**
-   * Lista as turmas de UMA escola. É o segundo passo da cascata: o aluno
-   * escolhe a escola e só então as turmas dela são carregadas.
-   *
-   * O select pede só id e nome. A coluna `codigo` nem poderia ser pedida:
-   * a migração 03 tirou a permissão de leitura dela, porque com ela
-   * aberta qualquer visitante listava os códigos de todas as turmas.
-   */
-  async function getTurmasPorEscola(escolaId) {
-    if (!escolaId) return [];
-    if (!temSupabase()) throw buildError(0, 'Supabase não está carregado.');
-
-    const { data, error } = await SUPA
-      .from('turmas')
-      .select('id, nome')
-      .eq('escola_id', escolaId)
-      .order('nome');
-
-    if (error) throw buildError(500, error.message, error);
-    return data;
-  }
 
   /**
    * Descobre a turma a partir do código curto (ex: '7B-K3M9').
@@ -395,8 +362,6 @@ const API = (() => {
     get, post, patch, delete: del,
 
     // Escolas e turmas (direto no Supabase)
-    getEscolas,
-    getTurmasPorEscola,
     getTurmaPorCodigo,
 
     // Recuperação de senha (pelo servidor, sem login)

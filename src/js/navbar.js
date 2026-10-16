@@ -459,7 +459,7 @@
 
     el.querySelector('.nivelzinho__patente').textContent = nivel.patente;
     el.querySelector('.nivelzinho__nv').textContent =
-      `Nível ${nivel.nivel}/${nivel.total_de_niveis || 20}`;
+      `Nível ${nivel.nivel}/${nivel.total_de_niveis || 100}`;
     el.querySelector('.nivelzinho__nv-curto').textContent = `Nv. ${nivel.nivel}`;
 
     encherBarra(el, nivel);

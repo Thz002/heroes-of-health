@@ -34,7 +34,7 @@ async function autenticar(req, res, next) {
   // afirmou, que é informação que a própria pessoa controla.
   const { data: perfil, error: erroPerfil } = await admin
     .from('usuarios')
-    .select('id, nome, tipo, idade, escola_id, turma_id')
+    .select('id, nome, tipo, idade, turma_id')
     .eq('id', data.user.id)
     .maybeSingle();
 

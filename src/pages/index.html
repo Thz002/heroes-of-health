@@ -735,34 +735,17 @@
             <p class="field-hint" id="idade-hint"></p>
           </div>
 
-          <!-- Modo A: escolhe a escola e só então as turmas dela aparecem -->
-          <div id="modo-selecao" class="field-group">
-            <div>
-              <label class="field-label" for="escola-aluno">Escola</label>
-              <div class="field-wrap">
-                <select class="field-input" id="escola-aluno" name="escola_aluno">
-                  <option value="" disabled selected>Carregando escolas...</option>
-                </select>
-                <span class="field-icon">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                </span>
-              </div>
-            </div>
-            <div>
-              <label class="field-label" for="turma">Turma</label>
-              <div class="field-wrap">
-                <select class="field-input" id="turma" name="turma" disabled>
-                  <option value="" disabled selected>Selecione a escola primeiro</option>
-                </select>
-                <span class="field-icon">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                </span>
-              </div>
-            </div>
-          </div>
+          <!-- O código que o professor entrega para a sala.
+               Era um de dois caminhos; virou o único.
 
-          <!-- Modo B: código que o professor entrega para a sala -->
-          <div id="modo-codigo" class="hidden">
+               O outro era escolher a escola numa lista e então a turma
+               dentro dela. Saiu porque a lista se enchia sozinha: o
+               cadastro deixava qualquer pessoa inventar uma escola, e
+               bastaram alguns dias de teste para o banco ganhar
+               "Harvard College" e "Oxford University". Numa escola de
+               verdade o estrago é pior — "E.E. João XXIII" e "EE Joao
+               23" viram duas, e metade da turma entra na errada. -->
+          <div id="modo-codigo">
             <label class="field-label" for="codigo-turma">Código da turma</label>
             <div class="field-wrap">
               <input class="field-input" type="text" id="codigo-turma" name="codigo_turma"
@@ -773,39 +756,14 @@
             </div>
             <p class="field-hint" id="codigo-hint">Peça o código ao seu professor.</p>
           </div>
-
-          <div class="mode-switch-row">
-            <button type="button" class="forgot-link" id="btn-modo-turma">Tenho um código da turma</button>
-          </div>
         </div>
 
-        <!-- Campos do PROFESSOR — só aparecem no cadastro -->
-        <div id="box-professor" class="field-group hidden">
-          <div>
-            <label class="field-label" for="escola">Escola de Atuação</label>
-            <div class="field-wrap">
-              <select class="field-input" id="escola" name="escola">
-                <option value="" disabled selected>Carregando escolas...</option>
-              </select>
-              <span class="field-icon">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              </span>
-            </div>
-          </div>
-
-          <!-- Aparece só ao escolher "+ Cadastrar Nova Escola" -->
-          <div id="box-nova-escola" class="hidden">
-            <label class="field-label" for="nova-escola">Nome da nova escola</label>
-            <div class="field-wrap">
-              <input class="field-input" type="text" id="nova-escola" name="nova_escola"
-                     placeholder="Ex: Colégio Santa Maria" maxlength="150" />
-              <span class="field-icon">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-              </span>
-            </div>
-            <p class="field-hint">Depois de criar a conta, cadastre as turmas no seu painel.</p>
-          </div>
-        </div>
+        <!-- O PROFESSOR não tem mais campo nenhum além do comum.
+             Ele cria as turmas depois, no painel, e é a turma que
+             carrega tudo: o código, os alunos e o ranking. A caixa
+             continua aqui, vazia, porque o auth.js a mostra e esconde
+             ao trocar de perfil. -->
+        <div id="box-professor" class="field-group hidden"></div>
 
         <!-- Esqueci senha — só no login -->
         <div class="forgot-row" id="forgot-row">

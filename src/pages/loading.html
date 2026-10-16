@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome! - Start Menu</title>
+    <title>Heróis da Saúde — Começar</title>
     <link rel="stylesheet" href="../css/style.css" />
     <script src="/vendor/supabase.js"></script>
     <script src="../js/supabase.js" defer></script>
@@ -12,46 +12,78 @@
     <script src="../js/loading.js" defer></script>
 
     <style>
+        /* ═══════════════════════════════════════════════════════════
+           A tela é partida em duas: o tutorial que gira à esquerda e o
+           menu à direita. O menu vem primeiro no HTML de propósito —
+           no celular as colunas viram linhas, e quem abre o jogo quer
+           o botão de jogar, não o tutorial.
+           ═══════════════════════════════════════════════════════════ */
         .page-main {
             min-height: 100vh;
             display: grid;
             place-items: center;
+            padding: 32px 24px;
         }
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: min(260px, 80vw);
+
+        .inicio {
+            width: min(1120px, 100%);
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            grid-template-areas: "carrossel menu";
+            align-items: center;
+            gap: 56px;
         }
-        .menu__logo {
-            text-align: center;
-            margin-bottom: 38px;
-        }
-        .menu__acoes {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-top: 34px;
-        }
+
+        /* ── O menu ─────────────────────────────────────────────── */
+        .menu { grid-area: menu; display: flex; flex-direction: column; }
+        .menu__logo { text-align: center; }
+
         .menu__emblema {
             display: inline-grid;
             place-items: center;
             width: 82px;
             height: 82px;
-            font-size: 40px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.08);
             border: 2px solid rgba(255, 255, 255, 0.14);
             margin-bottom: 18px;
             animation: flutuar 3s ease-in-out infinite;
         }
+
+        .menu__titulo {
+            font-family: var(--font-display);
+            font-size: clamp(38px, 6vw, 56px);
+            font-weight: 900;
+            line-height: 0.92;
+            color: var(--white);
+            margin: 0;
+            letter-spacing: -0.02em;
+            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+        .menu__titulo span { color: var(--gold); }
+
+        .menu__tagline {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin: 14px 0 0;
+        }
+
+        .menu__acoes {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 34px;
+            width: min(280px, 100%);
+            align-self: center;
+        }
+
         .menu__btn {
             width: 100%;
             padding: 15px;
             border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.16);
+            border: 1px solid var(--glass-border);
             background: rgba(255, 255, 255, 0.06);
-            color: #fff;
+            color: var(--white);
             font-family: var(--font-display);
             font-weight: 800;
             font-size: 16px;
@@ -63,84 +95,359 @@
             background: rgba(255, 255, 255, 0.11);
             border-color: rgba(255, 255, 255, 0.3);
         }
-        .menu__btn:active {
-            transform: translateY(0);
-        }
+        .menu__btn:active { transform: translateY(0); }
+
         .menu__btn--primario {
-            background: var(--cor-primaria, #14b8a6);
+            background: var(--primary);
             border-color: transparent;
             color: #05201d;
+            box-shadow: var(--shadow-primary);
         }
         .menu__btn--primario:hover {
-            background: var(--cor-primaria, #14b8a6);
+            background: var(--primary);
             filter: brightness(1.08);
         }
-        .menu__titulo {
-            font-family: var(--font-display);
-            font-size: clamp(38px, 9vw, 58px);
-            font-weight: 900;
-            line-height: 0.92;
-            color: #fff;
-            margin: 0;
-            letter-spacing: -0.02em;
-            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-        }
-        .menu__titulo span {
-            color: var(--gold, #f9c74f);
-        }
-        .menu__tagline {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.5);
-            margin: 14px 0 0;
-        }
-        @keyframes surgir {
-            from {
-                opacity: 0;
-                transform: translateY(18px);
-            }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* ═══════════════════════════════════════════════════════════
+           O CARROSSEL
+
+           `perspective` fica AQUI, no palco, e não nos cartões. É o
+           erro clássico: um `translateZ` dentro de um elemento sem
+           perspectiva no pai não afunda nada, só muda a escala — e a
+           cena inteira fica chapada sem ninguém entender por quê.
+           ═══════════════════════════════════════════════════════════ */
+        .tutorial { grid-area: carrossel; }
+
+        .tutorial__palco {
+            position: relative;
+            height: 430px;
+            perspective: 1500px;
+            perspective-origin: 50% 45%;
+        }
+
+        .tcard {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 310px;
+            height: 384px;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.10);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            cursor: pointer;
+            font: inherit;
+            color: inherit;
+
+            /* A ordem importa: `translate(-50%,-50%)` vem primeiro na
+               escrita para ser aplicado por último, centralizando o
+               cartão depois de ele já ter girado e afundado. */
+            transform: translate(-50%, -50%);
+            transition: transform .85s cubic-bezier(.22, .61, .36, 1),
+                        opacity   .85s cubic-bezier(.22, .61, .36, 1);
+        }
+
+        /* As quatro posições. Qualquer cartão pode estar em qualquer
+           uma delas; o JS só troca a classe. */
+        /* O da frente é o que se lê, e por isso é o único sólido: o
+           fundo da página atravessando o texto atrapalha a leitura, e
+           o vidro só faz sentido em quem está atrás. A diferença de
+           material separa "este aqui" dos outros dois tanto quanto a
+           posição separa. */
+        .tcard[data-pos="frente"] {
+            transform: translate(-50%, -50%) translateZ(0) rotateY(0deg) scale(1);
+            opacity: 1;
+            z-index: 3;
+            cursor: default;
+            background: #0e464c;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-color: rgba(255, 255, 255, 0.26);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+        }
+        .tcard[data-pos="direita"] {
+            transform: translate(-50%, -50%) translateX(172px) translateZ(-230px) rotateY(-26deg) scale(.94);
+            opacity: .5;
+            z-index: 2;
+        }
+        .tcard[data-pos="esquerda"] {
+            transform: translate(-50%, -50%) translateX(-172px) translateZ(-230px) rotateY(26deg) scale(.94);
+            opacity: .5;
+            z-index: 2;
+        }
+        /* Os que esperam a vez ficam atrás dos laterais e invisíveis —
+           é de onde eles entram quando o carrossel gira. */
+        .tcard[data-pos="fora"] {
+            transform: translate(-50%, -50%) translateZ(-440px) scale(.86);
+            opacity: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .tcard[data-pos="direita"]:hover,
+        .tcard[data-pos="esquerda"]:hover { opacity: .78; }
+
+        .tcard:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+        /* ── A arte de cada cartão ───────────────────────────────────
+           Uma cena do próprio jogo, de src/imgs/. O `object-fit: cover`
+           preenche a moldura cortando o excesso, então a imagem pode
+           ter qualquer proporção — mas as de 1408x768 que estão em
+           Interiores/ caem quase exatas aqui (1,83:1 contra 1,76:1 da
+           moldura), e por isso quase nada se perde no corte. */
+        .tcard__arte {
+            position: relative;
+            height: 176px;
+            flex: none;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background: linear-gradient(145deg, rgba(46, 196, 169, .22), rgba(7, 55, 62, .45));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+        }
+        .tcard__arte img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* O halo atrás do ícone. `pointer-events:none` porque ele cobre
+           o cartão inteiro e engoliria o clique. */
+        .tcard__arte::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 42%, rgba(107, 223, 184, .28), transparent 62%);
+            pointer-events: none;
+        }
+
+        /* Com imagem de verdade no lugar do ícone, o halo verde vira
+           estorvo: ele tingiria a arte inteira. Troca por uma sombra
+           em cima e embaixo — em cima para a etiqueta "Passo 1" ter
+           contraste sobre qualquer foto, embaixo para a imagem não
+           bater de chapa na borda do texto. */
+        .tcard__arte:has(img) {
+            background: #07373e;
+        }
+        .tcard__arte:has(img)::after {
+            background: linear-gradient(to bottom,
+                        rgba(7, 55, 62, .62) 0%,
+                        rgba(7, 55, 62, 0) 38%,
+                        rgba(7, 55, 62, 0) 62%,
+                        rgba(7, 55, 62, .45) 100%);
+        }
+        .tcard__passo {
+            position: absolute;
+            top: 14px;
+            left: 16px;
+            z-index: 1;
+            font-family: var(--font-display);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .6);
+            background: rgba(7, 55, 62, .5);
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 999px;
+            padding: 4px 10px;
+        }
+
+        .tcard__texto { padding: 20px 22px 24px; }
+
+        .tcard__titulo {
+            font-family: var(--font-display);
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--white);
+            margin: 0 0 9px;
+            line-height: 1.25;
+        }
+
+        .tcard__corpo {
+            font-size: 13.5px;
+            line-height: 1.62;
+            color: rgba(255, 255, 255, .62);
+            margin: 0;
+        }
+
+        /* ── As bolinhas ─────────────────────────────────────────── */
+        .tutorial__pontos {
+            display: flex;
+            justify-content: center;
+            gap: 9px;
+            margin-top: 10px;
+        }
+
+        .tponto {
+            width: 9px;
+            height: 9px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, .28);
+            background: transparent;
+            cursor: pointer;
+            transition: background .25s, border-color .25s, width .25s;
+        }
+        .tponto:hover { border-color: var(--accent); }
+        .tponto[aria-selected="true"] {
+            width: 26px;
+            border-radius: 999px;
+            background: var(--accent);
+            border-color: transparent;
+        }
+        .tponto:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+        /* ── Animações de entrada ────────────────────────────────── */
+        @keyframes surgir {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes flutuar {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-8px);
-            }
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-8px); }
         }
-        .menu__logo {
-            animation: surgir .6s ease both;
+        .menu__logo   { animation: surgir .6s ease both; }
+        .menu__acoes  { animation: surgir .6s ease .25s both; }
+        .tutorial     { animation: surgir .7s ease .1s both; }
+
+        /* ── Telas estreitas ─────────────────────────────────────── */
+        @media (max-width: 940px) {
+            .inicio {
+                grid-template-columns: 1fr;
+                grid-template-areas: "menu" "carrossel";
+                gap: 40px;
+            }
+            .menu__acoes { margin-top: 26px; }
+            .tutorial__palco { height: 400px; perspective: 1100px; }
+            .tcard { width: 280px; height: 360px; }
+            .tcard[data-pos="direita"]  { transform: translate(-50%, -50%) translateX(132px) translateZ(-250px) rotateY(-24deg) scale(.92); }
+            .tcard[data-pos="esquerda"] { transform: translate(-50%, -50%) translateX(-132px) translateZ(-250px) rotateY(24deg) scale(.92); }
         }
-        .menu__acoes {
-            animation: surgir .6s ease .25s both;
+
+        @media (max-width: 520px) {
+            .page-main { padding: 24px 14px; }
+            .tutorial__palco { height: 372px; }
+            .tcard { width: 240px; height: 332px; }
+            .tcard__arte { height: 146px; }
+            .tcard__texto { padding: 16px 18px 20px; }
+            .tcard__titulo { font-size: 17px; }
+            .tcard__corpo { font-size: 12.5px; }
+            /* Os laterais encostam mais, senão saem da tela. */
+            .tcard[data-pos="direita"]  { transform: translate(-50%, -50%) translateX(96px) translateZ(-260px) rotateY(-22deg) scale(.9); }
+            .tcard[data-pos="esquerda"] { transform: translate(-50%, -50%) translateX(-96px) translateZ(-260px) rotateY(22deg) scale(.9); }
+        }
+
+        /* Sem movimento: os cartões trocam secos, e o giro automático
+           é desligado pelo JS. Quem pediu menos animação não deveria
+           receber a maior da tela. */
+        @media (prefers-reduced-motion: reduce) {
+            .tcard { transition: opacity .2s linear; }
+            .menu__emblema, .menu__logo, .menu__acoes, .tutorial { animation: none; }
         }
     </style>
 </head>
+
 <body>
     <main class="page-main">
-        <div class="menu">
-            <div class="menu__logo">
-                <span class="menu__emblema">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
-                        <path
-                            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                    </svg>
-                </span>
-                <h1 class="menu__titulo">Heróis<br><span>da Saúde</span></h1>
-                <p class="menu__tagline" id="menu-saudacao">Salve o bairro, aprenda sobre saúde!</p>
+        <div class="inicio">
+
+            <!-- ── O menu ───────────────────────────────────────── -->
+            <div class="menu">
+                <div class="menu__logo">
+                    <span class="menu__emblema">
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </span>
+                    <h1 class="menu__titulo">Heróis<br><span>da Saúde</span></h1>
+                    <p class="menu__tagline" id="menu-saudacao">Salve o bairro, aprenda sobre saúde!</p>
+                </div>
+                <div class="menu__acoes">
+                    <button class="menu__btn menu__btn--primario" id="btn-jogar">▶ Jogar</button>
+                    <button class="menu__btn" id="btn-sair">Sair</button>
+                </div>
             </div>
-            <div class="menu__acoes">
-                <button class="menu__btn menu__btn--primario" id="btn-jogar">▶ Jogar</button>
-                <button class="menu__btn" id="btn-sair">Sair</button>
-            </div>
+
+            <!-- ── O tutorial que gira ──────────────────────────────
+                 Os cartões são escritos aqui, e não montados pelo JS,
+                 porque são conteúdo: quem for revisar o texto do
+                 tutorial encontra as frases no HTML, como em qualquer
+                 outra página. O JS só decide qual está na frente. -->
+            <section class="tutorial" aria-roledescription="carrossel" aria-label="Como jogar">
+                <div class="tutorial__palco" id="palco">
+
+                    <article class="tcard" data-pos="frente" tabindex="-1">
+                        <div class="tcard__arte">
+                            <span class="tcard__passo">Passo 1</span>
+                            <img src="../imgs/Mapa02.jpg" alt="" loading="lazy">
+                        </div>
+                        <div class="tcard__texto">
+                            <h2 class="tcard__titulo">O bairro é o seu mapa</h2>
+                            <p class="tcard__corpo">UBS, escola, mercado, farmácia, praça, córrego, terreno baldio.
+                                Cada ponto guarda missões sobre o que acontece ali. Escolha por onde começar.</p>
+                        </div>
+                    </article>
+
+                    <article class="tcard" data-pos="direita" tabindex="-1">
+                        <div class="tcard__arte">
+                            <span class="tcard__passo">Passo 2</span>
+                            <img src="../imgs/Interiores/UBS.jpg" alt="" loading="lazy">
+                        </div>
+                        <div class="tcard__texto">
+                            <h2 class="tcard__titulo">Responda as missões</h2>
+                            <p class="tcard__corpo">As perguntas são escritas pela equipe de Medicina e chegam na
+                                medida da sua idade. Marque a alternativa, confirme e veja na hora o resultado.</p>
+                        </div>
+                    </article>
+
+                    <article class="tcard" data-pos="esquerda" tabindex="-1">
+                        <div class="tcard__arte">
+                            <span class="tcard__passo">Passo 3</span>
+                            <img src="../imgs/Interiores/Escola.jpg" alt="" loading="lazy">
+                        </div>
+                        <div class="tcard__texto">
+                            <h2 class="tcard__titulo">Errar faz parte</h2>
+                            <p class="tcard__corpo">Quando a resposta não for a certa, o jogo explica o porquê e
+                                devolve a pergunta. Ninguém perde nada por tentar — a ideia é sair sabendo mais.</p>
+                        </div>
+                    </article>
+
+                    <article class="tcard" data-pos="fora" tabindex="-1">
+                        <div class="tcard__arte">
+                            <span class="tcard__passo">Passo 4</span>
+                            <img src="../imgs/Interiores/Praca.jpg" alt="" loading="lazy">
+                        </div>
+                        <div class="tcard__texto">
+                            <h2 class="tcard__titulo">Oito barras para encher</h2>
+                            <p class="tcard__corpo">Saúde, Educação, Vacinação, Vetores, Limpeza, Alimentação,
+                                Exercícios e Felicidade. Cada acerto alimenta as barras daquele assunto.</p>
+                        </div>
+                    </article>
+
+                    <article class="tcard" data-pos="fora" tabindex="-1">
+                        <div class="tcard__arte">
+                            <span class="tcard__passo">Passo 5</span>
+                            <img src="../imgs/Interiores/Parque.png" alt="" loading="lazy">
+                        </div>
+                        <div class="tcard__texto">
+                            <h2 class="tcard__titulo">Suba de nível</h2>
+                            <p class="tcard__corpo">Os acertos viram XP, o XP vira nível e o nível vira patente.
+                                No caminho você conquista insígnias para a sua estante.</p>
+                        </div>
+                    </article>
+
+                </div>
+
+                <div class="tutorial__pontos" id="pontos" role="tablist" aria-label="Escolher o passo"></div>
+            </section>
+
         </div>
     </main>
 </body>
+
 </html>

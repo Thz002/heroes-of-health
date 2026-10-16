@@ -13,8 +13,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Estado da tela ────────────────────────────
   let isLogin = true;          // true = tela de login, false = tela de cadastro
-  let usandoCodigo = false;    // o aluno está digitando o código em vez de escolher na lista
-  let escolasCarregadas = false;
   let turmaPorCodigo = null;   // a turma que o código digitado resolveu
 
   // ── Elementos da tela ─────────────────────────
@@ -39,17 +37,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const idadeInput = document.getElementById('idade');
   const idadeHint = document.getElementById('idade-hint');
-  const selectEscolaAluno = document.getElementById('escola-aluno');
-  const selectTurma = document.getElementById('turma');
-  const modoSelecao = document.getElementById('modo-selecao');
   const modoCodigo = document.getElementById('modo-codigo');
   const codigoInput = document.getElementById('codigo-turma');
   const codigoHint = document.getElementById('codigo-hint');
-  const btnModoTurma = document.getElementById('btn-modo-turma');
 
-  const selectEscolaProf = document.getElementById('escola');
-  const boxNovaEscola = document.getElementById('box-nova-escola');
-  const novaEscolaInput = document.getElementById('nova-escola');
 
   const forgotRow = document.getElementById('forgot-row');
   const forgotBtn = document.getElementById('forgot-btn');
@@ -159,123 +150,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ── Escola → Turma (lista que depende da outra) ──
-
-  function opcaoPlaceholder(texto) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = texto;
-    opt.disabled = true;
-    opt.selected = true;
-    return opt;
-  }
-
-  function preencherSelect(select, itens, placeholder) {
-    if (!select) return;
-    select.innerHTML = '';
-    select.appendChild(opcaoPlaceholder(placeholder));
-    itens.forEach(item => {
-      const opt = document.createElement('option');
-      opt.value = item.id;
-      opt.textContent = item.nome;
-      select.appendChild(opt);
-    });
-  }
-
-  // Carrega a lista de escolas uma vez só, ao abrir o cadastro.
-  async function carregarEscolas() {
-    if (escolasCarregadas) return;
-    try {
-      const escolas = await API.getEscolas();
-
-      preencherSelect(selectEscolaAluno, escolas, 'Selecione a escola');
-      preencherSelect(selectEscolaProf, escolas, 'Selecione a escola');
-
-      // Só o professor pode criar escola nova.
-      if (selectEscolaProf) {
-        const optNova = document.createElement('option');
-        optNova.value = 'novo';
-        optNova.textContent = '+ Cadastrar Nova Escola';
-        selectEscolaProf.appendChild(optNova);
-      }
-
-      escolasCarregadas = true;
-    } catch (_) {
-      preencherSelect(selectEscolaAluno, [], 'Não foi possível carregar as escolas');
-      preencherSelect(selectEscolaProf, [], 'Não foi possível carregar as escolas');
-    }
-  }
-
-  // Uma turma só existe dentro de uma escola. Por isso a lista de turmas
-  // começa desabilitada e só é preenchida depois que a escola é escolhida.
-  async function carregarTurmas(escolaId) {
-    if (!selectTurma) return;
-
-    selectTurma.disabled = true;
-    selectTurma.innerHTML = '';
-    selectTurma.appendChild(opcaoPlaceholder('Carregando turmas...'));
-
-    try {
-      const turmas = await API.getTurmasPorEscola(escolaId);
-
-      if (!turmas || turmas.length === 0) {
-        selectTurma.innerHTML = '';
-        selectTurma.appendChild(opcaoPlaceholder('Nenhuma turma cadastrada nesta escola'));
-        return;
-      }
-
-      preencherSelect(selectTurma, turmas, 'Selecione a turma');
-      selectTurma.disabled = false;
-    } catch (_) {
-      selectTurma.innerHTML = '';
-      selectTurma.appendChild(opcaoPlaceholder('Erro ao carregar as turmas'));
-    }
-  }
-
-  if (selectEscolaAluno) {
-    selectEscolaAluno.addEventListener('change', () => {
-      // Trocar de escola limpa a turma anterior. Sem isso o formulário
-      // enviaria uma turma que pertence a outra escola.
-      carregarTurmas(selectEscolaAluno.value);
-    });
-  }
-
-  // ── Escola nova (só professor) ────────────────
-  if (selectEscolaProf) {
-    selectEscolaProf.addEventListener('change', () => {
-      const criandoNova = selectEscolaProf.value === 'novo';
-      if (boxNovaEscola) boxNovaEscola.classList.toggle('hidden', !criandoNova);
-      if (criandoNova && novaEscolaInput) novaEscolaInput.focus();
-    });
-  }
-
   // ── Código da turma ───────────────────────────
-  function alternarModoTurma() {
-    usandoCodigo = !usandoCodigo;
-    turmaPorCodigo = null;
-
-    if (modoSelecao) modoSelecao.classList.toggle('hidden', usandoCodigo);
-    if (modoCodigo) modoCodigo.classList.toggle('hidden', !usandoCodigo);
-    if (btnModoTurma) {
-      btnModoTurma.textContent = usandoCodigo
-        ? 'Escolher escola e turma na lista'
-        : 'Tenho um código da turma';
-    }
-
-    if (usandoCodigo) {
-      setHint(codigoHint, 'Peça o código ao seu professor.');
-      if (codigoInput) { codigoInput.value = ''; codigoInput.focus(); }
-    } else {
-      if (selectEscolaAluno) selectEscolaAluno.selectedIndex = 0;
-      if (selectTurma) {
-        selectTurma.disabled = true;
-        selectTurma.innerHTML = '';
-        selectTurma.appendChild(opcaoPlaceholder('Selecione a escola primeiro'));
-      }
-    }
-  }
-
-  if (btnModoTurma) btnModoTurma.addEventListener('click', alternarModoTurma);
+  //
+  // Havia dois modos aqui, e um botão para alternar: o código, ou
+  // escolher escola e turma em duas listas encadeadas. Ficou o código.
+  //
+  // A lista dependia de alguém ter cadastrado a escola com o nome
+  // certo, e o cadastro aceitava qualquer nome de qualquer pessoa —
+  // em poucos dias de teste o banco já tinha "Harvard College". O
+  // código resolve a turma numa chamada só, não depende de lista
+  // nenhuma, e é o que o professor já entrega para a sala.
 
   // Descobre a turma a partir do código e mostra o nome para confirmação.
   async function resolverCodigo() {
@@ -294,8 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       turmaPorCodigo = turma;
-      const escola = turma.escola_nome ? ` — ${turma.escola_nome}` : '';
-      setHint(codigoHint, `Turma ${turma.nome}${escola}`, 'ok');
+      setHint(codigoHint, `Turma ${turma.nome}`, 'ok');
     } catch (_) {
       setHint(codigoHint, 'Não foi possível verificar o código agora.', 'err');
     }
@@ -333,35 +216,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const tipo = tipoSelecionado();
     const base = { nome, email: email.trim(), password: senha, tipo };
 
-    if (tipo === 'PROFESSOR') {
-      const escola = selectEscolaProf ? selectEscolaProf.value : '';
-      if (!escola) return { erro: 'Selecione a escola onde você atua.' };
-
-      if (escola === 'novo') {
-        const nomeEscola = novaEscolaInput ? novaEscolaInput.value.trim() : '';
-        if (nomeEscola.length < 3) return { erro: 'Informe o nome da nova escola.' };
-        // A escola nova é criada junto com a conta, do outro lado. Criar antes
-        // deixaria escolas soltas no banco se o cadastro falhasse depois.
-        return { dados: { ...base, escola_id: null, escola_nome: nomeEscola } };
-      }
-      return { dados: { ...base, escola_id: Number(escola) } };
-    }
+    // O PROFESSOR não tem mais nada a preencher além do comum: ele
+    // cria as turmas depois, no painel.
+    if (tipo === 'PROFESSOR') return { dados: base };
 
     // ALUNO
     const r = validarIdade(idadeInput ? idadeInput.value : '');
     if (!r.ok) return { erro: r.msg };
 
-    let turmaId;
-    if (usandoCodigo) {
-      if (!turmaPorCodigo) return { erro: 'Digite um código de turma válido.' };
-      turmaId = turmaPorCodigo.id;
-    } else {
-      if (!selectEscolaAluno || !selectEscolaAluno.value) return { erro: 'Selecione sua escola.' };
-      if (!selectTurma || !selectTurma.value) return { erro: 'Selecione sua turma.' };
-      turmaId = Number(selectTurma.value);
-    }
+    if (!turmaPorCodigo) return { erro: 'Digite um código de turma válido.' };
+    const turmaId = turmaPorCodigo.id;
 
-    // O aluno não envia a escola: ela se descobre pela turma.
+    // A turma é o único vínculo: não há mais escola para enviar.
     return { dados: { ...base, idade: r.idade, turma_id: turmaId } };
   }
 
@@ -374,7 +240,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (toggleText) toggleText.textContent = 'Já tem uma conta?';
     if (registerBtn) registerBtn.textContent = 'Fazer login';
 
-    carregarEscolas();
     alternarPerfil();
   }
 

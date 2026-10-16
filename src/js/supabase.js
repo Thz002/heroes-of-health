@@ -41,9 +41,8 @@ const AUTH = (() => {
     if (m.includes('email not confirmed')) return 'Esta conta ainda não foi confirmada por e-mail.';
     if (m.includes('user already registered')) return 'Já existe uma conta com este e-mail.';
     if (m.includes('password should be at least')) return 'A senha é curta demais.';
-    if (m.includes('duplicate key') && m.includes('escolas')) return 'Já existe uma escola com esse nome.';
     if (m.includes('violates check constraint')) return 'Algum dado está fora do permitido. Confira a idade.';
-    if (m.includes('violates foreign key')) return 'A turma ou escola escolhida não existe mais.';
+    if (m.includes('violates foreign key')) return 'A turma escolhida não existe mais.';
     if (m.includes('row-level security')) return 'O banco recusou a operação por segurança.';
     if (m.includes('failed to fetch')) return 'Sem conexão com o servidor. Verifique sua internet.';
 
@@ -80,8 +79,6 @@ const AUTH = (() => {
       perfil.idade = String(dados.idade ?? '');
       perfil.turma_id = String(dados.turma_id ?? '');
     } else {
-      if (dados.escola_id) perfil.escola_id = String(dados.escola_id);
-      if (dados.escola_nome) perfil.escola_nome = dados.escola_nome;
     }
 
     const conta = await SUPA.auth.signUp({
@@ -159,7 +156,7 @@ const AUTH = (() => {
     //
     // É temporário. Some quando todos os bancos tiverem rodado:
     //   alter table usuarios add column if not exists avatar_url text;
-    const COLUNAS = 'id, nome, tipo, idade, escola_id, turma_id';
+    const COLUNAS = 'id, nome, tipo, idade, turma_id';
 
     let r = await SUPA
       .from('usuarios')

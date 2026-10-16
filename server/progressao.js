@@ -93,33 +93,59 @@ const UM_DIA = 24 * 60 * 60 * 1000;
    Então, quando o conteúdo crescer, acrescentam-se degraus no TOPO.
    Ninguém desce nunca.
 
-   Calibragem: 2.250 XP de conteúdo + 50/dia. Quem responder tudo e
-   entrar por um mês chega perto do nível 7.
+   CALIBRAGEM, COM O CONTEÚDO DE HOJE
+
+   O que amarra a conta é o filtro etário: um aluno NÃO tem as 572
+   questões à disposição, só as da faixa dele.
+
+       nível 1 (7–10)    154 questões = 1.540 XP
+       nível 2 (11–14)   279 questões = 2.790 XP   ← a faixa mais rica
+       nível 3 (15–18)   139 questões = 1.390 XP
+
+   Somando o que um aluno de 11 a 14 anos junta num ano letivo:
+
+       2.790   acertar tudo da faixa dele (uma vez só, no 1º acerto)
+      10.000   presença, 50 XP por dia, ~200 dias de aula
+       2.000   bônus de conclusão dos quizzes do professor
+      ──────
+      14.790
+
+   Os marcos caíram onde precisavam cair:
+
+       nível  10     558 XP   uma semana — o fisgão
+       nível  30   2.668 XP   ≈ todo o conteúdo da faixa do aluno
+       nível  50   5.978 XP   meio do caminho, exige voltar
+       nível  85  ~14.800 XP  o ano letivo inteiro, bem aproveitado
+       nível 100  19.503 XP   além de um ano
+
+   O nível 30 fechar junto com o conteúdo da faixa não é coincidência:
+   é o que faz "respondi tudo o que havia para mim" valer exatamente
+   três patentes. Daí para cima o jogo pede o que ele quer de verdade,
+   que é voltar — presença e os quizzes que o professor monta.
+
+   E o nível 100 fica além de um ano de propósito. "Herdeiro do Saber"
+   não deveria ser alcançável por todo mundo no primeiro semestre.
    ═══════════════════════════════════════════════════════════════════ */
 
-const TOTAL_DE_NIVEIS = 20;
+const TOTAL_DE_NIVEIS = 100;
+
+/* O custo de subir um degrau: 50 XP, mais 3 a cada nível já passado.
+   Do 1 para o 2 custa 50; do 99 para o 100, 344. */
+const DEGRAU_BASE = 50;
+const DEGRAU_PASSO = 3;
 
 /**
  * Os degraus, gerados por fórmula e não escritos à mão.
  *
- * O degrau n custa 60 + 30·(n-2) XP a mais que o anterior: o primeiro
- * sai por 60, o décimo por 340, o vigésimo por 880. A soma dá 7.920 XP
- * para chegar ao nível 20.
+ * O incremento cresce de 3 em 3, e não de 30 em 30 como na escada de
+ * 20 níveis. Parece detalhe e é a diferença entre caber e não caber:
+ * mantendo os 30, o nível 100 custaria 151.470 XP — dez anos letivos
+ * de presença diária. Um nível que ninguém alcança não é objetivo, é
+ * enfeite, e noventa deles seriam noventa enfeites.
  *
- * ESSE NÚMERO NÃO É ARBITRÁRIO. É o que um aluno dedicado consegue
- * juntar com o conteúdo que existe hoje:
- *
- *     2.250  acertar as 225 perguntas do banco
- *     ~900   bônus de conclusão dos quizzes
- *     2.750  as dez insígnias
- *     1.500  trinta dias de presença
- *     ─────
- *     ~7.400
- *
- * Ou seja: o nível 20 é "fiz tudo o que havia para fazer, e apareci".
- * Uma escada calibrada acima disso deixaria os últimos degraus
- * inalcançáveis — e um nível que ninguém alcança não é objetivo, é
- * enfeite.
+ * Com 3, o topo fica em 19.503. Longe, mas na mesma ordem de grandeza
+ * do que um aluno junta em um ano, que é o que faz dele um horizonte
+ * em vez de uma piada.
  *
  * Quando o conteúdo crescer, acrescentam-se degraus NO TOPO. Mexer nos
  * de baixo faria quem já subiu descer, e isso o jogo não faz.
@@ -127,7 +153,7 @@ const TOTAL_DE_NIVEIS = 20;
 const NIVEIS = Array.from({ length: TOTAL_DE_NIVEIS }, (_, i) => {
   const nivel = i + 1;
   let xp = 0;
-  for (let n = 2; n <= nivel; n++) xp += 60 + 30 * (n - 2);
+  for (let n = 2; n <= nivel; n++) xp += DEGRAU_BASE + DEGRAU_PASSO * (n - 2);
   return { nivel, xp };
 });
 
@@ -137,13 +163,38 @@ const NIVEIS = Array.from({ length: TOTAL_DE_NIVEIS }, (_, i) => {
  * o que cada um está construindo é diferente. O aluno aprende, o
  * professor ensina — e o jogo não deveria chamar os dois da mesma coisa.
  *
- * As faixas são 1–10 e 11–20. O pedido dizia "1-10" e "10-20", e o 10
- * não pode pertencer às duas: aqui ele fecha a primeira faixa, para que
- * passar de 10 para 11 seja a troca de patente — um degrau que se sente.
+ * Dez faixas de dez níveis. O `ate` é inclusivo: o 10 fecha a primeira
+ * faixa e o 11 abre a segunda, para que a virada da dezena seja também
+ * a troca de patente — um degrau que se sente.
+ *
+ * A ordem importa: patenteDe() devolve a primeira faixa cujo teto o
+ * nível não ultrapassa, então elas precisam estar em ordem crescente.
  */
 const PATENTES = {
-  ALUNO:     [{ ate: 10, nome: 'Pequeno Aprendiz' }, { ate: 20, nome: 'Estudante' }],
-  PROFESSOR: [{ ate: 10, nome: 'Monitor' },          { ate: 20, nome: 'Mentor Iniciante' }]
+  ALUNO: [
+    { ate:  10, nome: 'Pequeno Aprendiz'  },
+    { ate:  20, nome: 'Estudante'         },
+    { ate:  30, nome: 'Discípulo'         },
+    { ate:  40, nome: 'Buscador'          },
+    { ate:  50, nome: 'Erudito'           },
+    { ate:  60, nome: 'Prodígio'          },
+    { ate:  70, nome: 'Visionário'        },
+    { ate:  80, nome: 'Polímata'          },
+    { ate:  90, nome: 'Luminar'           },
+    { ate: 100, nome: 'Herdeiro do Saber' }
+  ],
+  PROFESSOR: [
+    { ate:  10, nome: 'Monitor'                 },
+    { ate:  20, nome: 'Mentor Iniciante'        },
+    { ate:  30, nome: 'Instrutor'               },
+    { ate:  40, nome: 'Preceptor'               },
+    { ate:  50, nome: 'Mestre do Saber'         },
+    { ate:  60, nome: 'Arquimestre'             },
+    { ate:  70, nome: 'Grão-Mestre'             },
+    { ate:  80, nome: 'Venerável'               },
+    { ate:  90, nome: 'Oráculo'                 },
+    { ate: 100, nome: 'Patrono do Conhecimento' }
+  ]
 };
 
 function patenteDe(nivel, tipo) {
@@ -605,7 +656,20 @@ async function medirAluno(usuarioId, turmaId, retrato) {
    fábrica de quizzes deixa de ser atalho.
    ═══════════════════════════════════════════════════════════════════ */
 
-const XP_CONCLUSAO_ALUNO = 5;        // × perguntas × taxa
+/* 15, e não 5.
+
+   Com 5, um quiz inteiro de 10 perguntas acertando tudo pagava 50 XP
+   — exatamente o mesmo que abrir o aplicativo e não fazer nada. O jogo
+   dizia, em números, que estudar e aparecer valiam igual.
+
+   Com 15, a mesma sessão vale 150: três logins. Errando metade do
+   caminho ainda vale 75, que é mais do que só ter aparecido.
+
+   A presença continua somando mais ao longo de um ano (10.000 contra
+   5.790), e isso é da natureza da coisa: cada questão só paga no
+   primeiro acerto, enquanto o dia seguinte sempre vem. O que não podia
+   continuar é uma SESSÃO de estudo valer o mesmo que uma de nada. */
+const XP_CONCLUSAO_ALUNO = 15;       // × perguntas × taxa
 const XP_CONCLUSAO_PROFESSOR = 20;   // × perguntas × qualidade, DIVIDIDO pela turma
 
 /**

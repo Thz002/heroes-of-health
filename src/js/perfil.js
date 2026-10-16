@@ -196,7 +196,6 @@
 
     if (turma) {
       linha('Turma', turma.ano_escolar ? `${turma.nome} · ${turma.ano_escolar}` : turma.nome);
-      if (turma.escola) linha('Escola', turma.escola);
       if (turma.professor) linha('Professor', turma.professor);
 
       // Posição só faz sentido com colega: "1º de 1" não é conquista.
@@ -241,9 +240,6 @@
     let turmas = [];
     try { turmas = await API.getMinhasTurmas(); } catch (_) { /* segue sem a contagem */ }
 
-    const escola = await nomeDaEscola(perfil.escola_id);
-    if (escola) linha('Escola', escola);
-
     const alunos = turmas.reduce((s, t) => s + (t.total_alunos || 0), 0);
 
     linha('Turmas', turmas.length
@@ -275,16 +271,6 @@
     await mostrarEstante();
   }
 
-  /** O nome da escola sai da lista pública — é a mesma que o cadastro usa. */
-  async function nomeDaEscola(id) {
-    if (!id) return null;
-    try {
-      const escolas = await API.getEscolas();
-      return escolas.find(e => e.id === id)?.nome || null;
-    } catch (_) {
-      return null;
-    }
-  }
 
 
   /* ── Editar ────────────────────────────────────────────────────── */

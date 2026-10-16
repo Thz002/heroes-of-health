@@ -83,7 +83,12 @@ end $$;
 create table if not exists turmas (
   id bigint primary key generated always as identity,
   nome varchar(50) not null,                   -- ex: '7º Ano B'
-  escola_id bigint not null references escolas(id) on delete cascade,
+  -- APOSENTADA. A turma não pertence mais a uma escola: o código que o
+  -- professor entrega virou a única porta, e a escola não decidia nada
+  -- — o ranking é por professor, as questões são globais e as barras
+  -- são por aluno. A coluna fica, nula daqui em diante, para não
+  -- perder o vínculo das turmas que já existiam.
+  escola_id bigint references escolas(id) on delete set null,
 
   -- O código curto que o professor entrega para a sala (ex: '7B-K3M9').
   -- O aluno digita só isso e entra direto na turma certa.
@@ -97,7 +102,22 @@ create table if not exists turmas (
 );
 
 create unique index if not exists turmas_codigo_unico   on turmas (codigo);
-create unique index if not exists turmas_nome_por_escola on turmas (escola_id, nome);
+-- Sem escola, "não repetir nome de turma" passa a valer por PROFESSOR,
+-- que é a regra que ele espera de qualquer jeito: duas turmas minhas
+-- não podem se chamar igual. O índice antigo cairia sozinho em desuso
+-- com escola_id nulo, mas some explicitamente para não confundir.
+create unique index if not exists turmas_nome_por_professor on turmas (professor_id, nome);
+drop index if exists turmas_nome_por_escola;
+
+-- Num banco que já rodou a versão anterior, a coluna ainda está NOT
+-- NULL: o `create table if not exists` lá em cima não reescreve tabela
+-- que já existe. Este bloco solta a obrigação, e não faz nada onde ela
+-- já não existir.
+do $solta$
+begin
+  alter table turmas alter column escola_id drop not null;
+exception when others then null;
+end $solta$;
 
 -- Cor e ano escolar são só de exibição no painel do professor (dashboard).
 -- A cor tem check com a mesma lista de 6 opções do seletor na tela, como
@@ -738,9 +758,13 @@ $$;
 create or replace function public.buscar_turma_por_codigo(p_codigo text)
 returns table (id bigint, nome varchar, escola_id bigint, escola_nome varchar)
 language sql security definer set search_path = public as $$
+  -- `left join` e não `join`: com a escola aposentada, escola_id é
+  -- nulo nas turmas novas, e um join comum faria a turma não ser
+  -- encontrada pelo código — o aluno digitaria certo e ouviria que a
+  -- turma não existe.
   select t.id, t.nome, t.escola_id, e.nome
   from turmas t
-  join escolas e on e.id = t.escola_id
+  left join escolas e on e.id = t.escola_id
   where t.codigo = upper(trim(p_codigo))
   limit 1;
 $$;
@@ -975,27 +999,14 @@ begin
       v_escola_id := null;   -- a escola do aluno vem pela turma
 
     else
-      v_escola_id := public.texto_para_bigint(meta->>'escola_id');
-      v_escola_nm := nullif(trim(meta->>'escola_nome'), '');
-
-      if v_escola_id is not null
-         and not exists (select 1 from escolas e where e.id = v_escola_id) then
-        v_escola_id := null;
-      end if;
-
-      -- Professor cadastrando escola nova.
-      -- Procura antes de inserir em vez de usar "on conflict (nome)":
-      -- aquela cláusula exige uma constraint unique e falha com 42P10 se
-      -- ela não existir. Assim funciona com ou sem a constraint.
-      if v_escola_id is null and v_escola_nm is not null then
-        select e.id into v_escola_id
-        from escolas e where lower(e.nome) = lower(v_escola_nm) limit 1;
-
-        if v_escola_id is null then
-          insert into escolas (nome) values (left(v_escola_nm, 150))
-          returning id into v_escola_id;
-        end if;
-      end if;
+      -- O PROFESSOR também não tem mais escola.
+      --
+      -- Aqui havia vinte linhas que liam `escola_id` e `escola_nome` do
+      -- cadastro e, se o nome fosse novo, criavam a escola. Era por
+      -- este caminho que "Harvard College" e "Oxford University"
+      -- entraram no banco de um jogo sobre o SUS: bastava digitar um
+      -- nome na tela de cadastro para inventar uma instituição.
+      v_escola_id := null;
     end if;
 
     insert into usuarios (id, nome, tipo, idade, escola_id, turma_id)
@@ -1099,25 +1110,26 @@ create policy "admin edita qualquer cadastro"
   using (public.eh_admin()) with check (public.eh_admin());
 
 
--- ── escolas ──────────────────────────────────────────────────────────
--- Legível por VISITANTE de propósito: o aluno escolhe a escola durante o
--- cadastro, ou seja, ANTES de ter conta.
+-- ── escolas (APOSENTADA) ─────────────────────────────────────────────
+--
+-- A tabela continua aqui, com as linhas que já existiam, mas saiu do
+-- caminho: ninguém mais cria escola e ninguém mais escolhe escola.
+--
+-- As duas policies que sumiram eram as que faziam dela um problema.
+-- "qualquer um le as escolas" entregava a lista a visitante anônimo, e
+-- "logado cria escola", com `with check (true)`, deixava QUALQUER
+-- pessoa com conta — um aluno de 7 anos inclusive — inserir uma
+-- instituição. Sem tela que as use, mantê-las seria deixar aberta a
+-- porta de um cômodo que ninguém mais visita.
+--
+-- Fica a do admin, para quem precisar arrumar o que já está gravado.
 
 drop policy if exists "qualquer um le as escolas" on escolas;
 drop policy if exists "logado cria escola"        on escolas;
 drop policy if exists "admin cuida das escolas"   on escolas;
 
-create policy "qualquer um le as escolas"
-  on escolas for select to anon, authenticated using (true);
-
--- Normalmente quem cria escola é o gatilho do cadastro, que roda como
--- dono e nem passa por aqui. Esta policy cobre o caso do professor
--- criando escola pela tela depois de já estar logado.
-create policy "logado cria escola"
-  on escolas for insert to authenticated with check (true);
-
 create policy "admin cuida das escolas"
-  on escolas for update to authenticated
+  on escolas for all to authenticated
   using (public.eh_admin()) with check (public.eh_admin());
 
 

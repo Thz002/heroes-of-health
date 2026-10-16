@@ -146,7 +146,8 @@
     // escrito por pessoa, nunca código rodando na página.
     escrever('turma-nome', turma.ano_escolar ? `${turma.nome} · ${turma.ano_escolar}` : turma.nome);
 
-    const onde = [turma.escola, turma.professor && `Prof. ${turma.professor}`].filter(Boolean);
+    // `turma.escola` saiu da resposta do servidor junto com as escolas.
+    const onde = [turma.professor && `Prof. ${turma.professor}`].filter(Boolean);
     escrever('turma-onde', onde.join(' · '));
 
     // Posição só faz sentido com colega: "1º de 1" não é conquista.
