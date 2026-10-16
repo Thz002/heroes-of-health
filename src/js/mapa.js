@@ -211,7 +211,7 @@
   const modalDesc = document.getElementById("cenario-modal-desc");
   const modalInterior = document.getElementById("cenario-modal-interior");
   const modalEmBreve = document.getElementById("cenario-modal-em-breve");
-  const modalCaixa = modal?.querySelector(".mapa-modal");
+  const modalFamilia = document.getElementById("cenario-modal-familia");
   const modalPlay = document.getElementById("cenario-modal-play");
   const modalMissoes = document.getElementById("cenario-modal-missoes");
   const modalClose = document.getElementById("cenario-modal-close");
@@ -437,12 +437,12 @@
   }
 
   /**
-   * A lista de missões do lugar, à direita da foto. Mesmo card da lista
-   * de "Missões ativas", só que clicar nele escolhe em vez de jogar — quem
-   * leva para a missão é o botão. Fica separada de `abrirModal` porque
-   * `carregarMissoes` chama só isto (e o botão) quando a resposta chega
-   * com o modal já aberto — remontar o modal inteiro jogaria a foto de
-   * volta ao topo no meio da leitura.
+   * A lista de missões do lugar, embaixo da foto, ao lado do botão.
+   * Mesmo card da lista de "Missões ativas", só que clicar nele escolhe em
+   * vez de jogar — quem leva para a missão é o botão. Fica separada de
+   * `abrirModal` porque `carregarMissoes` chama só isto (e o botão) quando
+   * a resposta chega com o modal já aberto — remontar o modal inteiro
+   * recarregaria a família e voltaria a rolagem ao topo no meio da leitura.
    */
   function desenharMissoesDoModal(h) {
     if (!modalMissoes) return;
@@ -490,6 +490,28 @@
     }
   }
 
+  /**
+   * Numa casa, a família que mora nela fica no centro da foto — a mesma
+   * figura (familia03.png para a casa 3) que a tela da missão mostra.
+   * Os outros lugares não têm morador.
+   */
+  function mostrarFamilia(h) {
+    if (!modalFamilia) return;
+    // Esconde já: a figura da casa anterior não pode piscar sobre a nova
+    // foto enquanto a próxima carrega. E solta o onload antigo, senão uma
+    // família ainda carregando apareceria por cima de um lugar sem morador.
+    modalFamilia.hidden = true;
+    modalFamilia.onload = modalFamilia.onerror = null;
+    if (h.tipo !== "casa" || !h.casa) return;
+
+    const sobrenome = window.FAMILIAS && FAMILIAS[h.casa];
+    modalFamilia.alt = sobrenome ? `Família ${sobrenome}` : "Família que mora nesta casa";
+    modalFamilia.onload = () => { modalFamilia.hidden = false; };
+    // Sem a imagem, fica só o interior — nada de ícone de imagem quebrada.
+    modalFamilia.onerror = () => { modalFamilia.hidden = true; };
+    modalFamilia.src = `../imgs/familias/familia${String(h.casa).padStart(2, "0")}.png`;
+  }
+
   function abrirModal(h) {
     const cenario = CENARIOS[h.tipo];
     if (!cenario || !modal) return;
@@ -512,14 +534,16 @@
       modalInterior.src = `../imgs/Interiores/${interior}`;
       modalInterior.alt = `Interior — ${nomeDoPonto(h)}`;
     }
+    mostrarFamilia(h);
 
     missaoEscolhida = null;
     desenharMissoesDoModal(h);
     atualizarBotaoJogar(h);
 
-    // Quem rola agora é o modal inteiro: sem isto ele abriria no meio da
-    // foto anterior quando o aluno clica num segundo lugar.
-    if (modalCaixa) modalCaixa.scrollTop = 0;
+    // O modal tem tamanho fixo; o que rola é a lista de missões, para o
+    // lado. Sem isto um segundo lugar abriria rolado até onde o anterior
+    // ficou, com as primeiras missões fora de vista.
+    if (modalMissoes) modalMissoes.scrollLeft = 0;
 
     modal.classList.add("open");
     document.body.classList.add("modal-aberto");

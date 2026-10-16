@@ -99,39 +99,46 @@
     aria-labelledby="cenario-modal-nome">
     <div class="modal mapa-modal">
 
-      <header class="mapa-modal__head">
-        <h3 class="mapa-modal__nome" id="cenario-modal-nome"></h3>
-
-        <div class="mapa-modal__head-acoes">
-          <div class="mapa-modal__thumb-wrap">
-            <img id="cenario-modal-thumb" class="mapa-modal__thumb" alt="">
-          </div>
-          <button type="button" class="mapa-modal__close" id="cenario-modal-close"
-            aria-label="Fechar">&times;</button>
-        </div>
-      </header>
-
-      <div class="mapa-modal__conteudo">
-        <div class="mapa-modal__lugar">
-          <div class="mapa-modal__figura">
-            <img id="cenario-modal-interior" class="mapa-modal__interior" alt="" hidden>
-            <p class="mapa-modal__em-breve" id="cenario-modal-em-breve" hidden>Em breve implementado</p>
-          </div>
-
-          <div class="mapa-modal__corpo">
-            <p class="mapa-modal__desc" id="cenario-modal-desc"></p>
-          </div>
+      <!-- Em cima, a foto do interior com o cabeçalho por cima; numa casa,
+           a família que mora nela fica no centro. -->
+      <div class="mapa-modal__palco">
+        <div class="mapa-modal__figura">
+          <img id="cenario-modal-interior" class="mapa-modal__interior" alt="" hidden>
+          <img id="cenario-modal-familia" class="mapa-modal__familia" alt="" hidden>
+          <p class="mapa-modal__em-breve" id="cenario-modal-em-breve" hidden>Em breve implementado</p>
         </div>
 
-        <section class="mapa-modal__missoes" aria-labelledby="cenario-modal-missoes-titulo">
-          <h4 class="mapa-modal__missoes-titulo" id="cenario-modal-missoes-titulo">Missões</h4>
-          <p class="mapa-modal__missoes-instrucao">Escolha uma missão para jogar!</p>
+        <header class="mapa-modal__head">
+          <div class="mapa-modal__titulo">
+            <h3 class="mapa-modal__nome" id="cenario-modal-nome"></h3>
+          </div>
 
+          <div class="mapa-modal__head-acoes">
+            <div class="mapa-modal__thumb-wrap">
+              <img id="cenario-modal-thumb" class="mapa-modal__thumb" alt="">
+            </div>
+            <button type="button" class="mapa-modal__close" id="cenario-modal-close"
+              aria-label="Fechar">&times;</button>
+          </div>
+        </header>
+      </div>
+
+      <!-- Embaixo, fora da foto: a descrição e, numa linha, as missões
+           para escolher e o botão. -->
+      <div class="mapa-modal__base">
+        <p class="mapa-modal__desc" id="cenario-modal-desc"></p>
+
+        <p class="mapa-modal__missoes-cabeca">
+          <span class="mapa-modal__missoes-titulo" id="cenario-modal-missoes-titulo">Missões</span>
+          <span class="mapa-modal__missoes-instrucao">Escolha uma missão para jogar!</span>
+        </p>
+
+        <div class="mapa-modal__escolha">
           <div class="mapa-modal__missoes-lista" id="cenario-modal-missoes" role="radiogroup"
             aria-labelledby="cenario-modal-missoes-titulo"></div>
 
           <button type="button" id="cenario-modal-play" class="btn-primary mapa-modal__play">Jogar</button>
-        </section>
+        </div>
       </div>
     </div>
   </div>

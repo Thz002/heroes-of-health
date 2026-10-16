@@ -506,41 +506,139 @@
 }
 
 /* ── Modal do cenário ────────────────────────── */
-/* Cabeçalho em cima; embaixo, duas colunas: foto do interior + descrição
-   à esquerda, lista de missões + botão à direita. O padding do `.modal` genérico é zerado aqui — cabeçalho e
-   imagem vão de borda a borda, e o respiro passa a ser de cada faixa.
+/* Tamanho fixo, em duas partes:
 
-   Quem rola é o modal inteiro, não o corpo: a imagem tem altura livre
-   (ver .mapa-modal__figura) e pode passar da tela sozinha, então prender
-   a rolagem só ao texto deixaria parte da foto inalcançável. */
+     ┌─[ nome ]──────────────[ 🏠 ✕ ]─┐
+     │                                 │  .mapa-modal__palco — a foto
+     │      interior  (+ família)      │  do interior, com o cabeçalho
+     │                                 │  flutuando por cima
+     ├─────────────────────────────────┤
+     │ descrição                       │  .mapa-modal__base — fundo
+     │ [missão][missão][missão] →  [Jogar] │  escuro, fora da foto
+     └─────────────────────────────────┘
+
+   A foto fica com toda a altura que a base não usa. O padding do
+   `.modal` genérico é zerado aqui; cada parte tem o seu respiro. O
+   fundo é declarado de novo porque o `.modal` do dashboard.css troca o
+   gradiente do style.css por um véu translúcido — e o mesmo `.modal`
+   centraliza os filhos de um flex, o que deixava a foto com largura
+   zero e a base com a largura da lista de missões. */
 .mapa-modal {
   position: relative;
   padding: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  width: 100%;
-  max-width: min(920px, 100%);
-  max-height: 92vh;
+  overflow: hidden;
+  width: min(1040px, 100%);
+  max-width: none;
+  height: min(680px, calc(100vh - 48px));
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  background: #072e33;
+  backdrop-filter: none;
 }
 
-/* Cabeçalho ─ mesma cor da barra de navegação (o .topLine do
-   dashboard.css sobre o fundo da página resulta neste teal). */
-.mapa-modal__head {
+/* ── Em cima: a foto ── */
+.mapa-modal__palco {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+.mapa-modal__figura {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+/* Cobre a área toda. Como o tamanho é fixo, a foto é cortada nas
+   bordas em vez de esticar a caixa. */
+.mapa-modal__interior {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A família da casa, centralizada e presa embaixo: só a ponta de baixo
+   da figura (os pés) passa da borda e é cortada. A conta: com 95% da
+   altura da foto e 12% dela para fora, a cabeça fica a uns 16% do topo
+   — logo abaixo do cabeçalho. O contorno branco segue a silhueta do
+   PNG, como em missao.css. */
+.mapa-modal__familia {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  height: 95%;
+  width: auto;
+  max-width: none;
+  transform: translate(-50%, 12%);
+  filter:
+    drop-shadow(2px 0 0 #fff)
+    drop-shadow(-2px 0 0 #fff)
+    drop-shadow(0 2px 0 #fff)
+    drop-shadow(0 -2px 0 #fff)
+    drop-shadow(0 8px 14px rgba(0, 0, 0, 0.5));
+}
+
+/* O `img { display: block }` do style.css vence o [hidden] do navegador. */
+.mapa-modal__interior[hidden],
+.mapa-modal__familia[hidden] {
+  display: none;
+}
+
+/* Lugares que ainda não têm foto de interior desenhada. Hoje nenhum —
+   casa sem foto própria usa o interior padrão de CENARIOS.casa. */
+.mapa-modal__em-breve {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.mapa-modal__em-breve[hidden] {
+  display: none;
+}
+
+/* Cabeçalho ─ duas caixas soltas sobre a foto, no teal da barra de
+   navegação translúcido: o nome do lugar à esquerda, do tamanho do
+   texto, e a miniatura com o X à direita. Entre elas, a foto aparece.
+   O `stretch` deixa as duas da mesma altura. */
+.mapa-modal__head {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 1;
+  display: flex;
+  align-items: stretch;
   justify-content: space-between;
   gap: 16px;
-  /* Grudado no topo: com a imagem alta o suficiente para rolar, o nome do
-     lugar e o botão de fechar não podem sumir junto com ela. */
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  padding: 12px 16px 12px 26px;
-  background: #07373e;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  width: 100%;
+}
+
+.mapa-modal__titulo,
+.mapa-modal__head-acoes {
+  background: rgba(7, 55, 62, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.mapa-modal__titulo {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 22px;
 }
 
 .mapa-modal__nome {
@@ -552,20 +650,22 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
 .mapa-modal__head-acoes {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
+  padding: 7px;
 }
 
 /* A miniatura é o recorte do prédio no mapa — é ela que liga o modal ao
    ponto que o aluno acabou de clicar. */
 .mapa-modal__thumb-wrap {
-  width: 54px;
-  height: 54px;
+  width: 48px;
+  height: 48px;
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -588,10 +688,10 @@
   width: 38px;
   height: 38px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 50%;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
@@ -600,98 +700,87 @@
 
 .mapa-modal__close:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.16);
 }
 
-/* Duas colunas de mesma largura: à esquerda o lugar (foto + descrição),
-   à direita as missões dele para escolher. */
-.mapa-modal__conteudo {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: start;
-}
-
-.mapa-modal__lugar {
-  min-width: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Imagem do interior ─ largura da coluna (metade do modal) e altura
-   LIVRE: a foto aparece inteira, na escala dela. Recortar para uma altura
-   fixa cortava fora justamente o que o aluno foi ali ver. */
-.mapa-modal__figura {
-  position: relative;
-  width: 100%;
-  background: rgba(0, 0, 0, 0.28);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.mapa-modal__interior {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-/* Lugares que ainda não têm foto de interior desenhada — hoje só a rua;
-   casa sem foto própria usa o interior padrão de CENARIOS.casa. */
-.mapa-modal__em-breve {
-  padding: 52px 20px;
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.mapa-modal__corpo {
-  padding: 24px 26px 26px;
+/* ── Embaixo: a base escura, fora da foto ── */
+.mapa-modal__base {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 22px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .mapa-modal__desc {
+  margin: 0 0 6px;
   font-size: 14.5px;
-  line-height: 1.7;
-  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.78);
 }
 
-/* Coluna das missões. */
-.mapa-modal__missoes {
-  min-width: 0;
-  padding: 22px 22px 24px;
+.mapa-modal__missoes-cabeca {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
 }
 
 .mapa-modal__missoes-titulo {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   color: #fff;
-  margin: 0;
 }
 
 .mapa-modal__missoes-instrucao {
   font-size: 13px;
   color: var(--text-muted);
-  margin: 4px 0 14px;
 }
 
-/* Mesmos cards da lista de "Missões ativas", empilhados. Rola por dentro
-   quando o lugar tem muitas missões, para o botão não sumir lá embaixo. */
+/* Os mesmos cards da lista de "Missões ativas", lado a lado, rolando para
+   o lado quando não cabem. O padding de baixo afasta a barra de rolagem
+   dos cards; o de cima dá espaço ao contorno da escolhida. */
 .mapa-modal__missoes-lista {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  flex-direction: column;
   gap: 10px;
-  max-height: 340px;
-  overflow-y: auto;
-  /* O hover do card desliza 4px para a direita (ver .missions-list). */
-  overflow-x: hidden;
-  padding-right: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 2px 8px;
+  scroll-snap-type: x proximity;
+}
+
+/* Compactos: sem a descrição, que numa linha estreita só viraria "…". */
+.mapa-modal__missoes-lista .mission-item {
+  width: 250px;
+  padding: 10px 12px;
+  gap: 10px;
+  scroll-snap-align: start;
+}
+
+.mapa-modal__missoes-lista .mission-desc {
+  display: none;
+}
+
+.mapa-modal__missoes-lista .mission-icon {
+  width: 40px;
+  height: 40px;
+}
+
+/* O deslize de 4px para a direita do hover (pensado para a lista em
+   pé) aqui encostaria no card vizinho. */
+.mapa-modal__missoes-lista .mission-item:hover {
+  transform: none;
 }
 
 .mapa-modal__missoes-lista .missoes-aviso {
   margin: 0;
+  padding: 14px 4px;
+  text-align: left;
 }
 
 /* A escolhida fica acesa em verde — a faixa dourada de tarefa continua. */
@@ -707,16 +796,30 @@
   outline-offset: 2px;
 }
 
+/* Missões à esquerda, botão à direita, os dois alinhados pelo topo: a
+   barra de rolagem fica só embaixo dos cards. */
+.mapa-modal__escolha {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+/* Largura fixa: os rótulos mudam ("Jogar", "Continuar", "Sem missões
+   disponíveis") e o botão não pode empurrar a lista a cada troca. A
+   altura e o margin-top (o padding de cima da lista) o deixam do
+   tamanho e na linha dos cards. */
 .mapa-modal__play {
-  width: 100%;
-  padding: 13px;
-  margin-top: 18px;
+  flex-shrink: 0;
+  width: 230px;
+  height: 64px;
+  margin-top: 2px;
+  padding: 0 13px;
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 15px;
 }
 
-/* Lugar sem missão: o botão continua ali, cinza e travado, dizendo o
+/* Sem missão escolhida: o botão continua ali, cinza e travado, dizendo o
    porquê. Precisa levar `.btn-primary` no seletor para vencer o
    `.btn-primary:disabled` do dashboard.css, que só desbota o verde —
    aqui a cor tem de sair de vez, senão o bloqueio não se lê. O :hover
@@ -907,34 +1010,50 @@ body.modal-aberto {
 
 @media (max-width: 700px) {
   .mapa-modal__head {
-    padding: 10px 12px 10px 18px;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    gap: 10px;
+  }
+
+  .mapa-modal__titulo {
+    padding: 6px 14px;
   }
 
   .mapa-modal__nome {
     font-size: 18px;
   }
 
+  .mapa-modal__head-acoes {
+    gap: 8px;
+    padding: 5px;
+  }
+
   .mapa-modal__thumb-wrap {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
   }
 
-  .mapa-modal__corpo {
-    padding: 18px;
+  .mapa-modal__base {
+    padding: 14px 16px 16px;
   }
 
-  /* Tela estreita: as missões descem para baixo da descrição. */
-  .mapa-modal__conteudo {
-    grid-template-columns: 1fr;
+  /* Tela estreita: o botão desce para baixo das missões, na largura
+     toda. */
+  .mapa-modal__escolha {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
   }
 
-  .mapa-modal__lugar {
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  .mapa-modal__missoes-lista .mission-item {
+    width: 220px;
   }
 
-  .mapa-modal__missoes {
-    padding: 18px;
+  .mapa-modal__play {
+    width: 100%;
+    height: 50px;
+    margin-top: 0;
   }
 }
 
