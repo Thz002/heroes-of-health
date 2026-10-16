@@ -425,6 +425,41 @@ async function conquistar(usuarioId, publico, medidas) {
 }
 
 /**
+ * Os segredos do mapa (regra DESCOBERTA): a TV e as HQs da banca, o
+ * calendário da farmácia. Não há placar para medir — o evento É a
+ * conquista —, então eles não passam por `conquistar`, que os pula por
+ * não acharem a regra em `medidas`.
+ *
+ * Só concede linha da regra DESCOBERTA e do público de quem pede: é a
+ * trava que impede usar esta porta para pegar a insígnia de 200 acertos
+ * pelo console. Devolve a insígnia se ela é NOVA, null se a pessoa já a
+ * tinha, e { erro } quando o código não é um segredo.
+ */
+async function descobrir(usuarioId, publico, codigo) {
+  const insignia = await admin
+    .from('insignias')
+    .select('codigo, nome, descricao, regra, alvo, xp, imagem, ordem, cenario_slug, grupo')
+    .eq('codigo', codigo)
+    .eq('regra', 'DESCOBERTA')
+    .eq('publico', publico)
+    .maybeSingle();
+
+  if (insignia.error && !faltaTabela(insignia.error)) return { erro: insignia.error };
+  if (!insignia.data) return { erro: { naoExiste: true } };
+
+  // O mesmo upsert de `conquistar`: a segunda vez (outra aba, clique
+  // duplo) não grava nada e volta sem linha — ou seja, "já tinha".
+  const gravou = await admin
+    .from('insignias_usuarios')
+    .upsert({ usuario_id: usuarioId, insignia_codigo: codigo },
+            { onConflict: 'usuario_id,insignia_codigo', ignoreDuplicates: true })
+    .select('insignia_codigo');
+
+  if (gravou.error) return { erro: gravou.error };
+  return { nova: (gravou.data || []).length ? insignia.data : null };
+}
+
+/**
  * As insígnias recém-conquistadas, no formato do aviso da tela
  * (src/js/conquista-aviso.js).
  *
@@ -884,5 +919,5 @@ module.exports = {
   nivelDoXp, patenteDe, diaLocal, sequenciaDeDias, marcarPresenca,
   acertosUnicosPorAluno, xpDoAluno, xpDoProfessor, xpDeVarios,
   premioDeConclusao, registrarConclusao,
-  conquistar, medirAluno, medidaDe, paraAviso
+  conquistar, descobrir, medirAluno, medidaDe, paraAviso
 };

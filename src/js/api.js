@@ -259,6 +259,19 @@ const API = (() => {
   const getMinhaEstante = () => get('/minha-estante');
 
   /**
+   * Os segredos do mapa (insígnias DESCOBERTA): { descobertas:
+   * [{ codigo, nome, imagem, conquistada }] }. O mapa usa para saber
+   * quais dicas ainda mostrar.
+   */
+  const getMinhasDescobertas = () => get('/minhas-descobertas');
+
+  /**
+   * Avisa que um segredo foi achado. Devolve { insignias_novas, xp?,
+   * nivel? } — insignias_novas vazio quando a pessoa já o tinha.
+   */
+  const descobrir = (codigo) => post('/descobrir', { codigo });
+
+  /**
    * Muda o nome e a foto de quem está logado.
    *
    * Só esses dois. Idade, tipo e turma decidem o que a pessoa vê e pode
@@ -414,6 +427,8 @@ const API = (() => {
     entrarNaTurma,
     marcarPresenca,
     getMinhaEstante,
+    getMinhasDescobertas,
+    descobrir,
     salvarMeuPerfil,
     getMeuMapa,
     getMeusQuizzes,

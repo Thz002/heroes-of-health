@@ -550,6 +550,8 @@
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.28);
+  /* Dá a .mapa-modal__objetos as unidades cqw/cqh (o tamanho da foto). */
+  container-type: size;
 }
 
 /* Cobre a área toda. Como o tamanho é fixo, a foto é cortada nas
@@ -607,6 +609,227 @@
 
 .mapa-modal__em-breve[hidden] {
   display: none;
+}
+
+/* ── Objetos clicáveis da foto (OBJETOS_DO_INTERIOR em mapa.js) ──
+   A foto é cortada pelo object-fit: cover, centralizada. Esta camada
+   repete o corte: tem a proporção da foto (--proporcao, posto pelo JS),
+   a largura que faz ela cobrir a área toda — a da caixa ou a que a
+   altura pede, a maior — e o mesmo centro. Assim os percentuais de cada
+   objeto caem em cima do desenho em qualquer tamanho de modal. */
+.mapa-modal__objetos {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100cqw, 100cqh * var(--proporcao, 1.8333));
+  aspect-ratio: var(--proporcao, 1.8333);
+  transform: translate(-50%, -50%);
+  /* A camada em si não pega clique; só os objetos. */
+  pointer-events: none;
+}
+
+.mapa-objeto {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.mapa-objeto img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  transition: filter 0.18s ease, transform 0.18s ease;
+}
+
+/* O mesmo brilho dourado dos lugares do mapa. */
+.mapa-objeto:hover,
+.mapa-objeto:focus-visible {
+  z-index: 1;
+  outline: none;
+}
+
+.mapa-objeto:hover img,
+.mapa-objeto:focus-visible img {
+  filter: drop-shadow(0 0 10px rgba(249, 199, 79, 0.95)) brightness(1.12);
+  transform: scale(1.06);
+}
+
+.mapa-objeto__label {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translate(-50%, 6px);
+  margin-bottom: 8px;
+  padding: 4px 10px;
+  background: rgba(7, 55, 62, 0.95);
+  border: 1px solid rgba(107, 223, 184, 0.4);
+  border-radius: 8px;
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.mapa-objeto:hover .mapa-objeto__label,
+.mapa-objeto:focus-visible .mapa-objeto__label {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ── Visor: o modal vira só a imagem ──
+   As HQs da banca (com setas e contador) ou o calendário da farmácia.
+   Com o visor aberto, o card perde a moldura (fundo, borda, sombra) e
+   esconde a foto e a base — que continuam no DOM para o "Voltar". Sobra
+   a imagem, quase na tela toda, com os controles por cima dela. */
+.mapa-modal.mapa-modal--visor {
+  width: auto;
+  height: auto;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.mapa-modal--visor > .mapa-modal__palco,
+.mapa-modal--visor > .mapa-modal__base {
+  display: none;
+}
+
+/* O quadro tem o tamanho exato da imagem — é ele que segura os controles
+   dentro dela. Cresce até encostar nos 24px de respiro do overlay, na
+   largura ou na altura, o que vier primeiro; a proporção vem da imagem
+   carregada (--proporcao, posto pelo JS). Escondido até a primeira
+   imagem chegar, para não abrir com a proporção errada. */
+.mapa-visor__quadro {
+  position: relative;
+  width: min(100vw - 48px, (100vh - 48px) * var(--proporcao, 1.8333));
+  aspect-ratio: var(--proporcao, 1.8333);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+.mapa-visor__quadro.is-carregando {
+  visibility: hidden;
+}
+
+.mapa-visor__img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* Os controles só aparecem com o mouse sobre a imagem (ou com o foco do
+   teclado num deles). Escondidos, também não pegam clique. */
+.mapa-visor__topo,
+.mapa-visor__seta,
+.mapa-visor__contador {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, background 0.2s;
+}
+
+.mapa-visor__quadro:hover :is(.mapa-visor__topo, .mapa-visor__seta, .mapa-visor__contador),
+.mapa-visor__quadro:has(:focus-visible) :is(.mapa-visor__topo, .mapa-visor__seta, .mapa-visor__contador) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Na tela de toque não existe "passar o mouse": ficam sempre à vista. */
+@media (hover: none) {
+  .mapa-visor__topo,
+  .mapa-visor__seta,
+  .mapa-visor__contador {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* O mesmo teal translúcido do cabeçalho do modal, para ler por cima de
+   qualquer HQ. */
+.mapa-visor__topo {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mapa-visor__voltar,
+.mapa-visor__close.mapa-modal__close,
+.mapa-visor__seta,
+.mapa-visor__contador {
+  background: rgba(7, 55, 62, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.mapa-visor__voltar {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mapa-visor__voltar:hover,
+.mapa-visor__close.mapa-modal__close:hover,
+.mapa-visor__seta:hover:not(:disabled) {
+  background: rgba(13, 92, 99, 0.95);
+}
+
+.mapa-visor__seta {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  font-size: 34px;
+  line-height: 1;
+  padding-bottom: 4px;
+  cursor: pointer;
+}
+
+.mapa-visor__seta--anterior { left: 14px; }
+.mapa-visor__seta--proxima  { right: 14px; }
+
+/* Na primeira e na última HQ, a seta do lado sem mais nada fica apagada.
+   Pela cor, não pela opacidade — essa é a do aparecer no hover. */
+.mapa-visor__seta:disabled {
+  background: rgba(7, 55, 62, 0.45);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: default;
+}
+
+.mapa-visor__contador {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* Cabeçalho ─ duas caixas soltas sobre a foto, no teal da barra de

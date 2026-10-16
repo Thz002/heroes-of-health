@@ -1,11 +1,12 @@
 -- =====================================================================
 --  O CATÁLOGO DE INSÍGNIAS — Heróis da Saúde
 --
---  Todas as insígnias do jogo, com a arte de cada uma (60 linhas):
+--  Todas as insígnias do jogo, com a arte de cada uma (64 linhas):
 --
 --     5  perguntas certas em qualquer lugar      perguntas1..5.png
 --     3  dias seguidos de entrada                diaria1..3.png
 --     4  missões concluídas pelos lugares        missoes1..4.png
+--     4  segredos achados no mapa                tvs, hqs, all-hqs, calendar.png
 --    48  acertos em cada lugar: 16 × 3 degraus   <lugar>1..3.png
 --
 --  Dialeto: PostgreSQL (Supabase).
@@ -64,6 +65,47 @@ insert into insignias (codigo, nome, descricao, publico, regra, alvo, xp, ordem,
   ('volta-no-quarteirao',  'Volta no Quarteirão',  'Cinco missões concluídas pelos lugares do bairro.',            'ALUNO', 'MISSOES_CENARIO',   5, 100, 13, 'missoes2.png'),
   ('conhece-cada-esquina', 'Conhece Cada Esquina', 'Vinte e cinco missões concluídas. O bairro inteiro sabe seu nome.', 'ALUNO', 'MISSOES_CENARIO', 25, 250, 14, 'missoes3.png'),
   ('mapa-na-cabeca',       'Mapa na Cabeça',       'Cinquenta missões concluídas pelos lugares do bairro.',        'ALUNO', 'MISSOES_CENARIO',  50, 500, 15, 'missoes4.png')
+on conflict (codigo) do update set
+  nome         = excluded.nome,
+  descricao    = excluded.descricao,
+  publico      = excluded.publico,
+  regra        = excluded.regra,
+  alvo         = excluded.alvo,
+  xp           = excluded.xp,
+  ordem        = excluded.ordem,
+  imagem       = excluded.imagem,
+  cenario_slug = null,
+  grupo        = null;
+
+
+-- ── Os segredos do mapa ──────────────────────────────────────────────
+--
+-- DESCOBERTA: objetos clicáveis dentro da foto de um lugar (mapa.js,
+-- OBJETOS_DO_INTERIOR). Não há contagem — o alvo é 1 e quem dá a
+-- insígnia é POST /api/descobrir, quando a pessoa acha o segredo:
+--
+--   segredo-tv          clicou na TV da banca (os vídeos da Fiocruz)
+--   segredo-hqs         abriu as HQs, nas pilhas de jornal da banca
+--   segredo-hqs-todas   chegou à última HQ — o visor só passa uma por
+--                       clique, então quem chega lá passou por todas
+--   segredo-calendario  abriu o Calendário das Cores, na farmácia
+--
+-- O CÓDIGO É O QUE O MAPA PEDE: mapa.js manda estes códigos e mostra
+-- as dicas enquanto a pessoa não os tiver. Trocar um aqui exige trocar
+-- lá.
+--
+-- XP baixo de propósito: é o navegador que diz "achei", e qualquer um
+-- pode pedir pelo console. Ninguém sobe de nível com isto.
+--
+-- A descrição aparece também na estante, com a peça ainda bloqueada.
+-- Por isso diz o que a pessoa fez sem entregar onde: o caminho fica
+-- para as dicas do mapa.
+
+insert into insignias (codigo, nome, descricao, publico, regra, alvo, xp, ordem, imagem) values
+  ('segredo-tv',         'Sintonizado',          'Achou o canal de vídeos de saúde da Fiocruz escondido no bairro.', 'ALUNO', 'DESCOBERTA', 1, 30, 16, 'tvs.png'),
+  ('segredo-hqs',        'Balão de Fala',        'Descobriu as histórias em quadrinhos sobre saúde do bairro.',      'ALUNO', 'DESCOBERTA', 1, 30, 17, 'hqs.png'),
+  ('segredo-hqs-todas',  'Até a Última Página',  'Leu todas as histórias em quadrinhos sobre saúde.',                'ALUNO', 'DESCOBERTA', 1, 60, 18, 'all-hqs.png'),
+  ('segredo-calendario', 'Toda Cor Tem Causa',   'Descobriu o Calendário das Cores da Saúde: cada mês, uma causa.', 'ALUNO', 'DESCOBERTA', 1, 30, 19, 'calendar.png')
 on conflict (codigo) do update set
   nome         = excluded.nome,
   descricao    = excluded.descricao,
@@ -178,7 +220,7 @@ delete from insignias where codigo in ('primeira-missao', 'mao-na-massa', 'missa
 
 
 -- ── Conferir ─────────────────────────────────────────────────────────
--- Deve devolver 60 linhas, todas com imagem preenchida.
+-- Deve devolver 64 linhas, todas com imagem preenchida.
 
 -- select codigo, nome, regra, alvo, xp, ordem, imagem, cenario_slug, grupo
 --   from insignias order by publico, ordem;

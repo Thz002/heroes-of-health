@@ -105,6 +105,9 @@
         <div class="mapa-modal__figura">
           <img id="cenario-modal-interior" class="mapa-modal__interior" alt="" hidden>
           <img id="cenario-modal-familia" class="mapa-modal__familia" alt="" hidden>
+          <!-- Objetos clicáveis da foto (a TV e os jornais da banca, o
+               calendário da farmácia), por cima do desenho. -->
+          <div class="mapa-modal__objetos" id="cenario-modal-objetos"></div>
           <p class="mapa-modal__em-breve" id="cenario-modal-em-breve" hidden>Em breve implementado</p>
         </div>
 
@@ -138,6 +141,29 @@
             aria-labelledby="cenario-modal-missoes-titulo"></div>
 
           <button type="button" id="cenario-modal-play" class="btn-primary mapa-modal__play">Jogar</button>
+        </div>
+      </div>
+
+      <!-- Visor: quando um objeto da foto abre uma imagem — as HQs da banca
+           (uma por vez, só passa no clique) ou o calendário da farmácia —
+           o modal vira só essa imagem. Os controles ficam por cima dela e
+           só aparecem com o mouse em cima. "Voltar" devolve ao lugar. -->
+      <div class="mapa-visor" id="cenario-visor" hidden>
+        <div class="mapa-visor__quadro">
+          <img class="mapa-visor__img" id="cenario-visor-img" alt="">
+
+          <div class="mapa-visor__topo">
+            <button type="button" class="mapa-visor__voltar" id="cenario-visor-voltar">&larr; Voltar</button>
+            <button type="button" class="mapa-modal__close mapa-visor__close" id="cenario-visor-close"
+              aria-label="Fechar">&times;</button>
+          </div>
+
+          <button type="button" class="mapa-visor__seta mapa-visor__seta--anterior" id="cenario-visor-anterior"
+            aria-label="HQ anterior">&#8249;</button>
+          <button type="button" class="mapa-visor__seta mapa-visor__seta--proxima" id="cenario-visor-proxima"
+            aria-label="Próxima HQ">&#8250;</button>
+
+          <p class="mapa-visor__contador" id="cenario-visor-contador"></p>
         </div>
       </div>
     </div>

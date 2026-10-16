@@ -26,10 +26,27 @@ inicial do nome no lugar da arte.
 | `perguntas1..5.png` | Primeiros Passos, Pé na Estrada, Meio Caminho, Centurião, Enciclopédia | perguntas certas, em qualquer lugar | 10, 25, 50, 100, 200 |
 | `diaria1..3.png` | De Volta, Semana Cheia, Presença de Ouro | dias seguidos de entrada | 3, 7, 30 |
 | `missoes1..4.png` | Primeira Parada, Volta no Quarteirão, Conhece Cada Esquina, Mapa na Cabeça | missões concluídas pelos lugares | 1, 5, 25, 50 |
+| `tvs.png`, `hqs.png`, `all-hqs.png`, `calendar.png` | Sintonizado, Balão de Fala, Até a Última Página, Toda Cor Tem Causa | segredos achados no mapa (regra `DESCOBERTA`) | — |
 | `<lugar>1..3.png` | três por lugar, tabela abaixo | perguntas certas naquele lugar | 5, 25, 50 |
 
 "Missão concluída pelos lugares" é cada lugar de um quiz concluído: um
 quiz com perguntas da UBS, da Escola e do Mercado vale 3.
+
+### Os segredos do mapa
+
+Objetos clicáveis dentro das fotos da banca e da farmácia. Cada um dá a
+sua insígnia na hora em que é achado — não há contagem:
+
+| arquivo | insígnia | segredo |
+|---|---|---|
+| `tvs.png` | Sintonizado | a TV da banca (os vídeos da Fiocruz) |
+| `hqs.png` | Balão de Fala | as HQs, nas pilhas de jornal da banca |
+| `all-hqs.png` | Até a Última Página | chegar à última HQ |
+| `calendar.png` | Toda Cor Tem Causa | o Calendário das Cores, na farmácia |
+
+Enquanto não as tem, quem abre a banca ou a farmácia vê uma dica com a
+arte em silhueta — por isso vale a mesma regra da estante: o desenho
+precisa se reconhecer sem cor.
 
 ### Os lugares: três degraus que se sobrepõem
 
