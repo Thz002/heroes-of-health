@@ -857,6 +857,83 @@ rotas.post('/presenca', async (req, res) => {
 
 
 /* ═══════════════════════════════════════════════════════════════════
+   OS SEGREDOS DO MAPA  —  GET /minhas-descobertas, POST /descobrir
+
+   Objetos clicáveis dentro da foto de alguns lugares (a TV e as HQs da
+   banca, o calendário da farmácia) dão uma insígnia da regra
+   DESCOBERTA a quem os acha. O mapa pede a lista uma vez ao carregar,
+   para saber quais dicas ainda mostrar, e avisa cada achado.
+
+   O LIMITE, DITO COM TODAS AS LETRAS: quem diz "achei" é o navegador.
+   O servidor só garante que esta porta dá apenas insígnias DESCOBERTA
+   (nunca as de acerto ou de dias) e uma vez cada — por isso elas valem
+   pouco XP.
+   ═══════════════════════════════════════════════════════════════════ */
+
+rotas.get('/minhas-descobertas', async (req, res) => {
+  const eu = req.usuario.id;
+  const sou = req.usuario.tipo === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO';
+
+  const [bruto1, bruto2] = await Promise.all([
+    admin.from('insignias').select('codigo, nome, imagem')
+      .eq('regra', 'DESCOBERTA').eq('publico', sou).order('ordem'),
+    admin.from('insignias_usuarios').select('insignia_codigo').eq('usuario_id', eu)
+  ]);
+
+  const catalogo = PROG.ouVazio(bruto1);
+  const minhas = PROG.ouVazio(bruto2);
+
+  if (catalogo.error || minhas.error) {
+    return falhou(res, 500, 'Não foi possível carregar os segredos do mapa.',
+      catalogo.error || minhas.error, 'GET /minhas-descobertas');
+  }
+
+  const tenho = new Set((minhas.data || []).map(i => i.insignia_codigo));
+
+  res.json({
+    descobertas: (catalogo.data || []).map(i => ({
+      codigo: i.codigo,
+      nome: i.nome,
+      imagem: i.imagem || null,
+      conquistada: tenho.has(i.codigo)
+    }))
+  });
+});
+
+rotas.post('/descobrir', async (req, res) => {
+  const eu = req.usuario.id;
+  const sou = req.usuario.tipo === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO';
+  const codigo = req.body && req.body.codigo;
+
+  if (typeof codigo !== 'string' || !codigo || codigo.length > 40) {
+    return res.status(400).json({ message: 'Segredo inválido.' });
+  }
+
+  const r = await PROG.descobrir(eu, sou, codigo);
+
+  if (r.erro && r.erro.naoExiste) {
+    return res.status(404).json({ message: 'Esse segredo não existe.' });
+  }
+  if (r.erro) {
+    return falhou(res, 500, 'Não foi possível registrar a descoberta.', r.erro, 'POST /descobrir');
+  }
+
+  // Já tinha: nada a comemorar, e o XP não mudou.
+  if (!r.nova) return res.json({ insignias_novas: [] });
+
+  // A insígnia já está gravada, então o total recontado já a inclui.
+  const retrato = sou === 'PROFESSOR'
+    ? await PROG.xpDoProfessor(eu)
+    : await PROG.xpDoAluno(eu);
+
+  res.json({
+    insignias_novas: PROG.paraAviso([r.nova]),
+    ...(retrato.erro ? {} : { xp: retrato.total, nivel: PROG.nivelDoXp(retrato.total, sou) })
+  });
+});
+
+
+/* ═══════════════════════════════════════════════════════════════════
    A ESTANTE  —  GET /minha-estante
 
    Devolve o catálogo INTEIRO, não só o que a pessoa já tem. É o que

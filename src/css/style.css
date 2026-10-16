@@ -1580,6 +1580,39 @@ img { max-width: 100%; display: block; }
 
 .conquista-aviso--resto:hover { text-decoration: underline; }
 
+/* ── A dica: o segredo de um lugar que a pessoa ainda não achou ──
+   O cartão da conquista, com a medalha em silhueta — como na estante,
+   bloqueada — e um "?" por cima. O rótulo sai do dourado para o verde
+   claro: dourado é conquista feita, isto é convite. */
+.conquista-aviso--dica .conquista-aviso__rotulo { color: var(--accent); }
+
+.conquista-aviso--dica .conquista-aviso__arte { position: relative; }
+
+.conquista-aviso--dica .conquista-aviso__arte img {
+  filter: grayscale(1) brightness(0.5) drop-shadow(0 0 8px rgba(107, 223, 184, 0.45));
+}
+
+.conquista-aviso--dica .conquista-aviso__arte:not(.conquista-aviso__arte--letra)::after {
+  content: '?';
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #2b1d00;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.conquista-aviso--dica .conquista-aviso__descricao { font-style: italic; }
+
 /* ── O aviso de progresso: as barras do acerto ─────────────────────
    Mesmo cartão, mas em coluna e com a borda na cor do jogo (verde), e
    não no dourado das insígnias: progresso é rotina, conquista é festa.

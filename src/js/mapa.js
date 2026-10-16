@@ -178,6 +178,83 @@
     { tipo: "casa", casa: 20, imagem: "CasaLateral04.png", x: 1335, y: 430, w: 73, h: 113, tooltipPos: "left", interior: "CasaLateral04.jpg" },
   ];
 
+  // ── Objetos clicáveis dentro da foto do interior ──────────────────
+  //
+  // A mesma ideia dos HOTSPOTS, só que dentro do modal: um recorte
+  // (src/imgs/Interiores/) posicionado exatamente por cima do objeto
+  // desenhado na foto, que acende no hover. A chave é o arquivo da foto,
+  // porque as coordenadas são dela: x/y/w/h em pixels sobre a foto
+  // original (`largura` x `altura`). O modal corta a foto (object-fit:
+  // cover); a camada dos objetos é cortada igual (ver mapa.css), então os
+  // percentuais continuam batendo em qualquer tamanho de tela.
+  //
+  // `acao` diz o que o clique faz:
+  //   link   -> abre o endereço numa aba nova (o mapa continua aberto)
+  //   hqs    -> o modal vira o visor das HQs, uma por vez (HQS abaixo)
+  //   imagem -> o modal vira o visor de uma imagem só
+  // `segredo` é o código da insígnia (regra DESCOBERTA, db/insignias.sql)
+  // que achar o objeto dá — ver SEGREDOS mais abaixo.
+  const OBJETOS_DO_INTERIOR = {
+    "Banca.jpg": {
+      largura: 1408,
+      altura: 768,
+      itens: [
+        // A foto da banca não tem mais a TV nem os jornais desenhados: os
+        // recortes são o único desenho deles, apoiados no balcão.
+        { nome: "Ler as HQs", imagem: "jornais.png", x: 321, y: 419, w: 251, h: 91,
+          acao: { tipo: "hqs", segredo: "segredo-hqs" } },
+        { nome: "Assistir vídeos sobre saúde", imagem: "televisão.png", x: 953, y: 359, w: 124, h: 132,
+          acao: { tipo: "link", url: "https://videosaude.icict.fiocruz.br/", segredo: "segredo-tv" } },
+      ],
+    },
+    "Farmacia.jpeg": {
+      largura: 1024,
+      altura: 559,
+      itens: [
+        { nome: "Ver o calendário", imagem: "calendário.jpg", x: 364, y: 159, w: 50, h: 52,
+          acao: { tipo: "imagem", titulo: "Calendário das cores", imagem: "calendario-cores.jpeg",
+                  segredo: "segredo-calendario" } },
+      ],
+    },
+  };
+
+  // As HQs da banca (src/imgs/hqs/), na ordem de leitura. O servidor não
+  // lista pastas, então uma HQ nova entra aqui à mão. (A 3 é mesmo
+  // "hq-03", com hífen.)
+  const HQS = [
+    "hq01.jpeg", "hq02.jpeg", "hq-03.jpeg", "hq04.jpeg", "hq05.jpeg", "hq06.jpeg",
+    "hq07.jpeg", "hq08.jpeg", "hq09.jpeg", "hq10.jpeg", "hq11.jpeg", "hq12.jpeg",
+  ];
+
+  // ── Os segredos e as dicas ────────────────────────────────────────
+  //
+  // Cada objeto acima dá uma insígnia da regra DESCOBERTA a quem o acha
+  // (POST /api/descobrir), e chegar à última HQ dá mais uma. Enquanto a
+  // pessoa não tiver a insígnia, abrir o lugar mostra uma DICA no canto
+  // da tela — no cartão das conquistas —, que sugere onde clicar sem
+  // dizer.
+  //
+  // Cada lista interna é uma CORRENTE: aparece a dica do primeiro elo
+  // ainda não conquistado. É o que deixa a dica das HQs mudar de
+  // "procure" para "termine de ler" e só sumir com a última página.
+  // Os códigos são os de db/insignias.sql; trocar lá exige trocar aqui.
+  const HQS_TODAS = "segredo-hqs-todas";
+
+  const DICAS = {
+    banca: [
+      [{ codigo: "segredo-tv", titulo: "Notícia no ar",
+         texto: "O jornaleiro jura que as melhores notícias de saúde não estão no papel… estão no ar." }],
+      [{ codigo: "segredo-hqs", titulo: "Nem tudo é manchete",
+         texto: "Nem toda história desta banca é notícia — algumas falam por balões." },
+       { codigo: HQS_TODAS, titulo: "Continua…",
+         texto: "Tem história nesta banca que você ainda não terminou. Quem chega à última página ganha mais que um final feliz." }],
+    ],
+    farmacia: [
+      [{ codigo: "segredo-calendario", titulo: "O tempo na parede",
+         texto: "Nesta farmácia o tempo passa na parede — e cada mês veste uma cor diferente. Sabe por quê?" }],
+    ],
+  };
+
 
   // ── As 8 barras da saúde ──────────────────────────────────────────
   //
@@ -215,6 +292,15 @@
   const modalPlay = document.getElementById("cenario-modal-play");
   const modalMissoes = document.getElementById("cenario-modal-missoes");
   const modalClose = document.getElementById("cenario-modal-close");
+  const modalObjetos = document.getElementById("cenario-modal-objetos");
+
+  const visor = document.getElementById("cenario-visor");
+  const visorImg = document.getElementById("cenario-visor-img");
+  const visorAnterior = document.getElementById("cenario-visor-anterior");
+  const visorProxima = document.getElementById("cenario-visor-proxima");
+  const visorContador = document.getElementById("cenario-visor-contador");
+  const visorVoltar = document.getElementById("cenario-visor-voltar");
+  const visorClose = document.getElementById("cenario-visor-close");
 
   /* ═══════════════════════════════════════════════════════════════════
      PROGRESSO POR ÁREA
@@ -512,6 +598,194 @@
     modalFamilia.src = `../imgs/familias/familia${String(h.casa).padStart(2, "0")}.png`;
   }
 
+  /**
+   * Os objetos clicáveis da foto (OBJETOS_DO_INTERIOR). A maioria dos
+   * lugares não tem nenhum e a camada fica vazia. A proporção da foto vai
+   * para o CSS, que a usa para cortar a camada igual à foto.
+   */
+  function montarObjetos(interior) {
+    if (!modalObjetos) return;
+    modalObjetos.innerHTML = "";
+
+    const cena = interior && OBJETOS_DO_INTERIOR[interior];
+    if (!cena) return;
+
+    modalObjetos.style.setProperty("--proporcao", cena.largura / cena.altura);
+
+    for (const item of cena.itens) {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "mapa-objeto";
+      el.style.left = (item.x / cena.largura) * 100 + "%";
+      el.style.top = (item.y / cena.altura) * 100 + "%";
+      el.style.width = (item.w / cena.largura) * 100 + "%";
+      el.style.height = (item.h / cena.altura) * 100 + "%";
+      el.setAttribute("aria-label", item.nome);
+
+      const img = document.createElement("img");
+      img.src = `../imgs/Interiores/${item.imagem}`;
+      img.alt = "";
+      img.draggable = false;
+      el.appendChild(img);
+
+      const label = document.createElement("span");
+      label.className = "mapa-objeto__label";
+      label.textContent = item.nome;
+      el.appendChild(label);
+
+      el.addEventListener("click", () => usarObjeto(item.acao));
+      modalObjetos.appendChild(el);
+    }
+  }
+
+  function usarObjeto(acao) {
+    // As dicas saem: o segredo foi achado, e no visor elas cobririam a HQ.
+    if (typeof CONQUISTA_AVISO !== "undefined") CONQUISTA_AVISO.dicas([]);
+    if (acao.segredo) descobrirSegredo(acao.segredo);
+
+    if (acao.tipo === "link") {
+      // Aba nova: o aluno volta para o mapa do jeito que deixou.
+      window.open(acao.url, "_blank", "noopener");
+    } else if (acao.tipo === "hqs") {
+      abrirVisor();
+      mostrarHq(0);
+    } else if (acao.tipo === "imagem") {
+      abrirVisor();
+      visorImg.src = `../imgs/Interiores/${acao.imagem}`;
+      visorImg.alt = acao.titulo;
+    }
+  }
+
+  /* ── Visor: o modal vira só uma imagem (as HQs ou o calendário) ──
+     A classe no card esconde a foto e as missões (sem apagar nada) e tira
+     a moldura do modal, deixando só a imagem, quase na tela toda — por
+     isso "Voltar" só desfaz a classe. */
+
+  const modalCard = modal?.querySelector(".mapa-modal");
+  const visorQuadro = visor?.querySelector(".mapa-visor__quadro");
+
+  // O quadro toma a proporção de cada imagem que chega (as HQs não são
+  // todas iguais, e o calendário é em pé) — é o que deixa os controles
+  // dentro da imagem, e não numa faixa vazia ao lado dela.
+  visorImg?.addEventListener("load", () => {
+    if (!visorImg.naturalHeight) return;
+    visorQuadro.style.setProperty("--proporcao", visorImg.naturalWidth / visorImg.naturalHeight);
+    visorQuadro.classList.remove("is-carregando");
+  });
+
+  let hqAtual = null;   // índice em HQS; null = o visor não está nas HQs
+
+  /* ── Os segredos: o que a pessoa já achou ──
+     Uma chamada só, no carregamento: código -> { imagem, conquistada },
+     das insígnias DESCOBERTA do catálogo. null enquanto não chegou (ou
+     se falhou) — aí não aparece dica nem se registra achado: sem a
+     lista, não dá para saber se a insígnia existe neste banco. */
+
+  let segredos = null;
+  const descobrindo = new Set();   // pedidos em andamento, contra o clique duplo
+
+  async function carregarSegredos() {
+    try {
+      const r = await API.getMinhasDescobertas();
+      segredos = new Map((r.descobertas || []).map(d => [d.codigo, d]));
+    } catch (err) {
+      console.warn("[mapa] Não foi possível carregar os segredos do mapa:", err.message);
+    }
+  }
+
+  function jaAchou(codigo) {
+    const s = segredos && segredos.get(codigo);
+    return !s || s.conquistada;
+  }
+
+  /** As dicas do lugar, no canto da tela: um cartão por corrente pendente. */
+  function mostrarDicas(tipo) {
+    if (typeof CONQUISTA_AVISO === "undefined") return;
+
+    const lista = [];
+    for (const corrente of DICAS[tipo] || []) {
+      // Corrente cuja insígnia final não existe neste banco (o
+      // insignias.sql novo ainda não rodou): sem prêmio, sem dica.
+      if (!segredos || !segredos.has(corrente[corrente.length - 1].codigo)) continue;
+
+      const elo = corrente.find(d => !jaAchou(d.codigo));
+      if (elo) lista.push({ ...elo, imagem: segredos.get(elo.codigo).imagem });
+    }
+
+    // Lista vazia também limpa as dicas de um lugar aberto antes.
+    CONQUISTA_AVISO.dicas(lista);
+  }
+
+  /** Achou um segredo: grava, e comemora se a insígnia é nova. */
+  async function descobrirSegredo(codigo) {
+    if (jaAchou(codigo) || descobrindo.has(codigo)) return;
+    descobrindo.add(codigo);
+
+    try {
+      const r = await API.descobrir(codigo);
+      segredos.get(codigo).conquistada = true;
+      if (r.nivel && window.NIVEL) window.NIVEL.atualizar(r.nivel, r.xp);
+      if (typeof CONQUISTA_AVISO !== "undefined") CONQUISTA_AVISO.mostrar(r.insignias_novas);
+    } catch (err) {
+      // Fica para a próxima vez que a pessoa achar: a dica continua.
+      console.warn("[mapa] Não foi possível registrar o segredo:", err.message);
+    } finally {
+      descobrindo.delete(codigo);
+    }
+  }
+
+  function abrirVisor() {
+    if (!visor) return;
+    hqAtual = null;
+    // As setas e o contador são só das HQs; mostrarHq os acende.
+    visorAnterior.hidden = visorProxima.hidden = visorContador.hidden = true;
+    visorQuadro.classList.add("is-carregando");
+    visor.hidden = false;
+    modalCard?.classList.add("mapa-modal--visor");
+    visorVoltar.focus();
+  }
+
+  function fecharVisor() {
+    if (!visor || visor.hidden) return false;
+    visor.hidden = true;
+    modalCard?.classList.remove("mapa-modal--visor");
+    hqAtual = null;
+    // Sem o src antigo, a próxima abertura não pisca a imagem anterior.
+    visorImg.removeAttribute("src");
+    return true;
+  }
+
+  /** Carrossel parado: só troca de HQ quando o aluno clica numa seta. */
+  function mostrarHq(i) {
+    if (i < 0 || i >= HQS.length) return;
+    hqAtual = i;
+    visorImg.src = `../imgs/hqs/${HQS[i]}`;
+    visorImg.alt = `HQ ${i + 1} de ${HQS.length}`;
+
+    visorAnterior.hidden = visorProxima.hidden = visorContador.hidden = false;
+    visorAnterior.disabled = i === 0;
+    visorProxima.disabled = i === HQS.length - 1;
+    visorContador.textContent = `HQ ${i + 1} de ${HQS.length}`;
+    // Seta que acabou de travar no fim (ou no começo) perderia o foco do
+    // teclado para a página; ele passa para a outra.
+    if (document.activeElement && document.activeElement.disabled) {
+      (visorAnterior.disabled ? visorProxima : visorAnterior).focus();
+    }
+
+    // Já baixa a próxima, para o clique trocar sem esperar.
+    if (i + 1 < HQS.length) new Image().src = `../imgs/hqs/${HQS[i + 1]}`;
+    // Uma por clique, em ordem: quem chegou à última passou por todas.
+    else descobrirSegredo(HQS_TODAS);
+  }
+
+  visorAnterior?.addEventListener("click", () => mostrarHq(hqAtual - 1));
+  visorProxima?.addEventListener("click", () => mostrarHq(hqAtual + 1));
+  visorVoltar?.addEventListener("click", () => {
+    fecharVisor();
+    modalClose?.focus();
+  });
+  visorClose?.addEventListener("click", () => fecharModal());
+
   function abrirModal(h) {
     const cenario = CENARIOS[h.tipo];
     if (!cenario || !modal) return;
@@ -535,6 +809,9 @@
       modalInterior.alt = `Interior — ${nomeDoPonto(h)}`;
     }
     mostrarFamilia(h);
+    montarObjetos(interior);
+    fecharVisor();
+    mostrarDicas(h.tipo);
 
     missaoEscolhida = null;
     desenharMissoesDoModal(h);
@@ -554,6 +831,7 @@
     if (!modal) return;
     modal.classList.remove("open");
     document.body.classList.remove("modal-aberto");
+    fecharVisor();
   }
 
   modalClose?.addEventListener("click", fecharModal);
@@ -564,8 +842,17 @@
     if (e.target === modal) fecharModal();
   });
 
+  // Com o visor aberto, o Esc volta para o lugar em vez de fechar tudo, e
+  // as setas do teclado passam as HQs.
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") fecharModal();
+    if (e.key === "Escape") {
+      if (fecharVisor()) modalClose?.focus();
+      else fecharModal();
+    } else if (hqAtual !== null && e.key === "ArrowLeft") {
+      mostrarHq(hqAtual - 1);
+    } else if (hqAtual !== null && e.key === "ArrowRight") {
+      mostrarHq(hqAtual + 1);
+    }
   });
 
   modalPlay?.addEventListener("click", () => {
@@ -633,6 +920,7 @@
   const perfilPromessa = AUTH.perfilAtual().catch(() => null);
 
   carregarAreas();
+  carregarSegredos();
 
 
   /* ═══════════════════════════════════════════════════════════════════

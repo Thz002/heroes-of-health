@@ -508,6 +508,13 @@ create table if not exists xp_diario (
 --                   Mercado vale 3 quando é concluído
 --   QUIZZES         quizzes criados          (professor)
 --   ACERTOS_TURMA   acertos dos alunos dele  (professor)
+--   DESCOBERTA      um segredo achado no mapa (a TV e as HQs da banca,
+--                   o calendário da farmácia). A única regra que NÃO é
+--                   contagem: não há placar, alvo é sempre 1, e quem dá
+--                   a insígnia é POST /api/descobrir, só para linhas
+--                   desta regra. É o navegador que conta "achei", então
+--                   o XP delas fica baixo — dá para pedir pelo console,
+--                   e não há como o servidor saber se a pessoa clicou
 create table if not exists insignias (
   codigo varchar(40) primary key,
   nome varchar(60) not null,
@@ -517,7 +524,8 @@ create table if not exists insignias (
 
   regra varchar(20) not null
         check (regra in ('ACERTOS', 'ACERTOS_CENARIO', 'DIAS', 'MISSOES',
-                         'MISSOES_CENARIO', 'QUIZZES', 'ACERTOS_TURMA')),
+                         'MISSOES_CENARIO', 'QUIZZES', 'ACERTOS_TURMA',
+                         'DESCOBERTA')),
   alvo int not null check (alvo > 0),
 
   xp int not null default 0 check (xp >= 0),
@@ -535,7 +543,8 @@ create table if not exists insignias (
 alter table insignias drop constraint if exists insignias_regra_check;
 alter table insignias add constraint insignias_regra_check
   check (regra in ('ACERTOS', 'ACERTOS_CENARIO', 'DIAS', 'MISSOES',
-                   'MISSOES_CENARIO', 'QUIZZES', 'ACERTOS_TURMA'));
+                   'MISSOES_CENARIO', 'QUIZZES', 'ACERTOS_TURMA',
+                   'DESCOBERTA'));
 
 -- Para qual lugar do bairro a insígnia conta. Só ACERTOS_CENARIO usa.
 --
@@ -623,7 +632,7 @@ create index if not exists conclusoes_por_professor
 
 -- ── A estante de hoje ────────────────────────────────────────────────
 --
--- As linhas NÃO moram aqui: o catálogo inteiro (60 insígnias, com a
+-- As linhas NÃO moram aqui: o catálogo inteiro (64 insígnias, com a
 -- arte de cada uma) está em db/insignias.sql, que roda depois deste
 -- arquivo. Ficou separado porque é conteúdo do jogo que muda com
 -- frequência — um alvo calibrado, uma arte trocada — e não esquema.

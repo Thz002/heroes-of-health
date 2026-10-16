@@ -32,7 +32,8 @@
     DIAS:            ['dia seguido', 'dias seguidos'],
     MISSOES_CENARIO: ['missão concluída', 'missões concluídas'],
     QUIZZES:       ['quiz criado', 'quizzes criados'],
-    ACERTOS_TURMA: ['acerto da turma', 'acertos da turma']
+    ACERTOS_TURMA: ['acerto da turma', 'acertos da turma'],
+    DESCOBERTA:    ['segredo achado', 'segredos achados']
   };
 
   // O "Como conquistar" do modal. As descrições do banco estão no
@@ -51,7 +52,10 @@
     QUIZZES: n =>
       `Crie ${n} ${n === 1 ? 'quiz' : 'quizzes'} para as suas turmas.`,
     ACERTOS_TURMA: n =>
-      `Seus alunos precisam somar ${n} acertos.`
+      `Seus alunos precisam somar ${n} acertos.`,
+    // Sem dizer onde: o caminho é das dicas que o mapa mostra.
+    DESCOBERTA: () =>
+      'Um segredo escondido em algum lugar do bairro. Explore o mapa: alguns lugares dão dicas quando você entra neles.'
   };
 
   const modal = document.getElementById('modal-insignia');
@@ -326,6 +330,9 @@
     if (i.conquistada) {
       return i.conquistada_em ? `conquistada em ${data(i.conquistada_em)}` : 'conquistada';
     }
+
+    // Segredo não tem "quanto falta": ou achou, ou não.
+    if (i.regra === 'DESCOBERTA') return 'segredo do bairro';
 
     const falta = Math.max(0, i.alvo - i.progresso);
 

@@ -27,8 +27,15 @@
  * quiz.js, para dividir a MESMA pilha com as insígnias — dois avisos
  * no mesmo canto, cada um com a sua pilha, se sobreporiam.
  *
- * Global: CONQUISTA_AVISO.mostrar(lista) e
- *         CONQUISTA_AVISO.progresso(barras).
+ * A DICA. O terceiro cartão: ao abrir a banca ou a farmácia no mapa,
+ * uma charada sobre o segredo daquele lugar que a pessoa ainda não
+ * achou (mapa.js). Mesmo cartão da conquista, com a medalha em
+ * silhueta — a mesma da estante bloqueada —, para dizer "isto aqui é
+ * uma insígnia que você ainda pode ganhar" sem dizer onde.
+ *
+ * Global: CONQUISTA_AVISO.mostrar(lista),
+ *         CONQUISTA_AVISO.progresso(barras) e
+ *         CONQUISTA_AVISO.dicas(lista).
  * Carregado antes de navbar.js.
  */
 const CONQUISTA_AVISO = (() => {
@@ -37,6 +44,7 @@ const CONQUISTA_AVISO = (() => {
   const PASTA = '../imgs/insignias/';
   const DURACAO = 6500;        // quanto cada aviso fica na tela
   const DURACAO_PROGRESSO = 4500;  // menor: aparece a cada acerto
+  const DURACAO_DICA = 9000;   // maior: charada se lê duas vezes
   const INTERVALO = 450;       // o atraso entre um aviso e o seguinte
   const MAX_VISIVEIS = 3;
 
@@ -51,6 +59,7 @@ const CONQUISTA_AVISO = (() => {
   const PISO = 3;
 
   let cartaoDeProgresso = null;   // o que está na tela agora, se houver
+  let cartoesDeDica = [];         // as dicas na tela agora
 
   let pilha = null;
 
@@ -229,6 +238,58 @@ const CONQUISTA_AVISO = (() => {
     requestAnimationFrame(passo);
   }
 
+  /**
+   * As dicas de um lugar: [{ titulo, texto, imagem }]. `imagem` é a arte
+   * da insígnia que o segredo dá, desenhada em silhueta.
+   *
+   * Abrir o lugar de novo SUBSTITUI as dicas que ainda estão na tela,
+   * como o aviso de progresso: entrar e sair da banca três vezes não pode
+   * empilhar seis cartões iguais.
+   */
+  function dicas(lista) {
+    cartoesDeDica.forEach(el => sair(el, true));
+    cartoesDeDica = [];
+    if (!Array.isArray(lista) || !lista.length) return;
+
+    lista.forEach((d, n) => {
+      const el = cartaoDeDica(d);
+      cartoesDeDica.push(el);
+      setTimeout(() => {
+        // Trocadas antes de entrar (o lugar foi aberto de novo no meio
+        // do intervalo): esta já não vale.
+        if (cartoesDeDica.includes(el)) entrar(el, DURACAO_DICA);
+      }, n * INTERVALO);
+    });
+  }
+
+  function cartaoDeDica(d) {
+    const el = document.createElement('div');
+    el.className = 'conquista-aviso conquista-aviso--dica';
+    el.innerHTML = `
+      <div class="conquista-aviso__arte"></div>
+      <div class="conquista-aviso__texto">
+        <span class="conquista-aviso__rotulo">Dica secreta</span>
+        <strong class="conquista-aviso__nome"></strong>
+        <span class="conquista-aviso__descricao"></span>
+      </div>
+    `;
+
+    const arte = el.querySelector('.conquista-aviso__arte');
+    if (d.imagem) {
+      const img = document.createElement('img');
+      img.src = PASTA + d.imagem;
+      img.alt = '';
+      arte.appendChild(img);
+    } else {
+      arte.textContent = '?';
+      arte.classList.add('conquista-aviso__arte--letra');
+    }
+
+    el.querySelector('.conquista-aviso__nome').textContent = d.titulo || 'Um segredo por aqui';
+    el.querySelector('.conquista-aviso__descricao').textContent = d.texto || '';
+    return el;
+  }
+
   function cartaoDoResto(quantas) {
     const el = document.createElement('a');
     el.className = 'conquista-aviso conquista-aviso--resto';
@@ -272,6 +333,9 @@ const CONQUISTA_AVISO = (() => {
    */
   function sair(el, jaVaiOutro = false) {
     if (el === cartaoDeProgresso) cartaoDeProgresso = null;
+    cartoesDeDica = cartoesDeDica.filter(c => c !== el);
+    // Uma dica trocada antes de entrar nunca chegou ao DOM: nada a animar.
+    if (!el.isConnected) return;
     if (el.classList.contains('conquista-aviso--saindo')) return;
     el.classList.add('conquista-aviso--saindo');
     el.classList.remove('conquista-aviso--dentro');
@@ -288,5 +352,5 @@ const CONQUISTA_AVISO = (() => {
     setTimeout(remover, 600);
   }
 
-  return { mostrar, progresso };
+  return { mostrar, progresso, dicas };
 })();
