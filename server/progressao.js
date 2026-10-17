@@ -510,7 +510,7 @@ function premioDeConclusao(perguntas, respostas, alunos = 1) {
 const XP_POR_ACERTO_DA_TURMA = 1;
 
 async function xpDoProfessor(usuarioId) {
-  const [quizzes, turmas, brutoDias, brutoGanhas, brutoConclusoes] = await Promise.all([
+  const [quizzes, turmas, brutoDias, brutoGanhas, brutoConclusoes, brutoAjustes] = await Promise.all([
     admin.from('quizzes_professores').select('id', { count: 'exact', head: true })
       .eq('professor_id', usuarioId),
     admin.from('turmas').select('id').eq('professor_id', usuarioId),
@@ -520,7 +520,8 @@ async function xpDoProfessor(usuarioId) {
       .eq('usuario_id', usuarioId),
     admin.from('quiz_concluidos')
       .select('xp_professor, taxa, perguntas, concluido_em')
-      .eq('professor_id', usuarioId)
+      .eq('professor_id', usuarioId),
+    admin.from('xp_ajustes').select('pontos, motivo, criado_em').eq('usuario_id', usuarioId)
   ]);
 
   const dias = ouVazio(brutoDias);
@@ -566,7 +567,13 @@ async function xpDoProfessor(usuarioId) {
   // Ainda não há insígnias de professor.
   const deInsignias = (ganhas.data || []).reduce((s, i) => s + (i.insignias?.xp || 0), 0);
 
-  const total = deTurmas + deConclusoes + deDias + deInsignias;
+  // O ajuste manual do painel vale aqui como vale para o aluno. Sem
+  // isto, "definir nível" num professor mudava o número do painel e
+  // não mudava nada na tela dele — duas verdades sobre a mesma pessoa.
+  const ajustes = ouVazio(brutoAjustes);
+  const deAjustes = (ajustes.data || []).reduce((s, a) => s + (a.pontos || 0), 0);
+
+  const total = Math.max(0, deTurmas + deConclusoes + deDias + deInsignias + deAjustes);
 
   // Média das taxas de conclusão.
   const taxaMedia = feitos.length
@@ -579,6 +586,8 @@ async function xpDoProfessor(usuarioId) {
     de_conclusoes: deConclusoes,
     de_dias: deDias,
     de_insignias: deInsignias,
+    de_ajustes: deAjustes,
+    ajustes: ajustes.data || [],
     insignias: ganhas.data || [],
     quizzes_criados: criados,
     acertos_da_turma: acertosDaTurma,

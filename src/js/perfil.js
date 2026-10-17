@@ -69,8 +69,13 @@
     try {
       const r = await API.adminPatentes();
       let de = 1;
+      // A tabela só tem ALUNO e PROFESSOR. A equipe joga pela escada de
+      // aluno — é a que o servidor usa para contar o XP dela —, e sem
+      // esta linha a lista saía vazia e a seção nunca aparecia.
+      const escada = perfil.tipo === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO';
+
       faixas = (r.patentes || [])
-        .filter(p => p.tipo === perfil.tipo)
+        .filter(p => p.tipo === escada)
         .sort((a, b) => a.ate - b.ate)
         .map(p => { const f = { ...p, de }; de = p.ate + 1; return f; });
     } catch (_) {

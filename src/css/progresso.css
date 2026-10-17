@@ -1004,6 +1004,27 @@
   animation-delay: calc(var(--i, 0) * 45ms);
 }
 
+/* A equipe fica na lista, separada por um traço: ela aparece, mas
+   não faz parte da classificação que está acima dela. */
+.colega--equipe {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.14);
+  opacity: 0.82;
+}
+
+.colega__equipe {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(167, 139, 250, 0.16);
+  color: #c4b5fd;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .colega__pos {
   font-family: var(--font-display);
   font-weight: 800;

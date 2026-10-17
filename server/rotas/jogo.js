@@ -396,12 +396,14 @@ async function turmaComColegas(eu, turmaId) {
 
   const [professor, matriculados] = await Promise.all([
     admin.from('usuarios').select('id, nome, avatar_url').eq('id', turma.data.professor_id).maybeSingle(),
-    admin.from('usuarios').select('id, nome, avatar_url').eq('turma_id', turmaId).eq('tipo', 'ALUNO')
+    admin.from('usuarios').select('id, nome, tipo, avatar_url')
+      .eq('turma_id', turmaId).in('tipo', ['ALUNO', 'ADMIN'])
   ]);
 
   if (matriculados.error) return { erro: matriculados.error };
 
-  const alunos = matriculados.data || [];
+  const membros = matriculados.data || [];
+  const alunos = membros.filter(m => m.tipo === 'ALUNO');
 
   // Professor da turma, com foto e patente.
   let dadosProfessor = null;
@@ -426,28 +428,47 @@ async function turmaComColegas(eu, turmaId) {
     ano_escolar: turma.data.ano_escolar || null,
     professor: dadosProfessor?.nome || null,
     professor_perfil: dadosProfessor,
+
+    // Quantos ALUNOS: é o tamanho da turma, e conta de equipe não
+    // aumenta turma nenhuma.
     total_alunos: alunos.length
   };
 
-  if (!alunos.length) return { turma: dados, colegas: [], posicao: null };
+  if (!membros.length) return { turma: dados, colegas: [], posicao: null };
 
-  // XP completo de cada colega.
-  const porAluno = await PROG.xpDeVarios(alunos.map(a => a.id));
+  // XP completo de cada um. A conta de equipe entra pela régua de
+  // aluno, que é a mesma que o jogo usa para ela.
+  const porPessoa = await PROG.xpDeVarios(membros.map(m => m.id));
 
-  const colegas = alunos.map(a => {
-    const xp = porAluno.get(a.id) || 0;
+  const colegas = membros.map(m => {
+    const xp = porPessoa.get(m.id) || 0;
+    const equipe = m.tipo !== 'ALUNO';
+
     return {
-      nome: a.nome,
-      avatar_url: a.avatar_url || null,
+      nome: m.nome,
+      avatar_url: m.avatar_url || null,
       xp,
       nivel: PROG.nivelDoXp(xp, 'ALUNO'),
-      eu: a.id === eu
+      equipe,
+      eu: m.id === eu
     };
-  }).sort((a, b) => b.xp - a.xp || a.nome.localeCompare(b.nome, 'pt-BR'));
+  }).sort((a, b) =>
+    // A equipe aparece — ela existe e joga —, mas nunca disputa: vai
+    // para o fim da lista com qualquer pontuação. Entre os alunos, o
+    // XP manda, e o nome desempata.
+    Number(a.equipe) - Number(b.equipe) ||
+    b.xp - a.xp ||
+    a.nome.localeCompare(b.nome, 'pt-BR')
+  );
 
-  // Empate = mesma posição.
-  const meuXp = porAluno.get(eu) || 0;
-  const naFrente = colegas.filter(c => !c.eu && c.xp > meuXp).length;
+  // A posição é uma disputa entre alunos. Quem é da equipe não tem
+  // lugar no pódio, e também não empurra ninguém para baixo: a conta
+  // só olha para os outros alunos.
+  const souAluno = membros.some(m => m.id === eu && m.tipo === 'ALUNO');
+  if (!souAluno) return { turma: dados, colegas, posicao: null };
+
+  const meuXp = porPessoa.get(eu) || 0;
+  const naFrente = colegas.filter(c => !c.eu && !c.equipe && c.xp > meuXp).length;
 
   return { turma: dados, colegas, posicao: { lugar: naFrente + 1, total: alunos.length } };
 }

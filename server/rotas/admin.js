@@ -210,8 +210,10 @@ rotas.get('/usuarios', async (req, res) => {
 async function enfeitarComNivel(lista) {
   if (!lista.length) return;
 
-  const alunos = lista.filter(u => u.tipo === 'ALUNO');
-  const outros = lista.filter(u => u.tipo !== 'ALUNO');
+  // ADMIN entra no lote dos alunos: ele joga, e é pela régua de aluno
+  // que o jogo conta o XP dele.
+  const alunos = lista.filter(u => u.tipo !== 'PROFESSOR');
+  const outros = lista.filter(u => u.tipo === 'PROFESSOR');
 
   const [porAluno, dosOutros] = await Promise.all([
     alunos.length ? PROG.xpDeVarios(alunos.map(u => u.id)).catch(() => null) : null,
@@ -251,9 +253,15 @@ rotas.get('/usuarios/:id', async (req, res) => {
     return res.status(404).json({ message: 'Não existe conta com esse id.' });
   }
 
+  // A mesma regra do GET /meu-resumo: professor tem régua própria,
+  // todo o resto (aluno e equipe) usa a de aluno. Antes esta ficha
+  // media todo mundo como aluno e o cartão da busca media o professor
+  // como professor — a mesma pessoa com dois níveis.
   const [conta, xp] = await Promise.all([
     admin.auth.admin.getUserById(id),
-    PROG.xpDoAluno(id).catch(() => null),
+    (perfil.data.tipo === 'PROFESSOR'
+      ? PROG.xpDoProfessor(id)
+      : PROG.xpDoAluno(id)).catch(() => null),
   ]);
 
   res.json({
