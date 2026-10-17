@@ -228,7 +228,7 @@ Para conferir se as travas de segurança estão de pé, rode `db/00-testSecurity
 > **Backup:** rode `npm run backup` — ele copia todas as tabelas para `backups/<data>/` (JSON + um `restaurar.sql`). Essa pasta tem dados de alunos e fica fora do git.
 
 ---
-<<<<<<< HEAD
+
 =======
 
 ## Deploy na Vercel
@@ -254,8 +254,6 @@ A região da função (`gru1`, São Paulo) está junto do banco (`sa-east-1`), p
 | [`src/imgs/insignias/LEIA-ME.md`](src/imgs/insignias/LEIA-ME.md) | Como criar uma insígnia e ligar a arte a ela |
 
 ---
-
->>>>>>> 6205058e164726b2dc103336cb208a4ba902a467
 <p align="center">
   Feito com 💚 por estudantes de <b>Ciência da Computação (PUC Minas)</b> e <b>Medicina (PUC Betim)</b>.
 </p>
