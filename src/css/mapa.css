@@ -247,6 +247,20 @@
   transform: translate(-50%, 0);
 }
 
+/* Casa rente à borda esquerda (a 5): centralizado, o rótulo passava da
+   borda do mapa. Aqui ele começa alinhado à casa e cresce para a
+   direita. Vem depois das regras de -bottom para vencer o translate
+   delas, que tem a mesma especificidade. */
+.mapa-hotspot--label-inicio .mapa-hotspot__label {
+  left: 0;
+  transform: translate(0, -6px);
+}
+
+.mapa-hotspot--label-inicio:hover .mapa-hotspot__label,
+.mapa-hotspot--label-inicio.is-active .mapa-hotspot__label {
+  transform: translate(0, 0);
+}
+
 /* O córrego é uma faixa vertical rente à borda esquerda — o tooltip abre
    para a direita, ao lado da imagem, em vez de por cima. */
 .mapa-hotspot--label-right .mapa-hotspot__label {
@@ -941,6 +955,42 @@
   font-size: 14.5px;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.78);
+}
+
+/* Recolhida: duas linhas e reticências. As descrições das famílias têm
+   quatro ou cinco linhas, e abertas de vez empurrariam as missões e
+   espremeriam a foto — o modal tem altura fixa. */
+.mapa-modal__desc--recolhida {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Aberta, ela ganha espaço até um teto e rola dali em diante: nem uma
+   descrição comprida tira a foto de vista. */
+.mapa-modal__desc:not(.mapa-modal__desc--recolhida) {
+  max-height: calc(14.5px * 1.6 * 6);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.mapa-modal__ler-mais {
+  align-self: flex-start;
+  margin: -8px 0 4px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mapa-modal__ler-mais:hover {
+  text-decoration: underline;
 }
 
 .mapa-modal__missoes-cabeca {

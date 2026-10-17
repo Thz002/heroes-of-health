@@ -129,7 +129,11 @@
       <!-- Embaixo, fora da foto: a descrição e, numa linha, as missões
            para escolher e o botão. -->
       <div class="mapa-modal__base">
-        <p class="mapa-modal__desc" id="cenario-modal-desc"></p>
+        <!-- Recolhida em duas linhas; "Ler mais" só aparece quando o
+             texto não cabe nelas (as descrições das famílias). -->
+        <p class="mapa-modal__desc mapa-modal__desc--recolhida" id="cenario-modal-desc"></p>
+        <button type="button" class="mapa-modal__ler-mais" id="cenario-modal-ler-mais"
+          aria-controls="cenario-modal-desc" aria-expanded="false" hidden>Ler mais</button>
 
         <p class="mapa-modal__missoes-cabeca">
           <span class="mapa-modal__missoes-titulo" id="cenario-modal-missoes-titulo">Missões</span>

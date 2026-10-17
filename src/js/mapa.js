@@ -168,7 +168,9 @@
     { tipo: "casa", casa: 12, imagem: "Casa012.png", x: 880, y: 502, w: 110, h: 110, interior: "Casa12.jpg" },
     { tipo: "casa", casa: 2, imagem: "Casa02.png", x: 253, y: 139, w: 127, h: 107, interior: "Casa02.jpeg" },
     { tipo: "casa", casa: 15, imagem: "Casa015.png", x: 238, y: 20, w: 145, h: 100, tooltipPos: "bottom", interior: "Casa15.jpg" },
-    { tipo: "casa", casa: 5, imagem: "Casa05.png", x: 80, y: 20, w: 80, h: 90, interior: "Casa05.jpg" },
+    // Rente à borda esquerda: centralizado, o rótulo vazaria do mapa.
+    // `tooltipInicio` o alinha à esquerda da casa, crescendo para dentro.
+    { tipo: "casa", casa: 5, imagem: "Casa05.png", x: 80, y: 20, w: 80, h: 90, tooltipPos: "bottom", tooltipInicio: true, interior: "Casa05.jpg" },
     { tipo: "casa", casa: 4, imagem: "Casa04.png", x: 1041, y: 515, w: 85, h: 105, tooltipPos: "bottom", interior: "Casa04.jpg" },
     { tipo: "casa", casa: 16, imagem: "Casa016.png", x: 1182, y: 8, w: 150, h: 100, tooltipPos: "bottom", interior: "Casa16.jpg" },
 
@@ -286,6 +288,7 @@
   const modalThumb = document.getElementById("cenario-modal-thumb");
   const modalNome = document.getElementById("cenario-modal-nome");
   const modalDesc = document.getElementById("cenario-modal-desc");
+  const modalLerMais = document.getElementById("cenario-modal-ler-mais");
   const modalInterior = document.getElementById("cenario-modal-interior");
   const modalEmBreve = document.getElementById("cenario-modal-em-breve");
   const modalFamilia = document.getElementById("cenario-modal-familia");
@@ -786,6 +789,40 @@
   });
   visorClose?.addEventListener("click", () => fecharModal());
 
+  /**
+   * O texto do modal. Numa casa, quem é a família que mora nela
+   * (familias.js); nos outros lugares, e numa casa sem descrição, o que
+   * aquele tipo de lugar ensina.
+   */
+  function descricaoDoPonto(h) {
+    const familia = h.tipo === "casa" && window.FAMILIAS_DESCRICAO && FAMILIAS_DESCRICAO[h.casa];
+    return familia || CENARIOS[h.tipo].descricao;
+  }
+
+  /**
+   * Sempre abre recolhida, em duas linhas. O "Ler mais" só aparece se o
+   * texto não coube nelas — a descrição curta de um prédio não ganha um
+   * botão que não abre nada. A medida é feita aqui, com o texto já
+   * posto: o modal ainda está transparente, mas já tem tamanho.
+   */
+  function mostrarDescricao(texto) {
+    modalDesc.textContent = texto;
+    modalDesc.scrollTop = 0;
+    recolherDescricao(true);
+    if (modalLerMais) modalLerMais.hidden = modalDesc.scrollHeight <= modalDesc.clientHeight + 1;
+  }
+
+  function recolherDescricao(recolher) {
+    modalDesc.classList.toggle("mapa-modal__desc--recolhida", recolher);
+    if (!modalLerMais) return;
+    modalLerMais.textContent = recolher ? "Ler mais" : "Mostrar menos";
+    modalLerMais.setAttribute("aria-expanded", String(!recolher));
+  }
+
+  modalLerMais?.addEventListener("click", () => {
+    recolherDescricao(!modalDesc.classList.contains("mapa-modal__desc--recolhida"));
+  });
+
   function abrirModal(h) {
     const cenario = CENARIOS[h.tipo];
     if (!cenario || !modal) return;
@@ -794,7 +831,7 @@
     modalThumb.src = `../imgs/${h.imagem || cenario.imagem}`;
     modalThumb.alt = nomeDoPonto(h);
     modalNome.textContent = nomeDoPonto(h);
-    modalDesc.textContent = cenario.descricao;
+    mostrarDescricao(descricaoDoPonto(h));
 
     // A foto do interior vem do hotspot quando ele tem a sua (cada casa
     // do bairro tem um morador e uma sala diferentes) e, na falta dela,
@@ -874,6 +911,7 @@
       if (h.tooltipPos === "bottom") el.classList.add("mapa-hotspot--label-bottom");
       if (h.tooltipPos === "right") el.classList.add("mapa-hotspot--label-right");
       if (h.tooltipPos === "left") el.classList.add("mapa-hotspot--label-left");
+      if (h.tooltipInicio) el.classList.add("mapa-hotspot--label-inicio");
       el.style.left = (h.x / MAPA_W) * 100 + "%";
       el.style.top = (h.y / MAPA_H) * 100 + "%";
       el.style.width = (h.w / MAPA_W) * 100 + "%";
