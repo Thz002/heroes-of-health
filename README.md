@@ -1,4 +1,4 @@
-# 🦸 Heróis da Saúde
+#  Heróis da Saúde
 
 **Um bairro inteiro para cuidar.** Heróis da Saúde é um jogo educativo para crianças e adolescentes de 7 a 18 anos: o aluno explora um bairro em pixel art, entra na UBS, na farmácia, na escola e na casa de vinte famílias diferentes, e em cada lugar responde missões sobre saúde, prevenção e cuidado — enquanto o professor acompanha a turma de perto.
 
@@ -17,7 +17,7 @@
 
 ---
 
-## 📋 Sumário
+## Sumário
 
 1. [O jogo em imagens](#-o-jogo-em-imagens)
 2. [O que dá para fazer](#-o-que-dá-para-fazer)
@@ -32,7 +32,7 @@
 
 ---
 
-## 🎮 O jogo em imagens
+##  O jogo em imagens
 
 ### Cada casa, uma família
 Ao clicar num lugar do mapa, o aluno entra nele: a foto do interior, quem mora ali e as missões disponíveis. As vinte casas do bairro têm famílias diferentes — com suas histórias, rotinas e jeitos de cuidar da saúde.
@@ -64,9 +64,9 @@ O professor cria as turmas, entrega um código curto para a sala entrar e monta 
 
 ---
 
-## ✨ O que dá para fazer
+## O que dá para fazer
 
-### 🧒 Aluno
+### Aluno
 - **Explorar o bairro:** 16 lugares e 20 casas no mapa, com zoom, arraste e o progresso de cada lugar ao passar o mouse.
 - **Jogar missões** passadas pelo professor, com a foto do lugar de fundo e explicação depois de cada resposta.
 - **Acompanhar o próprio progresso** em 8 áreas da saúde — Saúde, Educação, Vacinação, Vetores, Limpeza, Alimentação, Exercícios e Felicidade —, sempre com rótulos gentis, nunca com nota vermelha.
@@ -74,22 +74,22 @@ O professor cria as turmas, entrega um código curto para a sala entrar e monta 
 - **Descobrir os segredos do bairro:** os quadrinhos educativos e os vídeos da Fiocruz na banca de jornal, o Calendário das Cores da Saúde na farmácia.
 - **Ver a turma:** os colegas, a posição no ranking por XP e o professor, também com o nível dele.
 
-### 👩‍🏫 Professor
+### Professor
 - **Criar turmas** com cor, ano escolar e um código de entrada (ex.: `MIN-3ZEH`).
 - **Montar quizzes** em dois modos: *automático* (o jogo sorteia entre os cenários e áreas escolhidos, na faixa etária da turma) ou *manual* (o professor marca as perguntas uma a uma).
 - **Escrever as próprias perguntas**, que só ele vê, ao lado das do sistema.
 - **Acompanhar cada turma** e o **ranking das turmas**, ordenado por uma média que não deixa três respostas certas passarem na frente de quatrocentas.
 
-### 🛠️ Equipe (admin)
+### Equipe (admin)
 - Painel para procurar pessoas, ajustar nível e XP (sempre com registro de quem fez e por quê), suspender contas, disparar recuperação de senha e renomear as patentes.
 
-### 🔓 Para todos
+### Para todos
 - **Referências:** a bibliografia do conteúdo, com busca, aberta a qualquer pessoa — mesmo sem conta.
 - **Recuperação de senha** por um código de 5 caracteres enviado por e-mail.
 
 ---
 
-## 📊 O conteúdo, em números
+## O conteúdo, em números
 
 | | |
 |---|---|
@@ -104,16 +104,16 @@ O conteúdo é sempre escrito pela equipe de Medicina — nenhuma pergunta é in
 
 ---
 
-## 🧠 Como o sistema funciona
+## Como o sistema funciona
 
 O navegador conversa com **dois lugares diferentes, de propósito**, e essa divisão é a principal regra de segurança do projeto:
 
 ```mermaid
 flowchart LR
-    N["🌐 Navegador<br/>HTML + CSS + JS"]
-    A["🔐 Supabase Auth<br/>login e cadastro"]
-    E["⚙️ Servidor Express<br/>regras do jogo"]
-    B[("🗄️ PostgreSQL<br/>Supabase")]
+    N[" Navegador<br/>HTML + CSS + JS"]
+    A[" Supabase Auth<br/>login e cadastro"]
+    E[" Servidor Express<br/>regras do jogo"]
+    B[(" PostgreSQL<br/>Supabase")]
 
     N -- "login direto (chave pública)" --> A
     N -- "API + token (Bearer)" --> E
@@ -130,7 +130,7 @@ Os detalhes de cada decisão estão em [`docs/banco-de-dados.md`](docs/banco-de-
 
 ---
 
-## 🧰 Tecnologias
+## Tecnologias
 
 | Camada | O que usa |
 |---|---|
@@ -143,7 +143,7 @@ Os detalhes de cada decisão estão em [`docs/banco-de-dados.md`](docs/banco-de-
 
 ---
 
-## 🗂️ Estrutura do projeto
+## Estrutura do projeto
 
 ```text
 heroes-of-health/
@@ -175,7 +175,7 @@ heroes-of-health/
 
 ---
 
-## 💻 Rodando localmente
+## Rodando localmente
 
 **Pré-requisitos:** Node.js 20 ou mais e um projeto no [Supabase](https://supabase.com).
 
@@ -207,7 +207,7 @@ heroes-of-health/
 
 ---
 
-## 🗄️ Banco de dados
+## Banco de dados
 
 O banco inteiro é descrito por arquivos SQL, colados no **SQL Editor** do Supabase, nesta ordem:
 
@@ -224,7 +224,7 @@ Para conferir se as travas de segurança estão de pé, rode `db/00-testSecurity
 
 ---
 
-## 🚀 Deploy na Vercel
+## Deploy na Vercel
 
 O projeto já vem configurado (`vercel.json`): o site sai pela CDN, a `/api` roda como função e um cron diário mantém o Supabase grátis ativo.
 
@@ -237,7 +237,7 @@ A região da função (`gru1`, São Paulo) está junto do banco (`sa-east-1`), p
 
 ---
 
-## 📚 Documentação
+## Documentação
 
 | Documento | Conteúdo |
 |---|---|
