@@ -5,6 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minha turma - Heróis da Saúde</title>
+  <!-- O emblema do jogo na aba. O SVG serve a quase todo navegador;
+       o PNG de 32 cobre os antigos, e o de 180 e o atalho do iPhone,
+       que vem sem canto arredondado porque o iOS recorta sozinho. -->
+  <link rel="icon" href="../imgs/favicon.svg" type="image/svg+xml" />
+  <link rel="alternate icon" href="../imgs/favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="../imgs/apple-touch-icon.png" />
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/dashboard.css">
   <link rel="stylesheet" href="../css/progresso.css">
@@ -60,7 +66,17 @@
               <span class="turma-faixa__lugar" id="posicao-lugar"></span>
               <span class="turma-faixa__rot" id="posicao-rot"></span>
             </div>
+
+            <button type="button" class="btn-sair-turma" id="sair-turma">Sair da turma</button>
           </section>
+
+          <!-- A conta de equipe entra na turma para testar o jogo, mas
+               não entra na contagem. Melhor dizer isso do que deixar a
+               pessoa procurar o próprio nome na lista. -->
+          <p class="turma-aviso" id="turma-aviso-equipe" hidden>
+            Você está nesta turma com uma conta da equipe: recebe os quizes do
+            professor, mas não aparece na lista de colegas nem no ranking.
+          </p>
 
           <section class="turma-faixa turma-faixa--vazia entrar-turma" id="bloco-sem-turma" hidden>
             <div class="entrar-turma__topo">

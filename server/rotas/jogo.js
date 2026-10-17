@@ -592,8 +592,20 @@ rotas.get('/minha-turma', async (req, res) => {
    "turma_id is null" no próprio update evita corrida. */
 
 rotas.post('/minha-turma', async (req, res) => {
-  if (req.usuario.tipo !== 'ALUNO') {
-    return res.status(403).json({ message: 'Só alunos entram em turma por aqui.' });
+  // ALUNO e ADMIN. O admin entra para JOGAR — é assim que a equipe
+  // testa o jogo pelo lado de quem joga, respondendo os quizes que o
+  // professor manda. Ele não aparece na lista de colegas nem no
+  // ranking da turma, porque `turmaComColegas` só conta ALUNO, e isso
+  // é de propósito: conta de teste não pode mexer na classificação que
+  // o professor usa para avaliar.
+  //
+  // PROFESSOR continua de fora: a turma dele é a que ele criou, e está
+  // em `turmas.professor_id`. Deixá-lo também matriculado como aluno
+  // daria duas verdades sobre o mesmo vínculo.
+  if (req.usuario.tipo === 'PROFESSOR') {
+    return res.status(403).json({
+      message: 'Professor não entra em turma como aluno — as suas turmas estão no painel.',
+    });
   }
   if (req.usuario.turma_id) {
     return res.status(409).json({ message: 'Você já está numa turma. Para trocar, fale com seu professor.' });
@@ -633,6 +645,41 @@ rotas.post('/minha-turma', async (req, res) => {
 
   res.json(daTurma);
 });
+
+/* ── DELETE /minha-turma ── sai da turma.
+
+   NADA de progresso se perde: XP, acertos, insígnias e paciente
+   virtual são todos presos ao usuario_id, e nenhum deles olha para
+   turma_id. O que muda é o que depende da turma — a posição no
+   ranking dela e os quizes que o professor manda — e esses voltam
+   inteiros se a pessoa entrar de novo na mesma turma.
+
+   Quem sai é a própria pessoa. Tirar um aluno da turma à revelia é
+   coisa de professor ou de admin, e tem lugar próprio no painel. */
+
+rotas.delete('/minha-turma', async (req, res) => {
+  if (!req.usuario.turma_id) {
+    return res.status(409).json({ message: 'Você não está em nenhuma turma.' });
+  }
+
+  const saiu = await admin
+    .from('usuarios')
+    .update({ turma_id: null })
+    .eq('id', req.usuario.id)
+    .eq('turma_id', req.usuario.turma_id)    // evita corrida com uma troca simultânea
+    .select('id');
+
+  if (saiu.error) {
+    return falhou(res, 500, 'Não foi possível sair da turma.', saiu.error, 'DELETE /minha-turma');
+  }
+  if (!saiu.data.length) {
+    return res.status(409).json({ message: 'Sua turma mudou enquanto isso. Recarregue a página.' });
+  }
+
+  console.log(`  · ${req.usuario.nome} saiu da turma ${req.usuario.turma_id}`);
+  res.json({ message: 'Você saiu da turma. Seu progresso continua todo aí.' });
+});
+
 
 /* ── POST /presenca ── marca o dia (o banco recusa o segundo do mesmo dia). */
 

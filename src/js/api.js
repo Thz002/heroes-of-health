@@ -125,6 +125,9 @@ const API = (() => {
   /** Entra numa turma (só quem não tem; senão 409). */
   const entrarNaTurma = (turmaId) => post('/minha-turma', { turma_id: turmaId });
 
+  /** Sai da turma. O progresso fica — quem decide isso é o servidor. */
+  const sairDaTurma = () => del('/minha-turma');
+
   /** Marca a presença de hoje. Devolve XP, nível, sequência e insígnias novas. */
   const marcarPresenca = () => post('/presenca');
 
@@ -262,6 +265,7 @@ const API = (() => {
     getMeuResumo,
     getMinhaTurma,
     entrarNaTurma,
+    sairDaTurma,
     marcarPresenca,
     getMinhaEstante,
     getMinhasDescobertas,

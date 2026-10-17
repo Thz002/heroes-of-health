@@ -13,18 +13,25 @@
 
   const PODIO = ['colega--ouro', 'colega--prata', 'colega--bronze'];
 
+  let souEu = null;             // o perfil de quem abriu a tela
+  let entradaLigada = false;    // o formulário de entrar só se liga uma vez
+
   iniciar();
 
   async function iniciar() {
     const conta = await AUTH.exigirLogin();
     if (!conta) return;
 
-    // Tela de aluno. O professor vê as turmas dele pelo painel.
+    // Tela de aluno. O professor vê as turmas dele pelo painel — mas a
+    // conta de equipe fica, porque ela entra em turma para jogar.
     const perfil = await AUTH.perfilAtual();
     if (perfil && perfil.tipo === 'PROFESSOR') {
       window.location.href = 'dashboard.html';
       return;
     }
+
+    souEu = perfil;
+    ligarSaida();
 
     await carregar();
   }
@@ -52,6 +59,9 @@
 
   function mostrarTurma(turma, posicao) {
     blocoTurma.hidden = false;
+
+    const aviso = document.getElementById('turma-aviso-equipe');
+    if (aviso) aviso.hidden = !souEu || souEu.tipo === 'ALUNO';
     document.title = `${turma.nome} - Heróis da Saúde`;
 
     const ponto = document.getElementById('turma-cor');
@@ -175,6 +185,11 @@
   let turmaDoCodigo = null;     // a turma que o código digitado achou
 
   function prepararEntrada() {
+    // Sair e entrar de novo sem recarregar passaria por aqui duas
+    // vezes, e o segundo ouvinte mandaria o formulário em dobro.
+    if (entradaLigada) return;
+    entradaLigada = true;
+
     const form = document.getElementById('form-entrar-turma');
     const codigo = document.getElementById('entrar-codigo');
     const dica = document.getElementById('entrar-dica');
@@ -230,6 +245,69 @@
         btn.textContent = 'Entrar na turma';
       }
     });
+  }
+
+  /* ── Sair da turma ───────────────────────────────────────────────
+
+     O medo de perder o que já fez é o que trava a pessoa aqui, então o
+     aviso diz, com todas as letras, o que acontece: nada do progresso
+     sai junto. Isso é verdade porque XP, acertos e insígnias estão
+     presos ao usuário, e não à turma. */
+
+  function ligarSaida() {
+    const botao = document.getElementById('sair-turma');
+    if (!botao) return;
+
+    botao.addEventListener('click', async () => {
+      const combinado = confirm(
+        'Sair desta turma?\n\n' +
+        'Seu XP, seu nível, suas conquistas e suas respostas continuam todos ' +
+        'com você — nada disso é da turma, é seu.\n\n' +
+        'O que para é o que vem do professor: os quizes da turma e a sua ' +
+        'posição no ranking dela. Entrando de novo com o mesmo código, tudo volta.'
+      );
+      if (!combinado) return;
+
+      botao.disabled = true;
+      botao.textContent = 'Saindo...';
+
+      try {
+        await API.sairDaTurma();
+        voltarAoComeco();
+      } catch (err) {
+        erro.textContent = err.message;
+        erro.hidden = false;
+      } finally {
+        botao.disabled = false;
+        botao.textContent = 'Sair da turma';
+      }
+    });
+  }
+
+  /** Devolve a tela ao estado de quem ainda não escolheu turma. */
+  function voltarAoComeco() {
+    erro.hidden = true;
+    document.title = 'Minha turma - Heróis da Saúde';
+
+    for (const id of ['bloco-turma', 'bloco-professor', 'bloco-colegas',
+                      'titulo-colegas', 'turma-posicao', 'turma-aviso-equipe']) {
+      const el = document.getElementById(id);
+      if (el) el.hidden = true;
+    }
+
+    lista.innerHTML = '';
+    blocoSemTurma.hidden = false;
+    subtitulo.textContent = 'Você saiu da turma. Seu progresso continua todo aí.';
+
+    // O código digitado antes fica guardado em turmaDoCodigo; sem
+    // limpar, apertar "Entrar" sem digitar nada devolveria a pessoa à
+    // turma de onde ela acabou de sair.
+    turmaDoCodigo = null;
+    document.getElementById('entrar-codigo').value = '';
+    document.getElementById('entrar-dica').textContent = '';
+
+    prepararEntrada();
+    document.getElementById('entrar-codigo').focus();
   }
 
   /** Enche um <select> com [{ id, nome }], com a primeira opção em branco. */
