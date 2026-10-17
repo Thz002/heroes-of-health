@@ -1,21 +1,5 @@
-/**
- * quizzes.js — os quizes e as perguntas do professor (quizzes.html)
- *
- * Duas vistas na mesma página, trocadas pelas abas:
- *
- *   Meus quizzes     — tudo o que a pessoa já passou para as turmas, do
- *                      mais novo para o mais velho, em barras horizontais:
- *                      o lugar de onde as perguntas vieram, as áreas que o
- *                      quiz alimenta, quantas perguntas caíram e quanto
- *                      tempo o aluno tem em cada uma.
- *   Minhas perguntas — as perguntas que o próprio professor escreveu.
- *
- * Os dois botões do topo abrem os MESMOS modais do painel de turmas:
- * "+ Criar quiz" (quiz-modal.js, com a turma escolhida lá dentro) e
- * "+ Criar pergunta" (questoes-ui.js).
- *
- * Carregado depois de supabase.js, api.js, navbar.js, questoes-ui.js e quiz-modal.js.
- */
+/** quizzes.js — quizzes e perguntas do professor (quizzes.html), em duas abas.
+    "+ Criar quiz" e "+ Criar pergunta" abrem os mesmos modais do painel. */
 (() => {
   'use strict';
 
@@ -65,8 +49,7 @@
     const conta = await AUTH.exigirLogin();
     if (!conta) return;
 
-    // Página de professor. O aluno que chegar aqui por link ou favorito
-    // volta para o jogo, em vez de tomar um 403 na cara.
+    // Aluno volta para o jogo.
     const perfil = await AUTH.perfilAtual();
     if (perfil && perfil.tipo === 'ALUNO') {
       window.location.href = 'mapa.html';
@@ -77,9 +60,7 @@
     await carregar();
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     ABAS
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Abas ── */
 
   abas.addEventListener('click', (e) => {
     const aba = e.target.closest('.aba');
@@ -98,8 +79,7 @@
     vistaQuizzes.hidden = vista !== 'quizzes';
     vistaPerguntas.hidden = vista !== 'perguntas';
 
-    // replaceState e não location.hash: trocar de aba não deve encher o
-    // botão "voltar" do navegador.
+    // replaceState não enche o histórico.
     history.replaceState(null, '', vista === 'perguntas' ? '#perguntas' : window.location.pathname);
 
     if (vista === 'perguntas' && questoes === null) carregarQuestoes();
@@ -121,9 +101,7 @@
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     MEUS QUIZZES
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Meus quizzes ── */
 
   async function carregar() {
     try {
@@ -177,8 +155,7 @@
 
     linha.querySelector('img').src = `../imgs/${principal.imagem}`;
 
-    // textContent e não innerHTML: título escrito por pessoa vira texto,
-    // nunca código rodando na página.
+    // textContent: texto escrito por pessoas.
     linha.querySelector('.quiz-linha__nome').textContent = q.titulo;
     linha.querySelector('.quiz-linha__lugar').textContent =
       `— ${principal.nome}${slugs.length > 1 ? ` +${slugs.length - 1}` : ''}`;
@@ -204,8 +181,7 @@
     linha.querySelector('.quiz-linha__perguntas').textContent =
       `${perguntas} ${perguntas === 1 ? 'pergunta' : 'perguntas'}`;
 
-    // Se o sorteio trouxe menos do que foi pedido, o professor precisa
-    // saber — senão parece que a tela contou errado.
+    // Avisa quando o sorteio trouxe menos que o pedido.
     if (q.qtd_pedida && perguntas < q.qtd_pedida) {
       linha.querySelector('.quiz-linha__perguntas').title =
         `Você pediu ${q.qtd_pedida}, mas só havia ${perguntas} disponíveis.`;
@@ -241,9 +217,7 @@
     return resto ? `${minutos}min${resto}s` : `${minutos} min`;
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     MINHAS PERGUNTAS
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Minhas perguntas ── */
 
   async function carregarQuestoes() {
     try {
@@ -267,10 +241,7 @@
     atualizarCabecalho();
   }
 
-  // O mesmo modal do card da turma no painel. Daqui não há turma
-  // escolhida, então o modal mostra o seletor de turmas no passo 1. A
-  // lista é recarregada do servidor a cada quiz criado: é ele quem conta
-  // as perguntas que de fato entraram.
+  // Mesmo modal de criar quiz, com seletor de turma.
   btnNovoQuiz.addEventListener('click', () => {
     QUIZ_MODAL.abrir({
       aoCriar: () => {
@@ -280,13 +251,11 @@
     });
   });
 
-  // O mesmo modal de "Nova pergunta" do "Criar quiz". Daqui não há
-  // turma, então nível e cenário começam em branco.
+  // Mesmo modal de nova pergunta.
   btnNovaQuestao.addEventListener('click', () => {
     QUESTOES_UI.abrirCriacao({
       aoCriar: (q) => {
-        // Lista já carregada: a nova entra no topo. Ainda não carregada:
-        // trocarVista busca do servidor, e a nova já vem junto.
+        // A nova pergunta entra no topo da lista.
         if (questoes !== null) questoes.unshift(q);
         trocarVista('perguntas');
         if (questoes !== null) desenharQuestoes();
@@ -294,9 +263,7 @@
     });
   });
 
-  /* ═══════════════════════════════════════════════════════════════════
-     APAGAR — um modal de confirmação para as duas vistas
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Apagar (confirmação para as duas abas) ── */
 
   function confirmarApagarQuiz(q) {
     abrirConfirmacao({
@@ -390,9 +357,7 @@
     }
   });
 
-  /* ═══════════════════════════════════════════════════════════════════
-     DETALHES DE TELA
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Detalhes de tela ── */
 
   function removerComAnimacao(elemento, depois) {
     if (!elemento) return depois();
@@ -411,7 +376,4 @@
     caixa.appendChild(aviso);
   }
 
-  // O botão Sair agora é desenhado pelo navbar.js, que também o liga.
-  // O listener que existia aqui virou código morto quando esta página
-  // passou a usar <nav data-navbar>.
 })();

@@ -99,26 +99,7 @@
       margin-top: 14px;
     }
 
-    /* A caneta anda, o papel fica parado.
-
-       `stroke-dasharray: 460` divide a linha em um traço de 460 e um
-       vazio de 460 — e o traçado inteiro mede 447, então em qualquer
-       instante a tela mostra um pedaço de um ou do outro. Mexer no
-       `stroke-dashoffset` é deslizar esse par ao longo do caminho:
-
-         offset  460   o vazio está sobre o traçado    -> tela limpa
-         offset    0   o traço está sobre o traçado    -> linha inteira
-         offset -460   o vazio voltou                  -> tela limpa
-
-       Indo de 460 a -460 sem pausa, a linha é escrita da esquerda
-       para a direita e depois sai pela esquerda, igual ao papel
-       passando embaixo da caneta. E como começo e fim do ciclo são o
-       mesmo estado (tela limpa), a volta ao início não pisca.
-
-       Os 3 batimentos levam 2,7s para serem escritos — 0,9s cada, que
-       dá ~67 por minuto, um coração em repouso. A limpeza é mais
-       rápida, 1,8s, porque nela não acontece nada de novo e esticá-la
-       só deixaria a tela vazia por mais tempo. */
+    /* Animação do ECG: o dashoffset vai de 460 a -460 (escreve e apaga a linha, sem piscar). */
     .ecg-path {
       stroke-dasharray: 460;
       stroke-dashoffset: 460;
@@ -131,10 +112,7 @@
       100% { stroke-dashoffset: -460; }   /* limpo de novo */
     }
 
-    /* Quem pede menos movimento no sistema recebe o traçado parado e
-       inteiro. Animação que não para é a que mais incomoda quem tem
-       sensibilidade vestibular, e esta ficaria rodando o tempo todo
-       atrás de um formulário de login. */
+    /* Movimento reduzido: traçado parado. */
     @media (prefers-reduced-motion: reduce) {
       .ecg-path { animation: none; stroke-dashoffset: 0; }
     }
@@ -298,10 +276,7 @@
       gap: 8px;
       animation: slide-up 0.3s ease-out;
     }
-    /* A margem só existe quando o alerta aparece — escondido ele é
-       `display: none` e não ocupa nada. Sem ela a caixa da mensagem
-       encosta no que vier abaixo, que na tela de recuperação é a
-       setinha de voltar. */
+    /* Margem só com o alerta visível. */
     .form-alert.show { display: flex; margin-bottom: 18px; }
     .form-alert.error   { background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.3); color: #ff8080; }
     .form-alert.success { background: rgba(107,223,184,0.14); border: 1px solid rgba(107,223,184,0.3); color: #6bdfb8; }
@@ -403,12 +378,7 @@
     #rec-passo-codigo,
     #rec-passo-senha { display: flex; flex-direction: column; gap: 16px; }
 
-    /* A setinha ocupa a própria linha, no canto esquerdo.
-       Ela já foi `position: absolute`, e isso dava dois problemas: o
-       título precisava de margem dos dois lados para desviar dela, o
-       que o deixava torto, e quando o alerta verde aparecia acima do
-       painel a setinha subia por cima dele. Fora do absolute, os dois
-       somem — ninguém colide com quem está no fluxo. */
+    /* A setinha de voltar ocupa a própria linha. */
     .rec-voltar {
       align-self: flex-start;
       width: 36px;
@@ -592,20 +562,7 @@
         <h1 class="logo-title">HERÓIS DA SAÚDE</h1>
         <p class="logo-sub" id="logo-sub">Sua missão de saúde começa aqui</p>
 
-        <!-- ECG animado — ritmo sinusal normal, redesenhado sem parar
-             Este traçado já foi uma linha reta com espetos soltos, e a
-             equipe de Medicina reconheceu nele um ritmo agônico: sem
-             onda P, sem onda T e com os batimentos em intervalos
-             desiguais. Era o eletro de quem está morrendo, na tela de
-             abertura de um jogo sobre cuidar da saúde.
-
-             Cada batimento agora tem as cinco partes, na proporção
-             certa — P pequena, QRS alto e estreito, T arredondada e
-             maior que a P — e os três saem de 88 em 88 unidades, que
-             é o que faz um ritmo ser "regular".
-
-             O desenho cabe inteiro na janela de propósito: quem se
-             move aqui é a caneta, não o papel. Ver o CSS de .ecg-path. -->
+        <!-- ECG animado: ritmo sinusal normal (P, QRS e T em intervalos regulares). -->
         <div class="ecg-wrap">
           <svg viewBox="0 0 280 40" fill="none" width="100%" preserveAspectRatio="none">
             <path
@@ -735,16 +692,7 @@
             <p class="field-hint" id="idade-hint"></p>
           </div>
 
-          <!-- O código que o professor entrega para a sala.
-               Era um de dois caminhos; virou o único.
-
-               O outro era escolher a escola numa lista e então a turma
-               dentro dela. Saiu porque a lista se enchia sozinha: o
-               cadastro deixava qualquer pessoa inventar uma escola, e
-               bastaram alguns dias de teste para o banco ganhar
-               "Harvard College" e "Oxford University". Numa escola de
-               verdade o estrago é pior — "E.E. João XXIII" e "EE Joao
-               23" viram duas, e metade da turma entra na errada. -->
+          <!-- Código da turma (único caminho para entrar). -->
           <div id="modo-codigo">
             <label class="field-label" for="codigo-turma">Código da turma</label>
             <div class="field-wrap">
@@ -758,11 +706,7 @@
           </div>
         </div>
 
-        <!-- O PROFESSOR não tem mais campo nenhum além do comum.
-             Ele cria as turmas depois, no painel, e é a turma que
-             carrega tudo: o código, os alunos e o ranking. A caixa
-             continua aqui, vazia, porque o auth.js a mostra e esconde
-             ao trocar de perfil. -->
+        <!-- Professor: sem campos extras (o auth.js mostra/esconde a caixa). -->
         <div id="box-professor" class="field-group hidden"></div>
 
         <!-- Esqueci senha — só no login -->
@@ -781,10 +725,7 @@
 
       </form>
 
-      <!-- ── Recuperação de senha ──────────────────────────────────
-           Três telas no mesmo lugar, trocadas pelo auth.js: pedir o
-           código, digitar os cinco caracteres, escolher a nova senha.
-           O formulário de login fica escondido enquanto isto aparece. -->
+      <!-- Recuperação de senha: três passos trocados pelo auth.js. -->
       <div class="recuperar hidden" id="recuperar">
 
         <button type="button" class="rec-voltar" id="rec-voltar" aria-label="Voltar">

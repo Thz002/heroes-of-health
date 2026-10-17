@@ -1,20 +1,3 @@
-# -*- coding: utf-8 -*-
-"""Le os .docx de perguntas da equipe de Medicina e extrai a estrutura.
-
-Passo 1 de 2. Escreve questoes_extraidas.json aqui do lado; quem
-transforma isso em SQL e o gerar_sql.py.
-
-O que este arquivo sabe, e que nao esta escrito em lugar nenhum:
-  - a resposta certa esta marcada pela COR VERDE do texto
-  - cada .docx usa um verde diferente (4EA72E/47D459 num, 008000 no outro)
-  - a linha do cenario vem DEPOIS da quarta alternativa (antes disso,
-    uma alternativa que cite um lugar seria confundida com ela)
-  - no arquivo 11-14 o cenario vem do cabecalho do bloco; no 7-10, por
-    pergunta
-  - a bibliografia ABNT no fim do arquivo tem de ser descartada
-
-Uso:  python parser.py ["C:/pasta/com/os/docx"]
-"""
 import zipfile, re, sys, os, glob, json, unicodedata
 sys.stdout.reconfigure(encoding='utf-8')
 

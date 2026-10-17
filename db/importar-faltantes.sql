@@ -1,25 +1,5 @@
--- =====================================================================
---  AS QUESTÕES QUE FALTAVAM — gerado por db/ferramentas/gerar_importacao.py
---
---  NÃO EDITE À MÃO. Para refazer:
---      python db/ferramentas/gerar_importacao.py --sql db/importar-faltantes.sql
---
---  TRÊS FONTES JUNTAS:
---    "todas as questões.docx"  enunciado, alternativas, gabarito e os
---                              dois feedbacks (acerto e erro)
---    os arquivos soltos        o cenário e as áreas de pontuação
---    o banco                   o que já estava lá, para não duplicar
---
---  O cenário vem do arquivo original sempre que a questão aparece em
---  algum deles. Para as que não aparecem em nenhum, vem da dedução por
---  assunto — essas estão marcadas com "deduzido" no comentário da linha.
---
---  IDEMPOTENTE: a chave é `codigo_externo`. Rodar duas vezes atualiza as
---  mesmas linhas em vez de criar cópias.
---
---  Onde rodar: SQL Editor do Supabase, COM NADA SELECIONADO.
---  Antes dele, rode db/feedback-questoes.sql (cria explicacao_erro).
--- =====================================================================
+-- Questões que faltavam (gerado por db/ferramentas/gerar_importacao.py — não edite à mão).
+-- Idempotente pelo codigo_externo. Rode depois de db/feedback-questoes.sql.
 
 
 
@@ -6324,14 +6304,7 @@ on conflict (codigo_externo) do update set
 
 
 
--- =====================================================================
---  EM QUE BARRAS CADA QUESTÃO PONTUA
---
---  Sem uma linha aqui, acertar a questão não move barra nenhuma — e sem
---  erro nenhum, só silêncio. A primeira área vale 10 pontos e as demais
---  5; a calibragem final não depende desses números, porque
---  recalcular_metas() refaz as metas no fim do arquivo.
--- =====================================================================
+-- Áreas que cada questão pontua (a primeira vale 10, as demais 5).
 
 insert into questoes_areas (questao_id, area_nome, pontos)
 select q.id, 'Saúde', 10 from questoes q where q.codigo_externo = 'CASA-N1-019'
@@ -9903,10 +9876,7 @@ on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
 
 
 
--- As metas das oito barras são a soma de tudo o que cada área pode
--- render. Com conteúdo novo entrando, elas precisam ser refeitas — e as
--- porcentagens de quem já jogou vão junto, senão um aluno fica com 100%
--- numa barra cuja régua acabou de crescer.
+-- Refaz as metas das barras com o conteúdo novo.
 select public.recalcular_metas();
 
 notify pgrst, 'reload schema';

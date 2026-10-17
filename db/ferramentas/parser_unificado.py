@@ -65,9 +65,7 @@ RE_ERRO     = re.compile(r'^[^\wÀ-ÿ]*SE\s+ERRAR\s*[:\-–]?\s*(.*)$', re.I | r
 RE_GABARITO = re.compile(r'^[^\wÀ-ÿ]*(?:Gabarito|Resposta\s+correta)\s*[:\-–]?\s*(.+)$', re.I | re.S)
 RE_VF       = re.compile(r'verdadeiro\s+ou\s+falso', re.I)
 
-# Às vezes o gabarito não ganhou linha própria e ficou grudado no fim da
-# última alternativa: "… e dos alimentos Gabarito: alternativa E". Sem
-# isto, a alternativa entra no banco com a resposta escrita dentro dela.
+# Gabarito grudado no fim da última alternativa.
 RE_GAB_COLADO = re.compile(
     r'\s+(?:Gabarito|Resposta\s+correta)\s*[:\-–]?\s*'
     r'((?:alternativa\s+|letra\s+)?[A-E]|Verdadeiro|Falso)\s*\.?\s*$', re.I)
@@ -109,8 +107,7 @@ def paragrafos(caminho):
         if not inteiro:
             continue
 
-        # Negrito só conta se cobrir TODO o texto visível: uma palavra em
-        # negrito no meio de uma alternativa não é gabarito.
+        # Negrito só conta como gabarito se cobrir o texto inteiro.
         com_letra = [(t, b) for t, b in trechos if t.strip()]
         todo_negrito = bool(com_letra) and all(b for _, b in com_letra)
 
@@ -180,8 +177,7 @@ def marcar_sem_numero(linhas):
     quando nenhuma pergunta está aberta; a alternativa certa aparece no
     meio de um bloco de alternativas.
     """
-    # Passo 1 — separar "Verdadeiro ou falso? Gabarito: X", que em parte
-    # do nível 3 vem tudo numa linha só.
+    # Passo 1: separa "Verdadeiro ou falso? Gabarito: X" da mesma linha.
     partidas = []
     for texto, negrito, lista in linhas:
         m = RE_VF_COLADO.match(texto)
@@ -191,14 +187,7 @@ def marcar_sem_numero(linhas):
         else:
             partidas.append((texto, negrito, lista))
 
-    # Passo 2 — promover a questão os itens de lista que são enunciado.
-    #
-    # Duas marcas, porque o documento usa duas convenções:
-    #
-    #   a) item em NEGRITO logo após o feedback da questão anterior
-    #      (nível 2: o enunciado vem destacado)
-    #   b) item seguido da linha "Verdadeiro ou falso?"
-    #      (nível 3: o enunciado vem sem destaque nenhum)
+    # Passo 2: promove a enunciado os itens em negrito ou seguidos de "Verdadeiro ou falso?".
     saida = []
     fechada = True          # nenhuma questão aberta neste ponto
 
@@ -308,8 +297,7 @@ def extrair(caminho=DOCX):
                 if not texto:
                     continue
 
-        # Alternativa: item de lista, ou linha com letra. As duas contam
-        # na MESMA sequência — o nível 3 mistura os dois estilos.
+        # Alternativa: item de lista ou linha com letra.
         if atual is not None:
             m = RE_LETRADA.match(texto)
             if lista or m:
@@ -336,10 +324,7 @@ def extrair(caminho=DOCX):
             }
             continue
 
-        # Parágrafo solto: é a continuação do último campo aberto. O
-        # enunciado quebra em dois antes da primeira alternativa; o
-        # feedback quebra depois dela, e antes disto a segunda metade da
-        # frase era perdida em silêncio ("…de pessoa em pessoa:" e nada).
+        # Parágrafo solto continua o último campo aberto.
         if atual and len(texto) > 3:
             campo = atual['ultimo']
             if campo == 'enunciado' and atual['opcoes']:

@@ -1,49 +1,7 @@
--- =====================================================================
---  HERÓIS DA SAÚDE — as perguntas da equipe de Medicina
---
---  Gerado a partir dos .docx da equipe por db/ferramentas/gerar_sql.py,
---  mas A PARTIR DAQUI ESTE ARQUIVO É A FONTE DA VERDADE: as explicações
---  entram aqui, à mão, como em qualquer outro arquivo de db/.
---
---  Só NÃO rode o gerador de novo em cima dele — isso devolveria os
---  placeholders por cima do que a Medicina escrever. Para um lote novo
---  (o nível 3, por exemplo), o gerador escreve em outro arquivo.
---
---  Rode DEPOIS de db/setup.sql e db/seed.sql.
---
---  É seguro rodar quantas vezes quiser: cada questão tem um
---  codigo_externo único, e o import é "on conflict do update".
---  Rodar de novo corrige o texto SEM apagar nenhuma resposta já dada
---  pelos alunos — o que um "delete + insert" destruiria, porque
---  respostas_alunos referencia questoes com on delete cascade.
---
---  A coluna criado_por não aparece aqui de propósito: o default dela é
---  o código do sistema ('00000000-0000-0000-0000-000000000000'), então
---  toda questão deste arquivo já entra como "do sistema", visível a
---  todos os professores. Questão de professor nasce pelo painel.
---
---  225 questões, em 18 grupos (cenário × nível).
---
---  As explicações nascem como PLACEHOLDER: o arquivo de origem não
---  trazia o texto que o aluno vê ao errar. Troque cada uma aqui quando
---  a Medicina entregar, e rode o arquivo de novo — o update cobre a
---  coluna explicacao, então o texto novo chega ao banco.
---
---  CUIDADO AO ESCREVER: apóstrofo dentro do texto tem de ser DOBRADO.
---    errado:  'a caixa-d'agua'      certo:  'a caixa-d''agua'
---
---  Para achar as que ainda faltam:
---    select count(*) from questoes where explicacao like 'Explicação em elaboração%';
--- =====================================================================
+-- Questões da Medicina (gerado por gerar_sql.py; agora editado à mão).
+-- Rode depois de setup.sql e seed.sql. Idempotente pelo codigo_externo. Apóstrofo dobrado: 'caixa-d''agua'.
 
--- Ficaram DE FORA, por não caberem no formato de 4 alternativas ou
--- por não terem a resposta marcada em verde no arquivo de origem:
---   nível 1, questão 8: sem resposta marcada
---     Durante uma atividade na escola, a professora pediu que as crianças identificassem algum
---   nível 1, questão 12: sem resposta marcada
---     Verdadeiro ou Falso
---   nível 1, questão 10: 0 alternativas, sem resposta marcada
---     Um lanche com fruta e pão alimenta melhor o corpo do que um lanche só de salgadinho. VER
+-- Questões do arquivo de origem que ficaram de fora (sem resposta marcada ou fora do formato).
 
 
 -- ── Guarda: os cenários têm de existir antes ─────────────────────────
@@ -59,8 +17,7 @@ begin
 end $$;
 
 
--- ── 1. As questões ───────────────────────────────────────────────────
--- Cada uma carrega o próprio cenário e a própria faixa etária.
+-- 1. As questões.
 
 -- CASA-N1 — 18 questões
 
@@ -3942,14 +3899,7 @@ on conflict (codigo_externo) do update
 
 
 
--- ── 2. Quais barras cada questão enche ───────────────────────────────
--- SEM ESTAS LINHAS O ALUNO ACERTA E NADA ACONTECE: o servidor lê daqui
--- para saber o que somar, e zero linhas = zero pontos, sem erro nenhum.
--- O peso de cada barra é proporcional a quantas questões do mesmo
--- cenário e nível realmente tratam daquele tema: num grupo de 39
--- questões em que só 1 fala de vetores, acertar vale 10 em Saúde e 1
--- em Vetores. Sem isso a barra de Vetores subiria com mérito que não
--- existe.
+-- 2. Pontos de cada questão por área (sem estas linhas, acertar não pontua).
 
 -- CASA-N1: Educação=8, Felicidade=8, Limpeza=3, Saúde=9, Vacinação=1, Vetores=1
 insert into questoes_areas (questao_id, area_nome, pontos)
@@ -4411,15 +4361,10 @@ select qs.id, v.area, v.pontos from questoes qs
 on conflict (questao_id, area_nome) do update set pontos = excluded.pontos;
 
 
--- ── As metas das barras ──────────────────────────────────────────────
--- A meta de cada área é tudo o que o conteúdo dela pode render. Como
--- este arquivo acabou de mudar o conteúdo, ela precisa ser refeita —
--- e as porcentagens de quem já jogou vão junto.
+-- Refaz as metas das barras.
 select public.recalcular_metas();
 
 -- select nome, meta from areas order by ordem;
 
--- ── Conferir depois de rodar ─────────────────────────────────────────
--- select c.slug, q.nivel_etario, count(*) as questoes
---   from questoes q join cenarios c on c.id = q.cenario_id
---  group by c.slug, q.nivel_etario order by c.slug, q.nivel_etario;
+-- Conferir:
+-- select c.slug, q.nivel_etario, count(*) from questoes q join cenarios c on c.id = q.cenario_id group by 1, 2 order by 1, 2;

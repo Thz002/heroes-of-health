@@ -1,35 +1,5 @@
--- =====================================================================
---  MIGRAÇÃO: as questões deixam de pertencer a uma "missão"
---
---  Antes:  cenarios ──< missoes ──< questoes      missoes ──< missao_areas
---  Depois: cenarios ──< questoes ──< questoes_areas
---
---  Por quê: "missão" passou a ser o nome que o aluno vê para o QUIZ que
---  o professor cria. A tabela missoes era só um agrupador (cenário ×
---  faixa etária) que ninguém escolhia nem via como tarefa. Agora cada
---  questão carrega o próprio cenário e a própria faixa etária, e diz
---  sozinha quantos pontos dá em cada área.
---
---  O QUE ACONTECE COM OS DADOS:
---    - questoes.cenario_id e questoes.nivel_etario vêm da missão de cada
---      questão;
---    - cada questão recebe, em questoes_areas, exatamente as linhas de
---      missao_areas da missão dela. Os pontos por acerto não mudam, e as
---      metas das barras também não: a soma continua a mesma;
---    - os ids das questões NÃO mudam, então respostas_alunos e
---      quiz_questoes continuam apontando para as mesmas perguntas;
---    - missoes e missao_areas são apagadas — mas antes vão para o schema
---      backup_pre_migracao, dentro do próprio banco (ver o fim do arquivo).
---
---  ORDEM:
---    1. npm run backup           (cópia fora do banco, na sua máquina)
---    2. ESTE arquivo              (SQL Editor -> colar tudo -> Run)
---    3. db/setup.sql              (como sempre; já descreve a estrutura nova)
---
---  É seguro rodar de novo: se missoes já não existir, a parte de dados é
---  pulada. Tudo roda numa transação só — se qualquer conferência falhar,
---  NADA é alterado.
--- =====================================================================
+-- Migração: as questões deixam de ter "missão" (cenário e nível passam para a questão).
+-- Ordem: npm run backup -> este arquivo -> db/setup.sql. Roda numa transação.
 
 begin;
 
@@ -44,9 +14,7 @@ begin
     return;
   end if;
 
-  -- ── 0. Cópia de segurança dentro do banco ─────────────────────────
-  -- Fora do alcance da API: o Supabase só expõe o schema public, e os
-  -- perfis anon/authenticated não recebem acesso a este.
+  -- 0. Cópia de segurança no schema backup_pre_migracao.
   create schema if not exists backup_pre_migracao;
   revoke all on schema backup_pre_migracao from anon, authenticated;
 
@@ -91,8 +59,7 @@ begin
     join missao_areas ma on ma.missao_id = q.missao_id
   on conflict (questao_id, area_nome) do nothing;
 
-  -- Conferência: o total de pontos que o conteúdo pode render (é disso
-  -- que saem as metas das barras) tem de ser idêntico antes e depois.
+  -- Conferência: o total de pontos tem de ser igual antes e depois.
   select coalesce(sum(ma.pontos), 0) into antes
     from missao_areas ma join questoes q on q.missao_id = ma.missao_id;
   select coalesce(sum(pontos), 0) into depois from questoes_areas;
@@ -101,8 +68,7 @@ begin
     raise exception 'Migração abortada: os pontos não bateram (antes %, depois %).', antes, depois;
   end if;
 
-  -- ── 3. Some a missão ──────────────────────────────────────────────
-  -- As permissões de coluna de questoes.missao_id vão junto com ela.
+  -- 3. Remove missao_id.
   drop index if exists questoes_por_missao;
   alter table questoes drop column missao_id;
   drop table missao_areas;
@@ -112,10 +78,7 @@ begin
 end $$;
 
 
--- ── 4. O que a tabela nova precisa desde já ──────────────────────────
--- O db/setup.sql faz tudo isto de novo, mas não pode ficar para depois:
--- tabela nova no public nasce ABERTA para qualquer visitante até o RLS
--- ser ligado, e recalcular_metas() antiga ainda leria missao_areas.
+-- 4. Índice e RLS da tabela nova já aqui (tabela nova nasce aberta).
 
 create index if not exists questoes_por_cenario_e_nivel on questoes (cenario_id, nivel_etario);
 create index if not exists questoes_areas_por_area      on questoes_areas (area_nome);
@@ -163,17 +126,13 @@ notify pgrst, 'reload schema';
 commit;
 
 
--- =====================================================================
---  CONFERIR DEPOIS DE RODAR
--- =====================================================================
+-- ── Conferir depois de rodar ──
 
--- Questões por cenário e faixa (deve somar 225, se nada mudou):
--- select c.slug, q.nivel_etario, count(*) from questoes q
---   join cenarios c on c.id = q.cenario_id
---  group by 1, 2 order by 1, 2;
+-- Questões por cenário e faixa (deve somar 225):
+-- select c.slug, q.nivel_etario, count(*) from questoes q join cenarios c on c.id = q.cenario_id group by 1, 2 order by 1, 2;
 
--- As metas das barras (devem ser as mesmas de antes):
+-- Metas das barras (iguais às de antes):
 -- select nome, meta from areas order by ordem;
 
--- Quando tiver certeza de que está tudo certo, apague a cópia interna:
+-- Com tudo certo, apague a cópia interna:
 -- drop schema backup_pre_migracao cascade;

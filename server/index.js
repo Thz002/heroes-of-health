@@ -1,23 +1,5 @@
-/**
- * server/index.js — Heróis da Saúde, o servidor
- *
- * O modelo é HÍBRIDO, e vale entender a divisão antes de mexer aqui:
- *
- *   - O LOGIN não passa por este servidor. O navegador fala direto com
- *     o Supabase Auth, como sempre fez, e recebe um token.
- *
- *   - O JOGO passa. Corrigir resposta, pontuar, montar o painel do
- *     professor — tudo isso acontece aqui, porque são decisões que não
- *     podem ficar na mão de quem joga.
- *
- * O RLS do banco continua ligado e continua sendo necessário: enquanto o
- * navegador falar com o Supabase para qualquer coisa, a chave publishable
- * continua utilizável direto. Servidor não substitui RLS; somam-se.
- *
- * Este mesmo processo também serve o front-end (pasta src/), então abrir
- * http://localhost:3000 já leva direto para a tela de login — não é mais
- * necessário abrir o HTML por file://. Ver "Servir o front-end" abaixo.
- */
+/** Servidor do jogo: API (game logic, com a chave secreta) e o front-end de src/.
+    O login é feito pelo navegador direto no Supabase Auth. */
 
 const express = require('express');
 const path    = require('path');
@@ -32,11 +14,7 @@ const PORTA = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '100kb' }));
 
-// ── CORS ─────────────────────────────────────────────────────────────
-// Agora que o próprio Express serve o front-end, a página e a API vivem
-// na mesma origem — a maioria das chamadas nem passa por CORS. Esta
-// lista existe só para quem ainda abre o HTML direto por file://
-// (Origin: null) durante o desenvolvimento.
+// CORS: só é usado no fallback por file:// (Origin: null).
 const ORIGENS_PERMITIDAS = new Set([
   `http://localhost:${PORTA}`,
   `http://127.0.0.1:${PORTA}`,

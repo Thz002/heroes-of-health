@@ -1,35 +1,5 @@
--- =====================================================================
---  HERÓIS DA SAÚDE — o banco inteiro, em um arquivo
---
---  Este arquivo substitui as migrações 01, 02, 03, 04 e o schema.sql,
---  que foram para db/_historico/. Ele descreve o banco COMO ELE DEVE
---  SER, e sabe se virar tanto num projeto novo e vazio quanto num que
---  já tem tabelas e gente cadastrada.
---
---  POR QUE UM ARQUIVO SÓ, E NÃO UMA PILHA DE MIGRAÇÕES:
---  histórico de migração serve para proteger dado de produção que não
---  pode ser perdido. Este projeto não tem isso — tem uma equipe de
---  faculdade mexendo num banco de teste. Aqui o histórico só atrapalha:
---  são mais arquivos para ler, mais ordem para lembrar, e mais chance de
---  rodar na sequência errada. Quando alguma coisa mudar, MUDE ESTE
---  ARQUIVO e rode de novo.
---
---  É seguro rodar quantas vezes quiser: tudo usa
---  "if not exists" / "drop ... if exists" / "create or replace".
---  NÃO apaga nenhum dado.
---
---  Onde rodar: painel do Supabase -> SQL Editor -> colar tudo -> Run
---  Depois deste, rode o seed.sql (os 7 cenários do mapa).
---
---  Dialeto: PostgreSQL. Não é MySQL, apesar do que diz o README.
---
---  Banco criado ANTES de as questões deixarem de ter "missão"? Rode
---  primeiro db/migracao-questoes-sem-missoes.sql — a trava logo abaixo
---  recusa seguir enquanto a tabela missoes existir.
---
---  Banco que já tinha questões antes da coluna questoes.criado_por
---  existir? Rode primeiro db/migracao-questoes-criado-por.sql.
--- =====================================================================
+-- HERÓIS DA SAÚDE — o banco inteiro (PostgreSQL/Supabase). Seguro de rodar de novo; não apaga dados.
+-- Rode no SQL Editor; depois, seed.sql e insignias.sql. Bancos antigos: rode antes as migracao-*.sql.
 
 do $$
 begin
@@ -40,9 +10,7 @@ begin
 end $$;
 
 
--- #####################################################################
---  1. TABELAS
--- #####################################################################
+-- ── 1. TABELAS ──
 
 -- ── Institucional ────────────────────────────────────────────────────
 
@@ -52,9 +20,7 @@ create table if not exists escolas (
   created_at timestamptz not null default now()
 );
 
--- O unique fica fora do create table porque a tabela pode já existir sem
--- ele. Sem essa regra o banco enche de duplicata ('Santa Maria',
--- 'Colegio Santa Maria'...) e a lista do cadastro fica impossível de usar.
+-- Nome de escola único (só cria a restrição se não houver repetidos).
 do $$
 declare repetidos int;
 begin
@@ -83,46 +49,31 @@ end $$;
 create table if not exists turmas (
   id bigint primary key generated always as identity,
   nome varchar(50) not null,                   -- ex: '7º Ano B'
-  -- APOSENTADA. A turma não pertence mais a uma escola: o código que o
-  -- professor entrega virou a única porta, e a escola não decidia nada
-  -- — o ranking é por professor, as questões são globais e as barras
-  -- são por aluno. A coluna fica, nula daqui em diante, para não
-  -- perder o vínculo das turmas que já existiam.
+  -- Aposentada: a turma não pertence mais a uma escola.
   escola_id bigint references escolas(id) on delete set null,
 
-  -- O código curto que o professor entrega para a sala (ex: '7B-K3M9').
-  -- O aluno digita só isso e entra direto na turma certa.
+  -- Código que o professor entrega para a turma (ex: '7B-K3M9').
   codigo varchar(12),
 
-  -- Quem criou a turma. A FK é criada mais abaixo, porque usuarios
-  -- ainda não existe neste ponto do arquivo.
+  -- Quem criou a turma (FK criada mais abaixo).
   professor_id uuid,
 
   created_at timestamptz not null default now()
 );
 
 create unique index if not exists turmas_codigo_unico   on turmas (codigo);
--- Sem escola, "não repetir nome de turma" passa a valer por PROFESSOR,
--- que é a regra que ele espera de qualquer jeito: duas turmas minhas
--- não podem se chamar igual. O índice antigo cairia sozinho em desuso
--- com escola_id nulo, mas some explicitamente para não confundir.
+-- Nome de turma único por professor.
 create unique index if not exists turmas_nome_por_professor on turmas (professor_id, nome);
 drop index if exists turmas_nome_por_escola;
 
--- Num banco que já rodou a versão anterior, a coluna ainda está NOT
--- NULL: o `create table if not exists` lá em cima não reescreve tabela
--- que já existe. Este bloco solta a obrigação, e não faz nada onde ela
--- já não existir.
+-- Solta o NOT NULL de escola_id em bancos antigos.
 do $solta$
 begin
   alter table turmas alter column escola_id drop not null;
 exception when others then null;
 end $solta$;
 
--- Cor e ano escolar são só de exibição no painel do professor (dashboard).
--- A cor tem check com a mesma lista de 6 opções do seletor na tela, como
--- segunda trava além da validação do servidor. O ano fica livre (sem
--- check) porque as opções do <select> podem crescer sem precisar migração.
+-- Cor e ano escolar: só exibição no painel do professor.
 alter table turmas add column if not exists cor varchar(9)
   not null default '#14b8a6'
   check (cor in ('#14b8a6','#3b82f6','#f9c74f','#f472b6','#a78bfa','#fb923c'));
@@ -133,24 +84,19 @@ alter table turmas add column if not exists ano_escolar varchar(10);
 -- ── Pessoas ──────────────────────────────────────────────────────────
 
 create table if not exists usuarios (
-  -- O identificador NÃO é inventado por esta tabela: é o mesmo que o
-  -- Supabase cria no login. "references auth.users(id)" amarra os dois,
-  -- e é isso que faz auth.uid() (e portanto o RLS inteiro) funcionar.
+  -- Mesmo id do login do Supabase (é o que faz auth.uid() e o RLS funcionarem).
   id uuid primary key references auth.users(id) on delete cascade,
 
   nome varchar(100) not null,
 
-  -- Não existe coluna "senha" nem "email" aqui, de propósito: as duas
-  -- vivem do lado do Supabase, junto com o login. Guardar senha em dois
-  -- lugares é justamente o erro que este desenho evita.
+  -- Senha e e-mail ficam no Supabase Auth, não aqui.
 
   tipo text not null default 'ALUNO'
        check (tipo in ('ALUNO', 'PROFESSOR', 'ADMIN')),
 
   idade int check (idade between 7 and 18),
 
-  -- ALUNO deixa em branco: a escola dele se descobre pela turma.
-  -- PROFESSOR preenche com a escola onde trabalha.
+  -- Aluno: vazio (a escola vem pela turma).
   escola_id bigint references escolas(id) on delete set null,
 
   -- Só o ALUNO preenche.
@@ -174,63 +120,39 @@ create table if not exists cenarios (
   descricao text not null
 );
 
--- Cada questão diz sozinha onde acontece e para que idade é. Antes isso
--- vinha de uma tabela "missoes" intermediária (cenário × faixa etária);
--- hoje "missão" é o nome que o aluno vê para o quiz do professor, e a
--- tabela antiga foi desfeita por db/migracao-questoes-sem-missoes.sql.
+-- Cada questão tem o próprio cenário e faixa etária.
 create table if not exists questoes (
   id bigint primary key generated always as identity,
   cenario_id bigint not null references cenarios(id) on delete cascade,
 
-  -- Faixa etária, comparada com usuarios.idade (aluno) e com o ano
-  -- escolar da turma (quiz do professor):
-  --   1 = 7 a 10 anos, 2 = 11 a 14, 3 = 15 a 18
+  -- Faixa etária: 1 = 7–10 anos, 2 = 11–14, 3 = 15–18.
   nivel_etario int not null check (nivel_etario between 1 and 3),
 
   enunciado text not null,
   opcao_a varchar(255) not null,
   opcao_b varchar(255) not null,
-  -- C e D aceitam nulo: a equipe de Medicina também escreve questões de
-  -- Verdadeiro/Falso, que têm só duas alternativas. A tela já pula opção
-  -- vazia, então isso não exigiu nada do lado de lá.
+  -- C e D podem ser nulas (questões de V/F).
   opcao_c varchar(255),
   opcao_d varchar(255),
-  -- A E só existe no nível 3, que segue o formato do ENEM (cinco
-  -- alternativas). Nas outras fica nula, e a tela pula, como a C e a D.
+  -- E só no nível 3 (formato ENEM).
   opcao_e varchar(255),
   resposta_correta char(1) not null check (resposta_correta in ('A','B','C','D','E')),
 
-  -- Texto educativo mostrado depois da resposta, escrito pela equipe de
-  -- Medicina. Aparece também quando o aluno erra, em tom de incentivo.
+  -- Texto mostrado depois da resposta.
   explicacao text not null
 );
 
--- O filtro mais quente do conteúdo: o professor criando um quiz sorteia
--- entre as questões dos cenários escolhidos, na faixa etária da turma.
+-- Filtro do sorteio de questões do quiz.
 create index if not exists questoes_por_cenario_e_nivel on questoes (cenario_id, nivel_etario);
 
--- Identidade estavel do conteudo importado (db/importar-questoes.sql).
---
--- Sem isto o import nao tem como saber se uma linha ja existe: rodar o
--- arquivo duas vezes duplicaria o banco inteiro em silencio. E a saida
--- obvia -- apagar tudo e recriar -- e pior, porque respostas_alunos
--- referencia questoes com "on delete cascade": apagar a questao levaria
--- junto o historico de respostas dos alunos.
---
--- Com o codigo_externo, o import vira "on conflict do update": corrige o
--- texto de uma pergunta sem perder nenhuma resposta ja dada.
+-- Identificador estável do import: permite "on conflict do update" sem perder respostas.
 alter table questoes add column if not exists codigo_externo varchar(60);
 
--- O "create table" acima só vale para banco novo; num que já existe ele
--- não muda nada. Estas duas linhas é que soltam a trava nos bancos que
--- já foram criados antes das questões de Verdadeiro/Falso existirem.
+-- Bancos antigos: C e D passam a aceitar nulo.
 alter table questoes alter column opcao_c drop not null;
 alter table questoes alter column opcao_d drop not null;
 
--- A mesma coisa para a letra E, que chegou com o nível 3: num banco que
--- já existe, o "create table" não acrescenta a coluna nem afrouxa o
--- check. O check antigo (só A a D) é achado pelo que ele diz, e não pelo
--- nome — o mesmo jeito do unique de escolas, lá em cima.
+-- Letra E: adiciona a coluna e troca o check antigo (A a D).
 alter table questoes add column if not exists opcao_e varchar(255);
 
 do $$
@@ -259,29 +181,7 @@ end $$;
 
 create unique index if not exists questoes_codigo_externo on questoes (codigo_externo);
 
--- Quem escreveu a questão.
---
---   '00000000-0000-0000-0000-000000000000'  -> questão DO SISTEMA (equipe de
---                                              Medicina, via importar-questoes.sql)
---   o id de um professor (usuarios.id)      -> questão criada por ele no painel
---
--- O default é o código do sistema, então o import da Medicina não precisa
--- mencionar a coluna: toda questão que entra por ele já nasce "do sistema".
--- Quem grava o id do professor é o servidor (POST /api/professor/questoes),
--- a partir do login — nunca de um campo vindo do navegador.
---
--- Cada professor enxerga as do sistema e as DELE, nunca as de outro
--- professor: quem garante é a policy de questoes (seção 4) e, no servidor,
--- o filtro de server/rotas/professor.js.
---
--- Não há FK para usuarios DE PROPÓSITO: o código do sistema não é um
--- usuário, e a FK recusaria todas as questões da Medicina. Se a conta de um
--- professor for apagada, as questões dele ficam no banco sem ninguém que as
--- veja — e as respostas que os alunos já deram a elas continuam valendo XP.
---
--- Banco que já tinha questões antes desta coluna existir: rode
--- db/migracao-questoes-criado-por.sql (ele preenche e confere). O alter
--- abaixo também preencheria sozinho, mas a migração mostra o que mudou.
+-- Autor da questão: código do sistema (Medicina) ou id do professor. Sem FK de propósito.
 alter table questoes add column if not exists criado_por uuid
   not null default '00000000-0000-0000-0000-000000000000';
 
@@ -295,15 +195,7 @@ create table if not exists areas (
   ordem int not null
 );
 
--- Quantos pontos enchem ESTA barra. Não é a mesma para as oito, e é aí
--- que está a diferença: o conteúdo é muito desigual (Saúde tem 140
--- questões, Vetores tem 5). Com uma meta única, ou as barras ricas
--- enchiam com um terço do material, ou as pobres nunca saíam do lugar —
--- nenhum número resolvia as duas coisas ao mesmo tempo.
---
--- Aqui a meta É o conteúdo que existe: encher a barra passa a significar
--- "você cuidou de tudo o que há sobre isso". Quem preenche é a função
--- recalcular_metas(), chamada no fim de cada import.
+-- Meta de cada barra = pontos que o conteúdo dela rende (recalcular_metas()).
 alter table areas add column if not exists meta int not null default 0;
 
 insert into areas (nome, ordem) values
@@ -311,10 +203,7 @@ insert into areas (nome, ordem) values
   ('Limpeza', 5), ('Alimentação', 6), ('Exercícios', 7), ('Felicidade', 8)
 on conflict (nome) do nothing;
 
--- Quanto cada questão vale em cada barra, no primeiro acerto. Sem uma
--- linha aqui, acertar a questão não pontua nada — sem erro nenhum, só
--- silêncio. Uma questão pode encher várias barras (Saúde e Limpeza, por
--- exemplo), cada uma com o seu peso.
+-- Pontos de cada questão em cada barra (sem linha aqui, o acerto não pontua).
 create table if not exists questoes_areas (
   questao_id bigint not null references questoes(id) on delete cascade,
   area_nome varchar(50) not null references areas(nome) on delete cascade,
@@ -337,8 +226,7 @@ create table if not exists progresso_areas (
   unique (usuario_id, area_nome)
 );
 
--- Fecha area_nome na lista das 8. O DO block existe para este arquivo
--- não morrer no meio caso já haja progresso com um nome fora da lista.
+-- area_nome limitado às 8 barras (só aplica se não houver nome fora da lista).
 alter table progresso_areas drop constraint if exists progresso_areas_area_fk;
 do $$
 declare fora int;
@@ -366,9 +254,7 @@ create table if not exists respostas_alunos (
   data_resposta timestamptz not null default now()
 );
 
--- Esta é a tabela que mais cresce: uma linha por tentativa, de cada
--- aluno, para sempre. O par (usuario, questao) é consultado a cada
--- resposta enviada, para decidir se é o primeiro acerto e vale ponto.
+-- Consultado a cada resposta para saber se é o primeiro acerto.
 create index if not exists respostas_por_aluno_e_questao
   on respostas_alunos (usuario_id, questao_id);
 
@@ -390,23 +276,7 @@ create table if not exists quizzes_professores (
   created_at timestamptz not null default now()
 );
 
--- Como o quiz foi montado. Isto é REGISTRO, não regra: as questões já
--- foram sorteadas e congeladas em quiz_questoes na hora da criação. Ficam
--- aqui para o professor lembrar o que pediu e conseguir repetir depois.
---
--- descricao é a frase que o aluno lê no card da missão, escrita pelo
--- professor. Sem ela o card mostraria só o título, e "Doenças" sozinho
--- não diz o que a pessoa vai encontrar ali dentro.
---
--- nivel_etario NÃO é escolhido pelo professor: sai do ano escolar da
--- turma (uma turma de 9º ano puxa questões de 11 a 14). Fica gravado
--- porque o ano da turma pode mudar depois, e aí o quiz antigo mentiria
--- sobre o próprio conteúdo.
---
--- As cinco ficam JUNTAS de propósito. O SQL Editor do Supabase roda só o
--- texto selecionado, e enquanto "descricao" estava separada das outras
--- por uma linha em branco ela foi deixada de fora da seleção — o banco
--- ficou com quatro das cinco, e criar quiz passou a falhar.
+-- Como o quiz foi montado (registro). Mantenha os cinco alters juntos: o SQL Editor roda só o selecionado.
 alter table quizzes_professores add column if not exists descricao varchar(200);
 alter table quizzes_professores add column if not exists nivel_etario int
   check (nivel_etario between 1 and 3);
@@ -414,17 +284,11 @@ alter table quizzes_professores add column if not exists cenarios text[];
 alter table quizzes_professores add column if not exists areas text[];
 alter table quizzes_professores add column if not exists qtd_pedida int;
 
--- O PostgREST guarda em cache o desenho das tabelas. Sem este aviso a
--- coluna existe no banco e a API continua dizendo que não.
+-- Recarrega o cache de schema do PostgREST.
 notify pgrst, 'reload schema';
 
 
--- As questões que caíram naquele quiz, congeladas na criação.
---
--- É esta tabela que faz a turma inteira responder as MESMAS perguntas —
--- sem ela, cada aluno sortearia as suas e o ranking não compararia nada.
--- A chave primária composta é também o que garante "não repete dentro do
--- mesmo quiz": o banco recusaria a segunda linha igual.
+-- Questões sorteadas de cada quiz, congeladas na criação.
 create table if not exists quiz_questoes (
   quiz_id bigint not null references quizzes_professores(id) on delete cascade,
   questao_id bigint not null references questoes(id) on delete cascade,
@@ -434,45 +298,16 @@ create table if not exists quiz_questoes (
 
 create index if not exists quiz_questoes_por_quiz on quiz_questoes (quiz_id, ordem);
 
--- De qual quiz veio esta resposta. Nulo = exploração livre pelo mapa.
---
--- Sem esta coluna é impossível saber se um aluno terminou um quiz, dar
--- nota, ou separar no relatório o que foi tarefa do que foi brincadeira
--- — a tabela é plana e não sabe dizer a que contexto cada acerto pertence.
+-- Quiz de origem da resposta.
 alter table respostas_alunos add column if not exists quiz_id bigint
   references quizzes_professores(id) on delete set null;
 
 create index if not exists respostas_por_quiz on respostas_alunos (quiz_id);
 
 
--- ── A foto de perfil ─────────────────────────────────────────────────
---
--- `text` e não `varchar(n)` porque a foto pode chegar de dois jeitos: um
--- endereço https:// curto, ou a imagem inteira embutida (data:image/...)
--- quando a pessoa escolhe um arquivo do próprio computador. O segundo
--- caso tem alguns milhares de caracteres.
---
--- Fica colado no bloco de progressão abaixo DE PROPÓSITO, sem linha em
--- branco no meio: o SQL Editor do Supabase roda só o texto selecionado,
--- e um alter sozinho entre comentários é exatamente o que ficou de fora
--- quando a coluna `descricao` sumiu três vezes.
+-- Foto de perfil (URL ou data:image).
 alter table usuarios add column if not exists avatar_url text;
--- ── O XP que não vem de acertar pergunta ─────────────────────────────
---
--- Acerto de questão NÃO entra aqui: ele já está em respostas_alunos, e
--- o XP sai de lá por conta (10 por questão distinta). Duplicar daria
--- duas versões do mesmo número, e um dia elas discordariam.
---
--- O prêmio diário é o contrário: não deixa rastro em lugar nenhum. Se
--- não for gravado, não existe. Por isso esta tabela.
---
--- A CHAVE É A REGRA: unique (usuario_id, dia) é o que garante "uma vez
--- por dia" — não um if no servidor. Dois cliques no mesmo segundo, duas
--- abas abertas, a pessoa recarregando a página: o banco recusa o
--- segundo, sempre, sem depender de o código lembrar de conferir.
---
--- `dia` é date e não timestamp de propósito: o prêmio é por DIA do
--- calendário de quem joga, não por 24 horas corridas.
+-- XP diário: a chave (usuario_id, dia) garante um prêmio por dia.
 create table if not exists xp_diario (
   usuario_id uuid not null references usuarios(id) on delete cascade,
   dia date not null,
@@ -482,39 +317,9 @@ create table if not exists xp_diario (
 );
 
 
--- ── As insígnias ─────────────────────────────────────────────────────
---
--- A ESTANTE É DIRIGIDA POR DADO, não por código. Cada insígnia é uma
--- LINHA: para criar uma nova, ninguém abre o servidor — insere uma
--- linha em db/insignias.sql. É o que permite desenhar as artes e
--- ligá-las sem tocar em JavaScript nenhum.
---
--- POR QUE NÃO HÁ REGRA DE PORCENTAGEM: a quantidade de quizzes muda o
--- tempo todo, porque o professor cria e apaga. "Acertou 80% do que foi
--- passado" mudaria de significado toda semana, e uma insígnia já
--- conquistada poderia deixar de valer. Toda regra aqui é de CONTAGEM
--- ABSOLUTA — 50 acertos são 50 acertos para sempre.
---
---   ACERTOS         questões distintas que a pessoa acertou
---   ACERTOS_CENARIO as mesmas, só as do lugar em `cenario_slug`
---   DIAS            dias de sequência (o prêmio diário)
---   MISSOES         quizzes concluídos — SEM USO desde outubro de 2026,
---                   quando as insígnias de tarefas do professor foram
---                   excluídas. Continua aceita: tirá-la do check faria
---                   este arquivo falhar num banco que ainda tenha as
---                   linhas antigas, e não ganharia nada
---   MISSOES_CENARIO pares (quiz concluído × lugar das questões dele):
---                   um quiz com perguntas da UBS, da Escola e do
---                   Mercado vale 3 quando é concluído
---   QUIZZES         quizzes criados          (professor)
---   ACERTOS_TURMA   acertos dos alunos dele  (professor)
---   DESCOBERTA      um segredo achado no mapa (a TV e as HQs da banca,
---                   o calendário da farmácia). A única regra que NÃO é
---                   contagem: não há placar, alvo é sempre 1, e quem dá
---                   a insígnia é POST /api/descobrir, só para linhas
---                   desta regra. É o navegador que conta "achei", então
---                   o XP delas fica baixo — dá para pedir pelo console,
---                   e não há como o servidor saber se a pessoa clicou
+-- ── Insígnias ──
+-- Regras: ACERTOS, ACERTOS_CENARIO, DIAS, MISSOES (sem uso), MISSOES_CENARIO, QUIZZES, ACERTOS_TURMA, DESCOBERTA.
+-- DESCOBERTA: segredos do mapa, dados por POST /api/descobrir.
 create table if not exists insignias (
   codigo varchar(40) primary key,
   nome varchar(60) not null,
@@ -531,54 +336,29 @@ create table if not exists insignias (
   xp int not null default 0 check (xp >= 0),
   ordem int not null,
 
-  -- O nome do arquivo da arte, dentro de src/imgs/insignias/.
-  -- Nulo = ainda sem arte: a estante desenha o lugar vazio dela.
+  -- Arquivo da arte em src/imgs/insignias/ (nulo = sem arte).
   imagem varchar(120)
 );
 
--- A lista de regras cresceu depois que a tabela já existia. O check
--- de cima só vale para um projeto novo; num banco com dados, o
--- "create table if not exists" não faz nada, então a trava é refeita
--- aqui. Apagar e recriar é o que deixa isto seguro de rodar de novo.
+-- Refaz o check de regras em bancos que já têm a tabela.
 alter table insignias drop constraint if exists insignias_regra_check;
 alter table insignias add constraint insignias_regra_check
   check (regra in ('ACERTOS', 'ACERTOS_CENARIO', 'DIAS', 'MISSOES',
                    'MISSOES_CENARIO', 'QUIZZES', 'ACERTOS_TURMA',
                    'DESCOBERTA'));
 
--- Para qual lugar do bairro a insígnia conta. Só ACERTOS_CENARIO usa.
---
--- É o slug do MAPA (src/js/mapa.js), não uma chave estrangeira para
--- cenarios, DE PROPÓSITO: banca, igreja, rio e ruas estão no mapa mas
--- ainda não têm linha em cenarios. As insígnias deles já existem e
--- ficam inalcançáveis até o lugar virar cenário com o MESMO slug.
+-- Lugar da insígnia ACERTOS_CENARIO (slug do mapa, sem FK de propósito).
 alter table insignias add column if not exists cenario_slug varchar(40);
 
 alter table insignias drop constraint if exists insignias_cenario_coerente;
 alter table insignias add constraint insignias_cenario_coerente
   check ((regra = 'ACERTOS_CENARIO') = (cenario_slug is not null));
 
--- Insígnias com o mesmo `grupo` são DEGRAUS de uma peça só (5, 25 e
--- 50 acertos na UBS, por exemplo). A estante mostra uma por grupo: o
--- degrau mais alto já conquistado, ou o primeiro se nenhum foi. O
--- degrau novo se sobrepõe ao anterior em vez de ocupar outro lugar.
---
--- Cada degrau continua sendo uma linha própria, com a própria arte, o
--- próprio XP e a própria data em insignias_usuarios: a regra
--- "conquista não se perde" vale para cada um, e o XP de quem chegou a
--- 50 inclui o de 5 e o de 25.
---
--- Nulo = peça avulsa. Quem junta os degraus é GET /minha-estante.
+-- Insígnias do mesmo grupo são degraus de uma peça só (juntados por GET /minha-estante).
 alter table insignias add column if not exists grupo varchar(40);
 
 
--- ── O que cada pessoa já conquistou ──────────────────────────────────
---
--- CONQUISTA NÃO SE PERDE. Esta tabela é o único lugar do jogo onde o
--- dado é gravado justamente para NÃO ser recalculado: se amanhã a
--- equipe de Medicina apagar 30 questões, quem já tinha a insígnia de
--- 100 acertos continua com ela. Recalcular tiraria da pessoa algo que
--- ela fez, por causa de uma mudança que não foi dela.
+-- Conquistas: gravadas para nunca serem recalculadas.
 create table if not exists insignias_usuarios (
   usuario_id uuid not null references usuarios(id) on delete cascade,
   insignia_codigo varchar(40) not null references insignias(codigo) on delete cascade,
@@ -590,24 +370,7 @@ create index if not exists insignias_por_usuario
   on insignias_usuarios (usuario_id, conquistada_em desc);
 
 
--- ── Quando um aluno termina um quiz ──────────────────────────────────
---
--- O momento em que o professor e o aluno ganham junto. Uma linha por
--- (aluno, quiz), gravada na resposta que fecha o questionário.
---
--- POR QUE GRAVAR, SE DAVA PARA CALCULAR: dava — bastava contar as
--- respostas. Mas o quiz pode ser APAGADO pelo professor, e
--- respostas_alunos.quiz_id vira nulo quando isso acontece. O XP de
--- ambos sumiria junto com o quiz, e o professor perderia nível por ter
--- feito uma faxina no painel. Conquista não se desfaz.
---
--- Por isso `professor_id` também é gravado aqui, e não lido de
--- quizzes_professores na hora de somar: o quiz pode não existir mais.
---
--- `taxa` é acertos ÷ respostas dadas dentro daquele quiz. Como concluir
--- exige acertar todas, ela mede QUANTAS TENTATIVAS foram precisas —
--- 1.00 é quem acertou tudo de primeira. É o número que diz se a pessoa
--- sabia ou se martelou até passar.
+-- Quizzes concluídos: o XP do aluno e do professor fica gravado mesmo se o quiz for apagado.
 create table if not exists quiz_concluidos (
   usuario_id uuid not null references usuarios(id) on delete cascade,
   quiz_id bigint not null,
@@ -630,37 +393,13 @@ create index if not exists conclusoes_por_professor
   on quiz_concluidos (professor_id, concluido_em desc);
 
 
--- ── A estante de hoje ────────────────────────────────────────────────
---
--- As linhas NÃO moram aqui: o catálogo inteiro (64 insígnias, com a
--- arte de cada uma) está em db/insignias.sql, que roda depois deste
--- arquivo. Ficou separado porque é conteúdo do jogo que muda com
--- frequência — um alvo calibrado, uma arte trocada — e não esquema.
+-- O catálogo de insígnias fica em db/insignias.sql.
 
--- A estante do PROFESSOR existe e está vazia, de propósito. As regras
--- dele (QUIZZES e ACERTOS_TURMA) já são aceitas pela tabela; faltam as
--- linhas, que serão combinadas depois. A tela trata estante vazia como
--- estado normal, não como erro.
+-- A estante do professor ainda não tem insígnias.
 
 
--- ── Recuperação de senha ─────────────────────────────────────────────
---
--- Quem esquece a senha recebe no e-mail um código de 5 caracteres. Esta
--- tabela é a memória desse código enquanto ele vale.
---
--- O código NÃO fica guardado aqui. Fica o hash dele, pelo mesmo motivo
--- que senha não se guarda em texto: quem puser os olhos nesta tabela —
--- um backup esquecido, um dump no grupo da turma — não pode sair
--- trocando a senha dos outros. Conferir é hashear de novo e comparar.
---
--- `tentativas` é o que torna o código de 5 caracteres seguro. São
--- 36^5 = 60.466.176 combinações, muita coisa para adivinhar à mão, mas
--- pouca para um script. Com no máximo 5 erros antes de o código morrer,
--- a chance de acertar chutando é de 1 em 12 milhões.
---
--- `ticket_hash` é o segundo portão. Acertar o código não troca a senha:
--- devolve um ticket, e é o ticket que a terceira tela apresenta. Sem
--- ele, bastaria chamar a rota de trocar senha direto, pulando o código.
+-- ── Recuperação de senha ──
+-- Guarda só o hash do código, com limite de tentativas e um ticket para a troca.
 create table if not exists codigos_recuperacao (
   id bigint primary key generated always as identity,
   email text not null,
@@ -673,26 +412,12 @@ create table if not exists codigos_recuperacao (
   criado_em timestamptz not null default now()
 );
 
--- O servidor busca sempre o código mais novo de um e-mail, e conta
--- quantos foram pedidos na última hora para limitar o abuso.
---
--- Sem `lower()` aqui de propósito: o e-mail já chega em minúsculas, o
--- servidor normaliza antes de gravar e antes de procurar. Um índice
--- sobre `lower(email)` não seria usado por uma busca em `email`, e
--- ficaria ocupando espaço sem servir a ninguém.
+-- Busca o código mais recente de um e-mail.
 create index if not exists codigos_por_email
   on codigos_recuperacao (email, criado_em desc);
 
 
--- ── Achar a conta pelo e-mail ────────────────────────────────────────
---
--- As contas vivem em `auth.users`, que é do Supabase e não é exposta
--- pela API. Esta função é a única porta, e ela devolve só o id: nada de
--- nome, data de criação ou metadado.
---
--- O `revoke` embaixo é o que importa. Sem ele, qualquer visitante com a
--- chave publishable chamaria a função e descobriria, um e-mail por vez,
--- quem tem conta no jogo. Só a chave secreta do servidor entra.
+-- Id da conta pelo e-mail. Só o servidor executa (revoke abaixo).
 create or replace function public.conta_por_email(p_email text)
 returns uuid
 language sql stable security definer set search_path = auth, public as $$
@@ -700,30 +425,15 @@ language sql stable security definer set search_path = auth, public as $$
 $$;
 
 
--- ── O que o ADMIN mexe ───────────────────────────────────────────────
---
--- Três coisas que antes só existiam no código ou em lugar nenhum.
+-- ── O que o admin mexe ──
 
--- 1. SUSPENDER em vez de apagar.
---
--- Apagar uma conta leva junto o progresso, as respostas e o lugar da
--- pessoa no ranking da turma — e isso não volta. Suspender resolve o
--- caso real (alguém usando mal a conta) sem destruir o histórico de
--- quem talvez volte na semana seguinte.
+-- 1. Suspender em vez de apagar.
 alter table usuarios add column if not exists suspenso boolean not null default false;
 alter table usuarios add column if not exists suspenso_em timestamptz;
 alter table usuarios add column if not exists suspenso_motivo varchar(200);
 
 
--- 2. XP dado à mão, com assinatura.
---
--- O admin pode somar ou tirar XP de alguém. A linha aqui é o que
--- separa "corrigi uma inconsistência" de "me dei mil pontos": todo
--- ajuste guarda quem fez, quanto e por quê, e o total do usuário passa
--- a ser `o que ele ganhou jogando` + `a soma destas linhas`.
---
--- Nada é editado no lugar: ajustar duas vezes grava duas linhas. Um
--- registro que pode ser reescrito não é registro.
+-- 2. Ajustes de XP feitos pelo admin, com quem fez e o motivo.
 create table if not exists xp_ajustes (
   id bigint primary key generated always as identity,
   usuario_id uuid not null references usuarios(id) on delete cascade,
@@ -736,16 +446,7 @@ create table if not exists xp_ajustes (
 create index if not exists ajustes_por_usuario on xp_ajustes (usuario_id);
 
 
--- 3. As patentes saem do código e viram dado.
---
--- Os nomes das dez faixas estavam escritos em server/progressao.js. Na
--- tabela, o admin renomeia, acrescenta e remove faixa sem deploy.
---
--- O que NÃO virou dado foi a escada de XP. Ela continua no código, e é
--- de propósito: um erro de digitação num campo de nível rebaixaria
--- todo mundo de uma vez, e perder nível por engano alheio é a pior
--- coisa que este jogo pode fazer com quem joga. Trocar um título não
--- machuca ninguém; mexer na régua machuca todo mundo ao mesmo tempo.
+-- 3. Nomes das patentes (a escada de XP continua no código).
 create table if not exists patentes (
   id bigint primary key generated always as identity,
   tipo varchar(20) not null check (tipo in ('ALUNO', 'PROFESSOR')),
@@ -768,23 +469,10 @@ insert into patentes (tipo, ate, nome) values
 on conflict (tipo, ate) do nothing;
 
 
--- #####################################################################
---  2. FUNÇÕES AUXILIARES
---
---  Quase todas são "security definer", e isso não é detalhe: é o que
---  evita a armadilha número um do RLS. Uma policy DA tabela usuarios que
---  fizesse "select tipo from usuarios" cairia nas policies de usuarios
---  de novo, que consultariam usuarios de novo... até o PostgreSQL
---  abortar com "infinite recursion detected in policy" (42P17).
---
---  "security definer" faz a função rodar como dona da tabela, e dona de
---  tabela não passa pelo RLS. A recursão para aí.
--- #####################################################################
+-- ── 2. FUNÇÕES AUXILIARES ──
+-- security definer evita a recursão infinita do RLS quando uma policy de usuarios lê usuarios.
 
--- ── Conversão segura de texto para número ────────────────────────────
--- O metadado do cadastro chega como texto, vindo do navegador. Estas
--- devolvem NULL em vez de estourar quando o texto não é número — melhor
--- um cadastro com a idade em branco do que nenhum cadastro.
+-- Converte texto em número, devolvendo NULL em vez de erro.
 
 create or replace function public.texto_para_int(p text)
 returns int language plpgsql immutable as $$
@@ -828,17 +516,12 @@ returns boolean language sql stable security definer set search_path = public as
   );
 $$;
 
--- ── Turma pelo código ────────────────────────────────────────────────
--- Pergunta fechada: manda-se um código e recebe-se UMA turma, ou nada.
--- Não dá para varrer a tabela atrás de todos os códigos.
+-- Busca uma turma pelo código (não lista os códigos).
 
 create or replace function public.buscar_turma_por_codigo(p_codigo text)
 returns table (id bigint, nome varchar, escola_id bigint, escola_nome varchar)
 language sql security definer set search_path = public as $$
-  -- `left join` e não `join`: com a escola aposentada, escola_id é
-  -- nulo nas turmas novas, e um join comum faria a turma não ser
-  -- encontrada pelo código — o aluno digitaria certo e ouviria que a
-  -- turma não existe.
+  -- left join: turmas novas não têm escola.
   select t.id, t.nome, t.escola_id, e.nome
   from turmas t
   left join escolas e on e.id = t.escola_id
@@ -858,28 +541,19 @@ language sql security definer set search_path = public as $$
   order by t.nome;
 $$;
 
--- ── Pontuação ────────────────────────────────────────────────────────
--- Soma pontos numa barra, criando a linha se for a primeira vez.
---
--- É função (e não um update no backend) por causa da corrida: duas
--- respostas quase simultâneas fariam "ler 40, somar 10, gravar 50" duas
--- vezes e um dos acertos sumiria. Aqui a soma acontece dentro do próprio
--- update, e o banco resolve.
+-- Soma pontos numa barra de forma atômica.
 
 create or replace function public.somar_pontos(
   p_usuario uuid, p_area varchar, p_pontos int
 )
 returns void language plpgsql security definer set search_path = public as $$
 declare
-  -- A meta vem da tabela areas, e é diferente para cada barra: ela vale
-  -- todos os pontos que o conteúdo daquela área pode render hoje.
+  -- Meta da barra (pontos que o conteúdo dela rende).
   v_meta int;
 begin
   select meta into v_meta from areas where nome = p_area;
 
-  -- Área ainda sem conteúdo (Alimentação e Exercícios hoje). Guarda o
-  -- ponto, mas não calcula porcentagem — dividir por zero derrubaria a
-  -- resposta inteira do aluno por causa de uma barra vazia.
+  -- Área sem conteúdo: soma o ponto sem calcular porcentagem.
   if v_meta is null or v_meta <= 0 then
     insert into progresso_areas (usuario_id, area_nome, pontos, porcentagem)
     values (p_usuario, p_area, p_pontos, 0)
@@ -897,20 +571,7 @@ end;
 $$;
 
 
--- ── Recalcular as metas a partir do conteúdo ─────────────────────────
---
--- A meta de uma área é a soma de tudo o que ela pode render: os pontos
--- de todas as questões que a alimentam.
---
--- Chame depois de importar conteúdo. As porcentagens de quem já jogou
--- são refeitas junto — sem isso um aluno ficaria com 100% numa barra
--- cuja régua acabou de crescer.
---
--- Só as questões DO SISTEMA entram na régua. As de professor valem pontos
--- para quem as acerta, mas não esticam a meta: senão cada pergunta criada
--- numa escola baixaria a porcentagem dos alunos de todas as outras, que
--- nem conseguem ver essa pergunta. (O teto de 100% em somar_pontos cobre
--- quem passar da meta somando as duas.)
+-- Refaz as metas a partir das questões do sistema e atualiza as porcentagens.
 create or replace function public.recalcular_metas()
 returns void language plpgsql security definer set search_path = public as $$
 begin
@@ -934,38 +595,8 @@ end;
 $$;
 
 
--- ── As barras de cada aluno, relativas ao que ELE tem para fazer ─────
---
--- É ESTA função que as telas usam hoje (GET /api/meu-progresso). As
--- metas globais acima (areas.meta, recalcular_metas, a porcentagem
--- gravada em progresso_areas) ficaram como reserva e saem numa limpeza
--- futura.
---
--- POR QUE A RÉGUA MUDOU: o aluno só joga dentro dos quizzes que o
--- professor passa. Medir a barra contra o banco inteiro era medir contra
--- algo que ele nunca alcança — e, ao contrário, uma meta fixa que ele
--- já tivesse batido deixaria sem sentido continuar jogando quando
--- chegasse missão nova.
---
--- A RÉGUA DE CADA ALUNO é o "universo" dele:
---     as questões dos quizzes da turma ATUAL
---   + as questões que ele JÁ ACERTOU, em qualquer momento.
---
--- A segunda parte é a regra "conquista não se perde": se o professor
--- apaga um quiz já feito, ou o aluno troca de turma, o que ele acertou
--- continua contando — a barra não cai por uma decisão que não foi dele.
--- Já um quiz NOVO aumenta o universo e a barra desce: há coisa nova
--- para fazer (a tela avisa "novas missões" quando isso acontece).
---
--- O peso de cada questão é o `pontos` de questoes_areas, como sempre.
--- Os pontos ganhos são os do PRIMEIRO acerto de cada questão (distinct),
--- a mesma regra de POST /api/responder.
---
--- Calculada na hora, e não gravada: a régua muda quando QUALQUER
--- professor cria ou apaga quiz, ou quando o aluno troca de turma. Um
--- número gravado ficaria velho em cada um desses caminhos. Uma turma
--- com dezenas de quizzes ainda são poucos milhares de linhas — nada
--- para o Postgres, e numa ida só, sem o corte de 1000 linhas da API.
+-- Barras do aluno (GET /api/meu-progresso): pontos das questões acertadas sobre as dos quizzes
+-- da turma atual + as já acertadas. Calculado na hora.
 create or replace function public.progresso_do_aluno(p_usuario uuid)
 returns table (area varchar, ordem int, pontos_ganhos bigint, pontos_possiveis bigint)
 language sql stable security definer set search_path = public as $$
@@ -1006,25 +637,8 @@ $$;
 create index if not exists quizzes_por_turma on quizzes_professores (turma_id);
 
 
--- #####################################################################
---  3. O PERFIL NASCE JUNTO COM A CONTA
---
---  O BUG QUE ISTO RESOLVE: o cadastro fazia duas escritas separadas —
---  o Supabase criava a linha em auth.users, e depois o navegador tentava
---  criar a linha em usuarios. Não era uma transação. Quando a segunda
---  falhava, sobrava uma conta que fazia login mas que o jogo não
---  conhecia: o usuário aparecia na aba "Users" e não na tabela usuarios.
---
---  A REGRA QUE ORGANIZA A FUNÇÃO:
---      o perfil completo é uma tentativa; a conta existir é obrigação.
---
---  Por isso o miolo fica num bloco com "exception". Quando a função de um
---  gatilho em auth.users lança erro, o Supabase desfaz a criação da conta
---  e responde "Database error saving new user" — sem dizer a causa. Ou
---  seja, um descuido aqui dentro vira "a turma inteira não consegue se
---  cadastrar". Se o perfil completo falhar, entra um perfil mínimo e o
---  motivo real vai para o log (painel -> Logs -> Postgres).
--- #####################################################################
+-- ── 3. O PERFIL NASCE JUNTO COM A CONTA ──
+-- Gatilho em auth.users cria o perfil; se falhar, cria um perfil mínimo (a conta nunca é recusada).
 
 create or replace function public.criar_perfil_do_novo_usuario()
 returns trigger
@@ -1049,10 +663,7 @@ begin
 
   v_tipo := upper(coalesce(nullif(trim(meta->>'tipo'), ''), 'ALUNO'));
 
-  -- ATENÇÃO: raw_user_meta_data é preenchido pelo NAVEGADOR, então é
-  -- informação que a própria pessoa controla. Nada daqui pode ser aceito
-  -- sem conferência. ADMIN nunca sai de um cadastro — promover é manual:
-  --     update usuarios set tipo = 'ADMIN' where id = '...';
+  -- O metadado vem do navegador: ADMIN nunca sai do cadastro.
   if v_tipo not in ('ALUNO', 'PROFESSOR') then
     v_tipo := 'ALUNO';
   end if;
@@ -1076,13 +687,7 @@ begin
       v_escola_id := null;   -- a escola do aluno vem pela turma
 
     else
-      -- O PROFESSOR também não tem mais escola.
-      --
-      -- Aqui havia vinte linhas que liam `escola_id` e `escola_nome` do
-      -- cadastro e, se o nome fosse novo, criavam a escola. Era por
-      -- este caminho que "Harvard College" e "Oxford University"
-      -- entraram no banco de um jogo sobre o SUS: bastava digitar um
-      -- nome na tela de cadastro para inventar uma instituição.
+      -- Professor também não tem escola.
       v_escola_id := null;
     end if;
 
@@ -1125,20 +730,7 @@ where p.id is null
 on conflict (id) do nothing;
 
 
--- #####################################################################
---  4. SEGURANÇA (RLS)
---
---  Sem isto, TODAS as tabelas ficam abertas: qualquer visitante com a
---  chave publishable lê e escreve pelo navegador. Criar tabela não
---  tranca nada — trancar é este bloco.
---
---  Como ler:
---    for select -> quem LÊ      for insert -> quem CRIA
---    for update -> quem ALTERA  for delete -> quem APAGA
---    to anon    -> qualquer visitante, mesmo sem conta
---    to authenticated -> só quem entrou
---    auth.uid() -> o identificador de quem está logado agora
--- #####################################################################
+-- ── 4. SEGURANÇA (RLS) ──
 
 alter table escolas             enable row level security;
 alter table turmas              enable row level security;
@@ -1168,9 +760,7 @@ create policy "ler o proprio cadastro"
 create policy "criar o proprio cadastro"
   on usuarios for insert to authenticated with check (auth.uid() = id);
 
--- Pode corrigir o próprio nome, mas NÃO pode se promover. Sem esta
--- trava, qualquer aluno viraria PROFESSOR com um update e passaria a
--- ler os dados dos colegas.
+-- Edita o próprio cadastro, mas não muda o próprio tipo.
 create policy "editar o proprio cadastro"
   on usuarios for update to authenticated
   using (auth.uid() = id)
@@ -1187,19 +777,7 @@ create policy "admin edita qualquer cadastro"
   using (public.eh_admin()) with check (public.eh_admin());
 
 
--- ── escolas (APOSENTADA) ─────────────────────────────────────────────
---
--- A tabela continua aqui, com as linhas que já existiam, mas saiu do
--- caminho: ninguém mais cria escola e ninguém mais escolhe escola.
---
--- As duas policies que sumiram eram as que faziam dela um problema.
--- "qualquer um le as escolas" entregava a lista a visitante anônimo, e
--- "logado cria escola", com `with check (true)`, deixava QUALQUER
--- pessoa com conta — um aluno de 7 anos inclusive — inserir uma
--- instituição. Sem tela que as use, mantê-las seria deixar aberta a
--- porta de um cômodo que ninguém mais visita.
---
--- Fica a do admin, para quem precisar arrumar o que já está gravado.
+-- Escolas (aposentada): só o admin.
 
 drop policy if exists "qualquer um le as escolas" on escolas;
 drop policy if exists "logado cria escola"        on escolas;
@@ -1245,11 +823,7 @@ create policy "admin apaga turma"
   on turmas for delete to authenticated using (public.eh_admin());
 
 
--- ── Conteúdo do jogo: todos leem, só o admin escreve ─────────────────
---
--- O "drop" de "logado le o conteudo" roda nas QUATRO tabelas, mas a
--- policy só volta em cenarios e areas: questoes e questoes_areas ganharam
--- regra própria logo abaixo, por causa das questões de professor.
+-- Conteúdo do jogo: todos leem, só o admin escreve.
 
 do $$
 declare t text;
@@ -1269,16 +843,7 @@ begin
   end loop;
 end $$;
 
--- As questões do sistema, todo logado lê. As de professor, só o próprio
--- autor (e o admin). Sem isto, um professor listaria pelo console as
--- perguntas que os colegas de outras escolas escreveram.
---
--- O aluno não precisa ler a questão do professor por aqui: ele a recebe
--- pelo servidor (GET /api/quizzes/:id/questoes), que confere se o quiz é
--- da turma dele.
---
--- Professor NÃO tem policy de insert: questão nova passa pelo servidor,
--- que valida os campos e grava criado_por a partir do login.
+-- Questões do sistema: todo logado lê; as de professor, só o autor e o admin.
 drop policy if exists "le as questoes do sistema e as proprias" on questoes;
 
 create policy "le as questoes do sistema e as proprias"
@@ -1288,9 +853,7 @@ create policy "le as questoes do sistema e as proprias"
     or public.eh_admin()
   );
 
--- Os pontos por área seguem a questão: quem não vê a questão não vê as
--- linhas dela. O exists passa pela policy de questoes acima — e não há
--- recursão, porque aquela policy não consulta questoes_areas.
+-- Pontos por área seguem a visibilidade da questão.
 drop policy if exists "le as areas das questoes que enxerga" on questoes_areas;
 
 create policy "le as areas das questoes que enxerga"
@@ -1298,25 +861,10 @@ create policy "le as areas das questoes que enxerga"
     exists (select 1 from questoes q where q.id = questoes_areas.questao_id)
   );
 
--- ⚠️ A policy acima libera a LINHA INTEIRA de questoes, e a linha tem
--- resposta_correta. O RLS é por linha e não sabe esconder coluna, então
--- sozinho ele entregaria o gabarito a qualquer aluno logado.
---
--- Quem fecha isso é a permissão por COLUNA, na seção 5 deste arquivo.
--- O quiz continua passando pelo servidor Express (server/rotas/jogo.js),
--- que enxerga tudo com a chave secreta e devolve só "acertou" mais a
--- explicação — agora as duas trancas se somam, em vez de só a convenção.
+-- A linha tem o gabarito: quem esconde as colunas é a seção 5.
 
 
--- ── Progresso do aluno ───────────────────────────────────────────────
---
--- O aluno só LÊ. Quem escreve é o servidor Express, com a chave secreta.
---
--- Não é excesso de zelo: com permissão de update, o aluno fazia
---     update progresso_areas set pontos = 999999
--- na própria linha pelo console, e o banco aceitava — a linha era dele.
--- "Esta linha é sua?" o RLS responde bem; "você merece estes pontos?"
--- é regra de jogo, e regra de jogo mora no servidor.
+-- Progresso: o aluno só lê; quem escreve é o servidor.
 
 drop policy if exists "le o proprio progresso"                on progresso_areas;
 drop policy if exists "cria o proprio progresso"              on progresso_areas;
@@ -1363,9 +911,7 @@ create policy "professor altera os proprios quizzes"
 create policy "professor apaga os proprios quizzes"
   on quizzes_professores for delete to authenticated using (auth.uid() = professor_id);
 
--- Faltava o outro lado: o aluno precisa VER o quiz que lhe foi passado.
--- Sem esta política, o professor criava a tarefa e a turma não enxergava
--- nada — só o servidor Express conseguia ler, com a chave secreta.
+-- Aluno lê os quizzes da turma dele.
 drop policy if exists "aluno le os quizzes da turma dele" on quizzes_professores;
 
 create policy "aluno le os quizzes da turma dele"
@@ -1374,11 +920,7 @@ create policy "aluno le os quizzes da turma dele"
   );
 
 
--- ── As questões congeladas de cada quiz ──────────────────────────────
---
--- Só leitura, para os dois lados. Quem ESCREVE aqui é o servidor, no
--- momento do sorteio — se o aluno pudesse inserir, escolheria as próprias
--- perguntas; se pudesse apagar, sumiria com as que não soubesse.
+-- Questões dos quizzes: só leitura (quem escreve é o servidor).
 alter table quiz_questoes enable row level security;
 
 drop policy if exists "professor le as questoes dos proprios quizzes" on quiz_questoes;
@@ -1399,45 +941,18 @@ create policy "aluno le as questoes do quiz da turma dele"
   );
 
 
--- ── XP diário e insígnias ────────────────────────────────────────────
---
--- Repare no que NÃO existe aqui: nenhuma policy de insert ou update.
--- É deliberado, e é a mesma regra de progresso_areas — quem escreve
--- pontuação é o servidor, com a chave secreta. Com um insert liberado,
--- qualquer aluno abriria o console e se daria 50 XP cinquenta vezes,
--- ou se concederia a insígnia de 225 acertos sem responder nada.
---
--- A pessoa LÊ o próprio XP e as próprias insígnias. Só isso.
+-- XP e insígnias: só leitura (quem escreve é o servidor).
 alter table xp_diario          enable row level security;
 alter table insignias          enable row level security;
 alter table insignias_usuarios enable row level security;
 alter table quiz_concluidos    enable row level security;
 
 
--- ── Códigos de recuperação ───────────────────────────────────────────
---
--- RLS ligado e NENHUMA policy. Não é esquecimento: é a configuração
--- mais fechada que existe. Sem policy, ninguém que chegue pela chave
--- publishable lê ou escreve uma linha aqui — nem anônimo, nem logado,
--- nem o dono do próprio e-mail. Quem entra é só o servidor, que usa a
--- chave secreta e passa por cima do RLS.
---
--- Precisa ser assim: um aluno que conseguisse ler esta tabela veria o
--- momento em que cada colega pediu recuperação, e um que conseguisse
--- escrever criaria um código válido para o e-mail de qualquer um.
+-- Códigos de recuperação: RLS sem policy (só o servidor acessa).
 alter table codigos_recuperacao enable row level security;
 
 
--- ── O que o admin mexe ───────────────────────────────────────────────
---
--- `xp_ajustes` segue a regra de toda pontuação neste banco: ninguém
--- escreve pelo navegador, nem o próprio admin. A tela dele fala com o
--- servidor, e é o servidor, com a chave secreta, que grava. Uma policy
--- de insert aqui — mesmo restrita a admin — significaria que bastaria
--- a sessão de um admin vazar para alguém se dar XP pelo console.
---
--- LER é diferente: o histórico de ajustes precisa aparecer na ficha do
--- usuário, e quem abre essa ficha já é admin.
+-- Ajustes de XP: só o admin lê; quem grava é o servidor.
 alter table xp_ajustes enable row level security;
 
 drop policy if exists "admin le os ajustes" on xp_ajustes;
@@ -1445,8 +960,7 @@ drop policy if exists "admin le os ajustes" on xp_ajustes;
 create policy "admin le os ajustes"
   on xp_ajustes for select to authenticated using (public.eh_admin());
 
--- As patentes são lidas por qualquer pessoa logada: o nome da faixa
--- aparece no perfil e no ranking de todo mundo. Escrever, só admin.
+-- Patentes: todo logado lê, só o admin escreve.
 alter table patentes enable row level security;
 
 drop policy if exists "todos leem as patentes" on patentes;
@@ -1468,8 +982,7 @@ drop policy if exists "professor le as conclusoes da turma" on quiz_concluidos;
 create policy "le as proprias conclusoes"
   on quiz_concluidos for select to authenticated using (auth.uid() = usuario_id);
 
--- O professor precisa ver de onde veio o XP dele. É o mesmo direito que
--- ele já tem sobre as respostas dos alunos das turmas dele.
+-- O professor lê as conclusões que renderam XP para ele.
 create policy "professor le as conclusoes da turma"
   on quiz_concluidos for select to authenticated using (auth.uid() = professor_id);
 
@@ -1478,9 +991,7 @@ drop policy if exists "le o proprio xp diario" on xp_diario;
 create policy "le o proprio xp diario"
   on xp_diario for select to authenticated using (auth.uid() = usuario_id);
 
--- O catálogo é conteúdo do jogo, como cenarios e areas: todo mundo vê a
--- estante inteira, inclusive as que ainda não conquistou. É isso que
--- transforma a prateleira vazia em objetivo em vez de mistério.
+-- Todo logado lê o catálogo de insígnias.
 drop policy if exists "todos leem o catalogo de insignias" on insignias;
 
 create policy "todos leem o catalogo de insignias"
@@ -1492,46 +1003,18 @@ drop policy if exists "professor le as insignias dos alunos" on insignias_usuari
 create policy "le as proprias insignias"
   on insignias_usuarios for select to authenticated using (auth.uid() = usuario_id);
 
--- O professor acompanha a turma: ver quem conquistou o quê é o mesmo
--- direito que ele já tem sobre as respostas dos alunos dele.
+-- O professor vê as insígnias dos alunos dele.
 create policy "professor le as insignias dos alunos"
   on insignias_usuarios for select to authenticated using (public.eh_meu_aluno(usuario_id));
 
 
--- #####################################################################
---  5. PERMISSÃO POR COLUNA
---
---  O RLS é por LINHA e não sabe esconder uma coluna. Mas a policy de
---  turmas precisa liberar a linha para VISITANTE (o aluno escolhe a
---  turma antes de ter conta) — e a linha tem o "codigo", que deveria ser
---  a credencial que o professor entrega à sala.
---
---  Sem isto, "select codigo from turmas" devolvia todos os códigos de
---  todas as escolas, e o código não filtrava ninguém.
---
---  Quem resolve é a permissão por COLUNA, que o PostgreSQL tem.
---  Quem precisa do código legitimamente usa minhas_turmas() ou o
---  servidor Express.
--- #####################################################################
+-- ── 5. PERMISSÃO POR COLUNA ──
+-- O RLS não esconde colunas: turmas.codigo fica de fora do select público.
 
 revoke select on turmas from anon, authenticated;
 grant  select (id, nome, escola_id, created_at) on turmas to anon, authenticated;
 
--- O mesmo problema, e a mesma solução, para o gabarito: a policy de
--- conteúdo libera a linha de questoes, e a linha tem resposta_correta e
--- explicacao. Sem isto, "select * from questoes" no console do navegador
--- devolvia o gabarito inteiro do jogo — e piora a cada questão importada.
---
--- A explicacao também fica de fora porque ela costuma dizer QUAL é a
--- resposta ("a alternativa correta é a B porque..."). Quem precisa das
--- duas legitimamente é o servidor Express, que usa a chave secreta e não
--- passa por aqui; ele entrega a explicação em /api/responder, depois que
--- o aluno já gastou a tentativa.
---
--- Efeito colateral aceito: o ADMIN também deixa de ler essas duas colunas
--- pelo navegador. Para corrigir conteúdo ele usa o SQL Editor do painel,
--- que roda como postgres e ignora estas permissões — é o mesmo caminho
--- que o projeto já usa para importar questão.
+-- Gabarito (resposta_correta e explicacao) fora do select do navegador; só o servidor lê.
 revoke select on questoes from anon, authenticated;
 grant  select (id, cenario_id, nivel_etario, enunciado, opcao_a, opcao_b, opcao_c, opcao_d, opcao_e)
   on questoes to anon, authenticated;
@@ -1539,94 +1022,44 @@ grant  select (id, cenario_id, nivel_etario, enunciado, opcao_a, opcao_b, opcao_
 grant execute on function public.buscar_turma_por_codigo(text) to anon, authenticated;
 grant execute on function public.minhas_turmas() to authenticated;
 
--- Pontuar é assunto do servidor. O aluno não executa isto.
---
--- O "from public" é o que importa: no PostgreSQL, create function já
--- concede execute a PUBLIC, e todo perfil (anon, authenticated) herda
--- dali. Revogar só dos perfis tirava um grant direto que nunca existiu,
--- e deixava o herdado intacto — na prática, o aluno conseguia chamar
--- somar_pontos com 999999 pontos e encher as próprias barras.
+-- Só o servidor pontua (revoga também de PUBLIC, de onde todos herdam).
 revoke execute on function public.somar_pontos(uuid, varchar, int) from public;
 revoke execute on function public.somar_pontos(uuid, varchar, int) from anon, authenticated;
 
--- Mesma trava para a recalculadora de metas: ela reescreve a porcentagem
--- de TODO mundo. Roda no SQL Editor (como postgres) ou pelo servidor.
+-- Mesma trava para recalcular_metas().
 revoke execute on function public.recalcular_metas() from public;
 revoke execute on function public.recalcular_metas() from anon, authenticated;
 
--- As barras de um aluno: só o servidor pergunta. A função é security
--- definer e recebe o id por parâmetro — aberta, qualquer logado leria o
--- progresso de qualquer colega só trocando o uuid.
+-- Só o servidor lê as barras de um aluno.
 revoke execute on function public.progresso_do_aluno(uuid) from public;
 revoke execute on function public.progresso_do_aluno(uuid) from anon, authenticated;
 
--- ── O que a pessoa pode alterar no próprio cadastro ──────────────────
--- A policy "editar o proprio cadastro" (seção 4) diz QUAL LINHA: a
--- própria. Não diz QUAIS COLUNAS — e o RLS não sabe dizer. Sem isto, um
--- aluno trocava pelo console a própria turma (entrando em qualquer
--- sala, sem código), a idade (mudando as perguntas que recebe) ou a
--- escola.
---
--- Pelo navegador, só nome e foto. E nem esses são escritos direto
--- hoje: passam por PATCH /api/meu-perfil. Entrar numa turma é
--- POST /api/minha-turma, que só aceita quem ainda não tem turma.
--- O servidor usa a chave secreta e não passa por aqui.
+-- No próprio cadastro, o navegador só altera nome e foto.
 revoke update on usuarios from anon, authenticated;
 grant  update (nome, avatar_url) on usuarios to authenticated;
 
 
--- #####################################################################
---  6. CONFERIR SE DEU CERTO
---
---  Descomente e rode. Ou use db/00-testSecurity.sql, que já traz tudo.
--- #####################################################################
+-- ── 6. CONFERIR SE DEU CERTO (ou use db/00-testSecurity.sql) ──
 
--- (a) Todas as tabelas devem vir com rowsecurity = true.
--- select tablename, rowsecurity from pg_tables
--- where schemaname = 'public' order by rowsecurity, tablename;
+-- (a) Todas com rowsecurity = true:
+-- select tablename, rowsecurity from pg_tables where schemaname = 'public' order by rowsecurity, tablename;
 
--- (b) Não deve sobrar nenhuma conta sem perfil.
--- select count(*) as contas_orfas from auth.users u
--- left join public.usuarios p on p.id = u.id where p.id is null;
+-- (b) Nenhuma conta sem perfil:
+-- select count(*) as contas_orfas from auth.users u left join public.usuarios p on p.id = u.id where p.id is null;
 
--- (c) O visitante não enxerga codigo nem professor_id.
---     Devem vir 4 colunas por grantee: created_at, escola_id, id, nome.
---     O filtro por privilege_type é obrigatório — sem ele a consulta
---     traz INSERT/UPDATE/REFERENCES junto e parece que o revoke falhou.
--- select grantee, column_name from information_schema.column_privileges
--- where table_name = 'turmas' and privilege_type = 'SELECT'
---   and grantee in ('anon','authenticated') order by grantee, column_name;
+-- (c) Visitante sem codigo/professor_id (4 colunas por grantee):
+-- select grantee, column_name from information_schema.column_privileges where table_name = 'turmas' and privilege_type = 'SELECT' and grantee in ('anon','authenticated') order by grantee, column_name;
 
--- (d) O gatilho está ligado? Uma linha, tgenabled = 'O'.
--- select tgname, tgenabled from pg_trigger
--- where tgrelid = 'auth.users'::regclass and not tgisinternal;
+-- (d) Gatilho ligado (tgenabled = 'O'):
+-- select tgname, tgenabled from pg_trigger where tgrelid = 'auth.users'::regclass and not tgisinternal;
 
--- (e) O aluno não enxerga o gabarito.
---     Devem vir 9 colunas por grantee: cenario_id, enunciado, id,
---     nivel_etario e opcao_a..opcao_e. Se aparecer resposta_correta ou explicacao, o
---     revoke da seção 5 não pegou.
--- select grantee, column_name from information_schema.column_privileges
--- where table_name = 'questoes' and privilege_type = 'SELECT'
---   and grantee in ('anon','authenticated') order by grantee, column_name;
+-- (e) Gabarito escondido (9 colunas por grantee, sem resposta_correta/explicacao):
+-- select grantee, column_name from information_schema.column_privileges where table_name = 'questoes' and privilege_type = 'SELECT' and grantee in ('anon','authenticated') order by grantee, column_name;
 
--- (f) Ninguém além do servidor executa somar_pontos.
---     Atenção à leitura: proacl NULO é o problema, não a solução — nulo
---     quer dizer "padrão do PostgreSQL", e o padrão é PUBLIC podendo
---     executar. O que se espera aqui é um proacl preenchido e SEM a
---     entrada "=X/" (grantee vazio antes do "=" é justamente o PUBLIC).
+-- (f) somar_pontos sem "=X/" (PUBLIC) no proacl:
 -- select proname, proacl from pg_proc where proname = 'somar_pontos';
 
 
--- #####################################################################
---  7. AVISAR A API QUE O DESENHO MUDOU
---
---  O Supabase guarda em cache o desenho das tabelas. Sem este aviso, a
---  tabela existe no banco e a API continua respondendo
---  "Could not find the table ... in the schema cache" — o cenário mais
---  confuso de depurar que existe aqui, porque o SQL rodou sem erro.
---
---  Fica no FIM do arquivo de propósito: assim vale para tudo o que foi
---  criado acima, e não só para o último bloco.
--- #####################################################################
+-- ── 7. Recarrega o cache de schema da API (fica no fim de propósito) ──
 
 notify pgrst, 'reload schema';

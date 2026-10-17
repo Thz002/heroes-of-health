@@ -1,43 +1,11 @@
-/**
- * db/fazer-backup.js — copia o banco inteiro para uma pasta local
- *
- *   npm run backup
- *
- * O plano gratuito do Supabase não guarda backup nenhum. Este script é o
- * backup: lê todas as tabelas do schema public com a chave secreta (a
- * mesma do servidor, vinda do .env) e grava, em backups/<data-hora>/:
- *
- *   <tabela>.json     os dados crus, uma lista de linhas por tabela
- *   auth_usuarios.json as contas de login (e-mail, datas, metadados)
- *   restaurar.sql     os mesmos dados como INSERTs, para colar no
- *                     SQL Editor e devolver tudo ao banco
- *
- * ⚠️ A pasta backups/ tem nome, idade e e-mail de alunos. Ela está no
- * .gitignore e NUNCA deve ir para o GitHub nem ser mandada por aí.
- *
- * O que ele NÃO salva:
- *   - senhas: o Supabase não entrega o hash nem para a chave secreta.
- *     Se o projeto inteiro for perdido, cada pessoa cria a conta de novo;
- *     o auth_usuarios.json diz quem eram e com que id.
- *   - a ESTRUTURA (tabelas, policies, funções): essa já está no git,
- *     em db/setup.sql. O restaurar.sql só devolve dados, e espera o
- *     banco com a mesma estrutura de quando o backup foi feito.
- *
- * Só lê. Não altera nada no banco.
- */
+/** Backup de todas as tabelas em backups/<data-hora>/ (JSON + restaurar.sql). Só lê.
+    backups/ tem dados de alunos: nunca vai para o git. */
 
 const fs = require('fs');
 const path = require('path');
 const { admin } = require('../server/supabase');
 
-// Na ordem em que o restaurar.sql precisa inserir: quem é referenciado
-// vem antes de quem referencia. Tabelas que não existirem neste banco
-// são puladas — assim o mesmo script serve antes e depois da migração
-// que troca missoes/missao_areas por questoes_areas.
-//
-// `ordem` é a coluna usada para paginar: sem ordem fixa, a página 2
-// poderia repetir ou pular linhas da página 1. Tabela de chave composta
-// passa a lista inteira das colunas da chave.
+// Tabelas na ordem de inserção do restaurar.sql; `ordem` é a coluna usada para paginar.
 const TABELAS = [
   { nome: 'escolas',             ordem: 'id' },
   { nome: 'turmas',              ordem: 'id' },
@@ -53,9 +21,7 @@ const TABELAS = [
   { nome: 'quizzes_professores', ordem: 'id' },
   { nome: 'quiz_questoes',       ordem: 'quiz_id' },
   { nome: 'respostas_alunos',    ordem: 'id' },
-  // A progressão (XP diário e insígnias). Ficaram de fora da lista quando
-  // as tabelas nasceram — e insignias_usuarios é justamente o dado que o
-  // jogo promete nunca recalcular, ou seja, o que não dá para refazer.
+  // Progressão: XP diário e insígnias.
   { nome: 'xp_diario',           ordem: ['usuario_id', 'dia'] },
   { nome: 'insignias',           ordem: 'codigo' },
   { nome: 'insignias_usuarios',  ordem: ['usuario_id', 'insignia_codigo'] },
@@ -103,9 +69,7 @@ async function lerContas() {
   }
 }
 
-// ── Valor JS -> literal SQL ──────────────────────────────────────────
-// Texto, data e array saem entre aspas simples sem tipo: o Postgres
-// converte sozinho para o tipo da coluna (timestamptz, text[], ...).
+// Valor JS -> literal SQL.
 function aspas(texto) {
   return "'" + String(texto).replace(/'/g, "''") + "'";
 }
@@ -115,9 +79,7 @@ function literal(valor) {
   if (typeof valor === 'boolean') return valor ? 'true' : 'false';
   if (typeof valor === 'number') return String(valor);
   if (Array.isArray(valor)) {
-    // Formato de array do Postgres: {"a","b"}. Aspas e barras de dentro
-    // são escapadas com barra invertida — é a regra do literal de array,
-    // diferente da do texto comum.
+    // Array no formato do Postgres: {"a","b"}.
     const itens = valor.map(v => v === null
       ? 'NULL'
       : '"' + String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"');
@@ -145,8 +107,7 @@ function inserts(nome, linhas, ajustar = l => l) {
     );
   }
 
-  // O contador do id continua de onde o backup parou — sem isto, o
-  // próximo cadastro tentaria o id 1 e bateria num que já existe.
+  // Ajusta o contador do id para continuar de onde o backup parou.
   if (comIdentidade) {
     saida.push(
       `select setval(pg_get_serial_sequence('public.${nome}', 'id'), ` +
@@ -181,9 +142,7 @@ function montarSql(dados, quando) {
     if (!linhas) continue;
 
     if (nome === 'turmas') {
-      // turmas e usuarios apontam uma para a outra (turmas.professor_id
-      // e usuarios.turma_id). A turma entra sem o professor, e ele é
-      // devolvido depois que os usuarios existirem.
+      // turmas e usuarios se referenciam: a turma entra sem professor_id, que volta depois.
       L.push(...inserts(nome, linhas, l => ({ ...l, professor_id: null })), '');
       continue;
     }

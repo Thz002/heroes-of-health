@@ -22,8 +22,7 @@
   const menu = document.getElementById('menu-turma');
   const menuNome = document.getElementById('menu-turma-nome');
 
-  // O modal de criar quiz mora em quiz-modal.js (QUIZ_MODAL): é o mesmo
-  // da página de quizzes, e desenha o próprio HTML.
+  // O modal de criar quiz fica em quiz-modal.js (QUIZ_MODAL).
 
   // Modal de confirmar o "desfazer turma"
   const modalConfirma = document.getElementById('modal-confirma');
@@ -36,8 +35,7 @@
   const COR_PADRAO = '#14b8a6'
   const LIMITE_PADRAO = 10;
 
-  // Qual turma o menu está mirando no momento. Guardar o objeto inteiro
-  // (e não só o id) evita ter que buscar a turma de novo a cada ação.
+  // Turma do menu aberto.
   let turmaDoMenu = null;
 
   iniciar();
@@ -78,8 +76,7 @@
     if (e.key === 'Escape' && !modal.hidden) fecharModal();
   });
 
-  // O mesmo modal serve para criar e para editar. null = está criando;
-  // com uma turma dentro = está editando aquela turma.
+  // null = criando; com turma = editando.
   let turmaEmEdicao = null;
 
   function abrirModal() {
@@ -131,8 +128,7 @@
       if (igual) achou = true;
     });
 
-    // Turma gravada com uma cor que saiu da lista: acende a primeira,
-    // para o seletor nunca ficar sem nenhuma opção marcada.
+    // Cor fora da lista: marca a primeira.
     if (!achou && bolinhas[0]) bolinhas[0].classList.add('cor--ativa');
   }
 
@@ -191,9 +187,7 @@
     }
   }
 
-  // Troca o card pelo mesmo card remontado com os dados novos, no lugar
-  // onde ele já estava — assim a ordem da lista não muda debaixo do
-  // professor que acabou de editar.
+  // Remonta o card no mesmo lugar.
   function atualizarCard(turma) {
     const antigo = lista.querySelector(`.turma-card[data-id="${turma.id}"]`);
     if (!antigo) return;
@@ -245,8 +239,7 @@
     // O --i faz cada card entrar um pouquinho depois do anterior (CSS).
     card.style.setProperty('--i', ordem);
 
-    // A turma inteira fica pendurada no card. Assim o menu sabe o nome,
-    // a cor e quantos alunos tem sem precisar consultar de novo.
+    // A turma fica guardada no card.
     card.__turma = t;
 
     card.innerHTML = `
@@ -323,13 +316,7 @@
     campo.remove();
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     MENU DO CARD
-
-     Existe UM menu na página, e ele é reaproveitado: ao clicar num card,
-     o JS escreve o nome da turma nele e o posiciona ali embaixo. Um menu
-     por card daria 30 menus escondidos numa tela com 30 turmas.
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Menu do card ── um só, reaproveitado. */
 
   let turmaParaExcluir = null;
 
@@ -348,8 +335,7 @@
     card.classList.add('menu-aberto');
     menuNome.textContent = turma.nome;
 
-    // Precisa estar visível ANTES de medir: um elemento escondido tem
-    // largura e altura zero, e a conta de posição sairia errada.
+    // Visível antes de medir.
     menu.hidden = false;
     posicionarMenu(card);
   }
@@ -361,13 +347,7 @@
       .forEach(c => c.classList.remove('menu-aberto'));
   }
 
-  /**
-   * Encosta o menu embaixo do card.
-   *
-   * As contas somam scrollX/scrollY porque getBoundingClientRect() mede
-   * a partir da JANELA, e o menu é posicionado a partir da PÁGINA. Sem
-   * essa soma, o menu erra o lugar assim que a página está rolada.
-   */
+  /** Posiciona o menu abaixo do card (coordenadas da página). */
   function posicionarMenu(card) {
     const alvo = card.getBoundingClientRect();
     const cx = menu.getBoundingClientRect();
@@ -387,8 +367,7 @@
     menu.style.top = `${Math.max(12, y)}px`;
   }
 
-  // Clique em qualquer outro lugar fecha o menu. O card é exceção: ele
-  // já tem o próprio tratamento, que abre e fecha.
+  // Clique fora fecha o menu.
   document.addEventListener('click', (e) => {
     if (menu.hidden) return;
     if (menu.contains(e.target)) return;
@@ -419,13 +398,7 @@
   }
 
 
-  /* ═══════════════════════════════════════════════════════════════════
-     DESFAZER TURMA
-
-     É o único botão desta tela sem volta, então passa por uma pergunta
-     antes. O aluno NÃO é apagado junto: ele só fica sem turma, e o
-     progresso dele continua inteiro.
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Desfazer turma ── pede confirmação (os alunos só ficam sem turma). */
 
   function pedirConfirmacao(turma) {
     turmaParaExcluir = turma;
@@ -495,9 +468,7 @@
   });
 
 
-  /* ═══════════════════════════════════════════════════════════════════
-     DETALHES DE TELA
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Detalhes de tela ── */
 
   /** Escreve uma mensagem numa caixinha de aviso e a revela. */
   function avisar(caixa, mensagem) {
@@ -514,12 +485,7 @@
     if (!modalConfirma.hidden) return fecharConfirma();
   });
 
-  // ── O fundo acompanha o mouse, de leve ────────────────────────────
-  //
-  // O requestAnimationFrame existe para não recalcular a cada pixel do
-  // mouse: o navegador dispara mousemove dezenas de vezes por segundo, e
-  // sem essa trava a página engasga. O blob-3 fica de fora porque ele já
-  // tem uma animação própria de transform — as duas brigariam.
+  // Fundo acompanha o mouse (com requestAnimationFrame).
   const blobsQueSeguem = document.querySelectorAll('.blob-1, .blob-2');
   let aguardandoQuadro = false;
 

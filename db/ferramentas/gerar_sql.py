@@ -156,8 +156,7 @@ for (slug, nivel), itens in sorted(grupos.items()):
         w('insert into questoes (codigo_externo, cenario_id, nivel_etario, enunciado,')
         w('       opcao_a, opcao_b, opcao_c, opcao_d, opcao_e, resposta_correta, explicacao)')
         w('select %s, c.id, %d, %s,' % (q(x['codigo']), nivel, q(x['enunciado'])))
-        # Verdadeiro/Falso tem duas opcoes (C, D e E vao nulas); so o
-        # nivel 3 no formato ENEM preenche a E.
+        # V/F tem duas opções; só o nível 3 (ENEM) preenche a E.
         cinco = list(x['alts']) + [None] * (5 - len(x['alts']))
         for a in cinco:
             w('       %s,' % (q(a) if a is not None else 'null'))
@@ -187,18 +186,7 @@ w('')
 for (slug, nivel), itens in sorted(grupos.items()):
     cod = codigo_do_grupo(slug, nivel)
 
-    # Quantos pontos cada área ganha por acerto NESTE grupo.
-    #
-    # Não são 10 para todas. As áreas de um grupo são a união do que as
-    # questões dele citam — e num grupo de 39 questões onde só 1 fala de
-    # vetores, dar 10 em Vetores por qualquer acerto inflaria a barra com
-    # mérito que não existe: acertar citologia subiria "controle de
-    # vetores". O peso é a proporção real, com mínimo de 1 (o banco tem
-    # check de pontos > 0).
-    #
-    # É a mesma conta de quando os pontos eram da tabela missao_areas (uma
-    # missão por grupo): a migração copiou aqueles pesos para cada questão,
-    # e gerar de novo tem de dar o mesmo resultado.
+    # Pontos por área proporcionais a quantas questões do grupo tratam dela (mínimo 1).
     quantas = Counter(a for x in itens for a in x['areas'])
     pesos = {a: max(1, round(PONTOS_POR_AREA * n / len(itens)))
              for a, n in quantas.items()}

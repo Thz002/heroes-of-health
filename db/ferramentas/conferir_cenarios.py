@@ -1,21 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-conferir_cenarios.py — cruza o consolidado com os arquivos originais
-
-A pergunta que este programa responde: das 580 questões de
-"todas as questões.docx", quantas aparecem nos arquivos que a equipe
-mandou aos poucos — e, portanto, já têm cenário decidido por quem
-escreveu?
-
-E a segunda: onde a escolha da equipe difere do que eu havia proposto
-por análise de assunto.
-
-Uso:
-    python db/ferramentas/conferir_cenarios.py
-    python db/ferramentas/conferir_cenarios.py --md ARQ.md
-    python db/ferramentas/conferir_cenarios.py --divergencias
-"""
-
 import difflib
 import importlib.util
 import os
@@ -136,10 +118,7 @@ def relatorio(dados):
           + ', '.join(f'**nível {n}**: {faltam_n[n]}' for n in (1, 2, 3) if faltam_n[n]) + '.')
         p()
 
-    # ── 3. concordância ─────────────────────────────────────────────
-    # Duas comparações diferentes, e misturá-las não diria nada:
-    #   - questão JÁ no banco  -> o cenário de lá contra o da equipe
-    #   - questão nova         -> a minha proposta contra a da equipe
+    # 3. Concordância entre o cenário do banco/proposta e o da equipe.
     cen_no_banco = {cb.normalizar(l['enunciado']): slug_de_cenario(l, atual)
                     for l in no_banco}
 
@@ -196,8 +175,7 @@ def relatorio(dados):
     p('## 4. Como ficaria usando o cenário da equipe')
     p()
 
-    # Cenário definitivo de cada questão nova: o da equipe quando existe,
-    # a minha proposta quando não existe.
+    # Cenário final: o da equipe, ou a proposta quando não houver.
     cen_de, origem = {}, Counter()
     for q, o in achadas:
         if o['cenarios']:

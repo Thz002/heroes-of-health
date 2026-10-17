@@ -1,7 +1,4 @@
-/* =============================================
-   HERÓIS DA SAÚDE — mapa.css
-   Mapa interativo do bairro
-   ============================================= */
+/* mapa.css — mapa interativo do bairro. */
 
 .mapa-layout {
   display: grid;
@@ -76,8 +73,7 @@
   background: #04292e;
   cursor: grab;
   touch-action: none;
-  /* Arrastar o mapa não pode selecionar imagem/texto por baixo do cursor —
-     a seleção azul interrompe o pan no meio do movimento. */
+  /* Arrastar o mapa não seleciona imagem/texto. */
   user-select: none;
   -webkit-user-select: none;
 }
@@ -86,8 +82,7 @@
   cursor: grabbing;
 }
 
-/* Durante o pan os hotspots não capturam o ponteiro: evita o hover piscando
-   e o mouseenter trocando a sidebar enquanto o usuário só arrasta o mapa. */
+/* Durante o pan, os hotspots ignoram o ponteiro. */
 .mapa-viewport.is-panning .mapa-hotspot {
   pointer-events: none;
 }
@@ -99,10 +94,7 @@
   transform-origin: center center;
 }
 
-/* `will-change` só durante o arrasto. Se ficasse fixo, o navegador
-   rasterizaria o mapa uma única vez em 100% e apenas esticaria essa textura
-   ao dar zoom — era daí que vinha o embaçado (e a nitidez temporária no
-   hover, que forçava uma nova rasterização da imagem). */
+/* will-change só durante o arrasto (fixo, o zoom ficava borrado). */
 .mapa-viewport.is-panning .mapa-canvas {
   will-change: transform;
 }
@@ -132,11 +124,7 @@
   -webkit-user-select: none;
 }
 
-/* Ordem de camadas pedida para essas três construções, que se sobrepõem:
-   Terreno baldio embaixo, Quadra por cima dele, Igreja por cima da Quadra.
-   Sem isto, todo hotspot empata em z-index:3 e desempata pela ordem no
-   array HOTSPOTS — o que colocava o baldio (último no array) acima dos
-   outros dois, ao contrário do pedido. */
+/* Camadas: terreno baldio < quadra < igreja. */
 .mapa-hotspot[data-tipo="terreno-baldio"] {
   z-index: 1;
 }
@@ -149,10 +137,7 @@
   z-index: 3;
 }
 
-/* Ruas: cobre a malha viária inteira do bairro (praticamente o mapa
-   todo), então fica sempre atrás de qualquer construção/casa que se
-   sobreponha a ela — senão a caixa retangular do hotspot roubaria o
-   hover das construções por cima. */
+/* Ruas sempre atrás das construções. */
 .mapa-hotspot[data-tipo="ruas"] {
   z-index: 0;
 }
@@ -161,9 +146,7 @@
   width: 100%;
   height: 100%;
   display: block;
-  /* Sem filtro em repouso: um drop-shadow permanente (mesmo com raio 0)
-     obriga o navegador a renderizar cada imagem numa superfície separada e
-     reamostrada — era o que deixava as construções embaçadas. */
+  /* Sem filtro em repouso (evita imagem borrada). */
   filter: none;
   transition: filter 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
   pointer-events: none;
@@ -172,12 +155,7 @@
   -webkit-user-drag: none;
 }
 
-/* Ruas.png só traz o desenho das ruas (fundo transparente): fica invisível
-   em repouso e só some a ocultação — revelando o formato exato das ruas —
-   quando o hover ativa o brilho junto com as demais construções. Sem
-   scale aqui: a imagem cobre quase o mapa inteiro, então ampliar 5% (como
-   as outras construções) deslocaria visivelmente as bordas da malha viária
-   em vez de manter o alinhamento exato com o mapa base. */
+/* Ruas: invisíveis em repouso, aparecem no hover (sem scale). */
 .mapa-hotspot[data-tipo="ruas"] img {
   opacity: 0;
 }
@@ -215,11 +193,7 @@
   transform: scale(1.05);
 }
 
-/* Sobe o hotspot inteiro (não só o rótulo) acima de todos os vizinhos ao
-   passar o mouse — o z-index do rótulo sozinho não bastava, pois só conta
-   dentro do stacking context do próprio .mapa-hotspot, nunca contra outro
-   hotspot vizinho que fique na frente dele. Sem isso o tooltip ficava
-   parcial ou totalmente escondido atrás da construção ao lado. */
+/* O hotspot inteiro sobe no hover para o rótulo não ficar atrás do vizinho. */
 .mapa-hotspot:hover,
 .mapa-hotspot.is-active {
   z-index: 20;
@@ -231,9 +205,7 @@
   transform: translate(-50%, 0);
 }
 
-/* Elementos colados no topo do mapa (as casas da fileira de cima e o
-   Parque) — o tooltip por cima vazaria para fora do card, então abre
-   para baixo da imagem. */
+/* Elementos no topo do mapa: rótulo abaixo. */
 .mapa-hotspot--label-bottom .mapa-hotspot__label {
   bottom: auto;
   top: 100%;
@@ -247,10 +219,7 @@
   transform: translate(-50%, 0);
 }
 
-/* Casa rente à borda esquerda (a 5): centralizado, o rótulo passava da
-   borda do mapa. Aqui ele começa alinhado à casa e cresce para a
-   direita. Vem depois das regras de -bottom para vencer o translate
-   delas, que tem a mesma especificidade. */
+/* Casa rente à borda esquerda: rótulo alinhado à esquerda da casa. */
 .mapa-hotspot--label-inicio .mapa-hotspot__label {
   left: 0;
   transform: translate(0, -6px);
@@ -261,8 +230,7 @@
   transform: translate(0, 0);
 }
 
-/* O córrego é uma faixa vertical rente à borda esquerda — o tooltip abre
-   para a direita, ao lado da imagem, em vez de por cima. */
+/* Córrego: rótulo à direita. */
 .mapa-hotspot--label-right .mapa-hotspot__label {
   left: 100%;
   bottom: auto;
@@ -301,9 +269,7 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-xl);
   padding: 26px 22px;
-  /* Altura fixa: o painel não pode crescer/encolher conforme o lugar
-     apontado tem 2 ou 8 áreas — o mapa ao lado ficaria pulando a cada
-     hover. Quem rola é só a lista de barras (ver mais abaixo). */
+  /* Altura fixa; só a lista de barras rola. */
   height: 455px;
   display: flex;
   flex-direction: column;
@@ -320,9 +286,7 @@
   gap: 10px;
 }
 
-/* O `display:flex` acima é mais específico que o `[hidden]{display:none}`
-   do navegador: sem esta regra o "Passe o mouse sobre o mapa" continuava
-   desenhado por baixo do conteúdo do hover, mesmo com hidden=true no JS. */
+/* [hidden] vence o display:flex. */
 .mapa-sidebar__empty[hidden] {
   display: none;
 }
@@ -348,11 +312,9 @@
 .mapa-sidebar__content:not([hidden]) {
   display: flex;
   flex-direction: column;
-  /* Ocupa a altura toda do painel: é o que faz o "clique no lugar" do
-     rodapé encostar embaixo, e não logo depois da última barra. */
+  /* Ocupa a altura toda do painel. */
   flex: 1;
-  /* Sem isto o item flex nunca encolhe abaixo do seu conteúdo e a lista de
-     barras vazaria para fora do painel em vez de rolar. */
+  /* Permite à lista encolher e rolar. */
   min-height: 0;
   animation: fade-in 0.25s ease-out;
 }
@@ -371,13 +333,7 @@
   height: 140px;
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.2);
-  /* Era display:grid + place-items:center. Numa linha implícita (sem
-     grid-template-rows), a altura da track é "auto" durante o cálculo do
-     próprio item — o item nunca enxerga uma altura definida pra resolver
-     max-height em %, então só o max-width entrava em vigor. Imagens mais
-     altas (Igreja, Córrego, Casa011...) esticavam livremente e estouravam
-     os 140px, sendo cortadas por baixo pelo overflow:hidden. Flex resolve
-     o eixo cruzado (altura) contra o tamanho definido do próprio container. */
+  /* Flex (e não grid) para o max-height em % funcionar. */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -395,8 +351,7 @@
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
 }
 
-/* Cabeçalho do painel: miniatura + nome, lado a lado. A imagem grande
-   (140px) ficou para o modal — na lateral o espaço agora é das barras. */
+/* Cabeçalho do painel: miniatura + nome. */
 .mapa-sidebar__head {
   display: flex;
   align-items: center;
@@ -431,8 +386,7 @@
   line-height: 1.4;
 }
 
-/* Empurra o convite ao clique para o rodapé do painel, para a lista de
-   barras não ficar espremida contra ele quando o lugar tem só uma área. */
+/* Empurra o convite para o rodapé do painel. */
 .mapa-sidebar__cta {
   margin-top: auto;
   flex-shrink: 0;
@@ -443,9 +397,7 @@
 }
 
 /* ── Barras de área da saúde ─────────────────── */
-/* Usadas em dois lugares com a mesma marcação: no painel lateral (hover)
-   e dentro do modal (clique). --cor-area é definida no JS, a partir da
-   área que a barra representa. */
+/* Barras de área (--cor-area vem do JS). */
 .mapa-areas {
   display: flex;
   flex-direction: column;
@@ -503,8 +455,7 @@
   height: 7px;
 }
 
-/* Sobrescreve o gradiente padrão de .progress-bar: aqui a cor identifica
-   a área (Vacinação é roxa, Alimentação é verde...), e não o "cheio". */
+/* A cor identifica a área. */
 .mapa-area__bar {
   background: linear-gradient(90deg,
       color-mix(in srgb, var(--cor-area, #2ec4a9) 55%, transparent),
@@ -520,23 +471,7 @@
 }
 
 /* ── Modal do cenário ────────────────────────── */
-/* Tamanho fixo, em duas partes:
-
-     ┌─[ nome ]──────────────[ 🏠 ✕ ]─┐
-     │                                 │  .mapa-modal__palco — a foto
-     │      interior  (+ família)      │  do interior, com o cabeçalho
-     │                                 │  flutuando por cima
-     ├─────────────────────────────────┤
-     │ descrição                       │  .mapa-modal__base — fundo
-     │ [missão][missão][missão] →  [Jogar] │  escuro, fora da foto
-     └─────────────────────────────────┘
-
-   A foto fica com toda a altura que a base não usa. O padding do
-   `.modal` genérico é zerado aqui; cada parte tem o seu respiro. O
-   fundo é declarado de novo porque o `.modal` do dashboard.css troca o
-   gradiente do style.css por um véu translúcido — e o mesmo `.modal`
-   centraliza os filhos de um flex, o que deixava a foto com largura
-   zero e a base com a largura da lista de missões. */
+/* ── Modal do cenário ── altura fixa: foto do interior em cima, descrição e missões embaixo. */
 .mapa-modal {
   position: relative;
   padding: 0;
@@ -577,11 +512,7 @@
   object-fit: cover;
 }
 
-/* A família da casa, centralizada e presa embaixo: só a ponta de baixo
-   da figura (os pés) passa da borda e é cortada. A conta: com 95% da
-   altura da foto e 12% dela para fora, a cabeça fica a uns 16% do topo
-   — logo abaixo do cabeçalho. O contorno branco segue a silhueta do
-   PNG, como em missao.css. */
+/* Família da casa, centralizada e presa embaixo (só os pés passam da borda). */
 .mapa-modal__familia {
   position: absolute;
   left: 50%;
@@ -604,8 +535,7 @@
   display: none;
 }
 
-/* Lugares que ainda não têm foto de interior desenhada. Hoje nenhum —
-   casa sem foto própria usa o interior padrão de CENARIOS.casa. */
+/* Lugar sem foto de interior (hoje nenhum). */
 .mapa-modal__em-breve {
   position: absolute;
   inset: 0;
@@ -625,12 +555,7 @@
   display: none;
 }
 
-/* ── Objetos clicáveis da foto (OBJETOS_DO_INTERIOR em mapa.js) ──
-   A foto é cortada pelo object-fit: cover, centralizada. Esta camada
-   repete o corte: tem a proporção da foto (--proporcao, posto pelo JS),
-   a largura que faz ela cobrir a área toda — a da caixa ou a que a
-   altura pede, a maior — e o mesmo centro. Assim os percentuais de cada
-   objeto caem em cima do desenho em qualquer tamanho de modal. */
+/* Objetos clicáveis: a camada repete o corte (cover) da foto com --proporcao. */
 .mapa-modal__objetos {
   position: absolute;
   left: 50%;
@@ -700,11 +625,7 @@
   transform: translate(-50%, 0);
 }
 
-/* ── Visor: o modal vira só a imagem ──
-   As HQs da banca (com setas e contador) ou o calendário da farmácia.
-   Com o visor aberto, o card perde a moldura (fundo, borda, sombra) e
-   esconde a foto e a base — que continuam no DOM para o "Voltar". Sobra
-   a imagem, quase na tela toda, com os controles por cima dela. */
+/* ── Visor ── o modal vira só a imagem (HQs ou calendário), com os controles por cima. */
 .mapa-modal.mapa-modal--visor {
   width: auto;
   height: auto;
@@ -719,11 +640,7 @@
   display: none;
 }
 
-/* O quadro tem o tamanho exato da imagem — é ele que segura os controles
-   dentro dela. Cresce até encostar nos 24px de respiro do overlay, na
-   largura ou na altura, o que vier primeiro; a proporção vem da imagem
-   carregada (--proporcao, posto pelo JS). Escondido até a primeira
-   imagem chegar, para não abrir com a proporção errada. */
+/* Quadro do tamanho exato da imagem (--proporcao vem do JS). */
 .mapa-visor__quadro {
   position: relative;
   width: min(100vw - 48px, (100vh - 48px) * var(--proporcao, 1.8333));
@@ -743,8 +660,7 @@
   max-width: none;
 }
 
-/* Os controles só aparecem com o mouse sobre a imagem (ou com o foco do
-   teclado num deles). Escondidos, também não pegam clique. */
+/* Controles visíveis só no hover ou com foco. */
 .mapa-visor__topo,
 .mapa-visor__seta,
 .mapa-visor__contador {
@@ -824,8 +740,7 @@
 .mapa-visor__seta--anterior { left: 14px; }
 .mapa-visor__seta--proxima  { right: 14px; }
 
-/* Na primeira e na última HQ, a seta do lado sem mais nada fica apagada.
-   Pela cor, não pela opacidade — essa é a do aparecer no hover. */
+/* Seta apagada na primeira e na última HQ. */
 .mapa-visor__seta:disabled {
   background: rgba(7, 55, 62, 0.45);
   color: rgba(255, 255, 255, 0.3);
@@ -846,10 +761,7 @@
   white-space: nowrap;
 }
 
-/* Cabeçalho ─ duas caixas soltas sobre a foto, no teal da barra de
-   navegação translúcido: o nome do lugar à esquerda, do tamanho do
-   texto, e a miniatura com o X à direita. Entre elas, a foto aparece.
-   O `stretch` deixa as duas da mesma altura. */
+/* Cabeçalho: duas caixas sobre a foto (nome; miniatura e fechar). */
 .mapa-modal__head {
   position: absolute;
   top: 16px;
@@ -957,9 +869,7 @@
   color: rgba(255, 255, 255, 0.78);
 }
 
-/* Recolhida: duas linhas e reticências. As descrições das famílias têm
-   quatro ou cinco linhas, e abertas de vez empurrariam as missões e
-   espremeriam a foto — o modal tem altura fixa. */
+/* Descrição recolhida em duas linhas. */
 .mapa-modal__desc--recolhida {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -968,8 +878,7 @@
   overflow: hidden;
 }
 
-/* Aberta, ela ganha espaço até um teto e rola dali em diante: nem uma
-   descrição comprida tira a foto de vista. */
+/* Aberta: cresce até um teto e rola. */
 .mapa-modal__desc:not(.mapa-modal__desc--recolhida) {
   max-height: calc(14.5px * 1.6 * 6);
   overflow-y: auto;
@@ -1013,9 +922,7 @@
   color: var(--text-muted);
 }
 
-/* Os mesmos cards da lista de "Missões ativas", lado a lado, rolando para
-   o lado quando não cabem. O padding de baixo afasta a barra de rolagem
-   dos cards; o de cima dá espaço ao contorno da escolhida. */
+/* Cards de missão lado a lado, com rolagem horizontal. */
 .mapa-modal__missoes-lista {
   flex: 1;
   min-width: 0;
@@ -1077,10 +984,7 @@
   gap: 18px;
 }
 
-/* Largura fixa: os rótulos mudam ("Jogar", "Continuar", "Sem missões
-   disponíveis") e o botão não pode empurrar a lista a cada troca. A
-   altura e o margin-top (o padding de cima da lista) o deixam do
-   tamanho e na linha dos cards. */
+/* Largura fixa: o rótulo muda e não pode empurrar a lista. */
 .mapa-modal__play {
   flex-shrink: 0;
   width: 230px;
@@ -1092,11 +996,7 @@
   font-size: 15px;
 }
 
-/* Sem missão escolhida: o botão continua ali, cinza e travado, dizendo o
-   porquê. Precisa levar `.btn-primary` no seletor para vencer o
-   `.btn-primary:disabled` do dashboard.css, que só desbota o verde —
-   aqui a cor tem de sair de vez, senão o bloqueio não se lê. O :hover
-   repete a regra porque `.btn-primary:hover` ainda levantaria o botão. */
+/* Botão bloqueado (sem missão escolhida), vence o .btn-primary:disabled. */
 .btn-primary.mapa-modal__play--bloqueado,
 .btn-primary.mapa-modal__play--bloqueado:hover {
   background: rgba(255, 255, 255, 0.12);
@@ -1107,8 +1007,7 @@
   cursor: not-allowed;
 }
 
-/* Com o modal aberto, rolar a página por baixo dele desalinha o mapa e o
-   usuário volta perdido ao fechar. */
+/* Trava a rolagem da página com o modal aberto. */
 body.modal-aberto {
   overflow: hidden;
 }
@@ -1146,9 +1045,7 @@ body.modal-aberto {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* Altura fixa: a quantidade de missões varia (e cresce conforme a
-     professora manda tarefas), então a seção rola por dentro em vez de
-     esticar a página. */
+  /* Altura fixa; a seção rola por dentro. */
   height: 320px;
   overflow-y: auto;
   /* O hover do card desliza 4px para a direita — sem este respiro ele
@@ -1237,8 +1134,7 @@ body.modal-aberto {
   margin-top: 28px;
 }
 
-/* O ícone deixou de ser emoji e passou a ser a imagem do cenário — a
-   mesma que aparece no mapa. É o que amarra o card ao lugar. */
+/* Ícone = imagem do cenário no mapa. */
 .mission-icon {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.06);
@@ -1253,8 +1149,7 @@ body.modal-aberto {
   pointer-events: none;
 }
 
-/* Tarefa da professora tem peso diferente de passeio pelo bairro:
-   ganha a faixa dourada na lateral. */
+/* Missão do professor ganha faixa dourada. */
 .mission-item--tarefa {
   border-color: rgba(249, 199, 79, 0.3);
   box-shadow: inset 3px 0 0 var(--gold, #f9c74f);
@@ -1330,8 +1225,7 @@ body.modal-aberto {
   }
 }
 
-/* Nenhuma missão do aluno vale ponto nesta área: a barra fica apagada e
-   o número dá lugar a "sem missões" — "0%" soaria como fracasso. */
+/* Área sem missões: barra apagada e "sem missões". */
 .mapa-area--sem-missoes { opacity: 0.5; }
 .mapa-area--sem-missoes .mapa-area__pct {
   font-weight: 600;

@@ -1,16 +1,4 @@
-/**
- * perfil.js — a tela "Meu perfil" (perfil.html)
- *
- * Serve os dois papéis, porque os dois têm conta: o aluno vê a faixa
- * etária, a turma e os números do jogo; o professor vê a escola e
- * quantas turmas mantém.
- *
- * Nada aqui é editável ainda. É de propósito: trocar nome, idade ou
- * turma mexe em quem a pessoa é dentro do jogo (a idade decide QUAIS
- * questões ela vê), e isso pede regra combinada antes de tela.
- *
- * Carregado depois de supabase.js, api.js e navbar.js.
- */
+/** perfil.js — "Meu perfil" (perfil.html), para aluno e professor. */
 (() => {
   'use strict';
 
@@ -28,8 +16,7 @@
     { ate: 18, nivel: 3, texto: '15 a 18 anos' }
   ];
 
-  // Guardado para o formulário saber de onde partiu e para o Cancelar
-  // conseguir desfazer sem recarregar a página.
+  // Estado atual, para o Cancelar desfazer.
   let atual = null;
 
   iniciar();
@@ -63,14 +50,7 @@
 
   /* ── A patente, para quem é da equipe ──────────────────────────── */
 
-  /**
-   * Trocar a própria patente, aqui mesmo no perfil.
-   *
-   * Quem pode é só ADMIN, e quem confere isso é o servidor — esconder a
-   * seção é conveniência, não trava. O caminho é o mesmo do painel:
-   * `adminDefinirNivel` lança um ajuste em `xp_ajustes` com o motivo
-   * registrado, em vez de escrever um número solto em cima do progresso.
-   */
+  /** Admin troca a própria patente (o servidor confere e grava um ajuste de XP). */
   async function ligarEquipe(perfil) {
     const bloco = document.getElementById('bloco-equipe');
     const escolha = document.getElementById('equipe-patente');
@@ -152,35 +132,14 @@
       : 'Seus dados no jogo.';
   }
 
-  /**
-   * Os cartões de número.
-   *
-   * `cartoes` é uma lista de { valor, rotulo, nota, destaque } e o
-   * primeiro costuma ser o XP. Montar por lista em vez de deixar quatro
-   * <article> fixos no HTML é o que permite o aluno e o professor terem
-   * números diferentes sem duplicar a tela — eles medem coisas que não
-   * se parecem.
-   */
-  /**
-   * A patente ao lado de ALUNO / PROFESSOR, e a barra de nível.
-   *
-   * A patente é IDENTIDADE, não estatística: "Pequeno Aprendiz" é o que
-   * a pessoa é dentro do jogo, do mesmo jeito que "Aluno" é. Por isso
-   * fica junto do nome, e não perdida entre os números lá embaixo.
-   *
-   * A barra também é preenchida aqui, com o nível que esta tela já
-   * buscou. O navbar.js preenche toda <div data-nivel> quando a
-   * presença do dia volta, mas depender só disso deixava a barra vazia
-   * se aquela chamada demorasse ou falhasse — e é a tela de perfil,
-   * justamente onde a pessoa vai procurar o próprio nível.
-   */
+  /** Cartões de número: [{ valor, rotulo, nota, destaque }]. */
+  /** Patente ao lado do tipo e a barra de nível. */
   function mostrarPatente(nivel, xp) {
     if (!nivel) return;
 
     const selo = document.getElementById('dado-patente');
     if (selo) {
-      // Só a classe de cor: o selo tem um ícone dentro, e trocar o
-      // innerHTML dele levaria o ícone junto.
+      // Troca só a classe de cor do selo.
       for (const c of [...selo.classList]) {
         if (c.startsWith('patente-cor--')) selo.classList.remove(c);
       }
@@ -200,8 +159,7 @@
     for (const c of cartoes) {
       const art = document.createElement('article');
       art.className = 'numero-card' + (c.destaque ? ' numero-card--xp' : '');
-      // A terceira linha só existe quando há algo a dizer. Um cartão com
-      // uma frase apagada embaixo pesa a tela sem informar nada.
+      // A terceira linha só aparece quando há nota.
       art.innerHTML = `
         <span class="numero-card__valor"></span>
         <span class="numero-card__rot"></span>` +
@@ -218,11 +176,7 @@
     bloco.hidden = false;
   }
 
-  /**
-   * A estante resumida: as já conquistadas primeiro, depois as próximas
-   * a cair. Mostra oito — o suficiente para a pessoa ver que existe uma
-   * estante, sem repetir a página inteira de conquistas.
-   */
+  /** Estante resumida: conquistadas primeiro (até oito). */
   async function mostrarEstante() {
     let dados;
     try { dados = await API.getMinhaEstante(); } catch (_) { return; }
@@ -312,15 +266,7 @@
     await mostrarEstante();
   }
 
-  /**
-   * O professor mede outra coisa.
-   *
-   * O XP dele vem inteiro da turma — por isso os cartões falam de
-   * turmas, de tarefas concluídas e de com quanta facilidade a turma
-   * chega lá. "Quizzes criados" aparece como contexto, e não como
-   * conquista: criar tarefa não dá mais XP, porque tarefa que ninguém
-   * faz não ensinou ninguém.
-   */
+  /** Números do professor (o XP dele vem da turma). */
   async function comoProfessor(perfil) {
     let turmas = [];
     try { turmas = await API.getMinhasTurmas(); } catch (_) { /* segue sem a contagem */ }
@@ -360,12 +306,7 @@
 
   /* ── Editar ────────────────────────────────────────────────────── */
 
-  /**
-   * Abre, fecha e salva.
-   *
-   * O formulário nasce preenchido com o que já existe: um campo de nome
-   * vazio faria a pessoa achar que vai APAGAR o nome, e não mudá-lo.
-   */
+  /** Editor de perfil: abre preenchido, fecha e salva. */
   function ligarEditor() {
     const editor = document.getElementById('editor');
     const form = document.getElementById('form-perfil');
@@ -378,8 +319,7 @@
     const btnTirar = document.getElementById('btn-tirar');
     const salvar = document.getElementById('btn-salvar');
 
-    // A foto escolhida do computador, já reduzida. Enquanto for null, a
-    // foto que vale é a do campo de endereço.
+    // Foto escolhida do computador (null = vale o endereço).
     let arquivoEscolhido = null;
 
     const fotoAtual = () => arquivoEscolhido || campoFoto.value.trim();
@@ -390,8 +330,7 @@
 
       campoNome.value = atual.nome || '';
 
-      // Foto embutida não cabe no campo de endereço — ela já é a imagem
-      // inteira. Volta como "arquivo escolhido", que é o que ela é.
+      // Foto embutida volta como "arquivo escolhido".
       const foto = atual.avatar_url || '';
       arquivoEscolhido = foto.startsWith('data:') ? foto : null;
       campoFoto.value = arquivoEscolhido ? '' : foto;
@@ -411,8 +350,7 @@
 
     campoNome.addEventListener('input', atualizarPrevia);
 
-    // Digitar um endereço descarta o arquivo: são duas fontes para a
-    // mesma foto, e a última escolha é a que vale.
+    // Digitar um endereço descarta o arquivo.
     campoFoto.addEventListener('input', () => {
       if (campoFoto.value.trim()) arquivoEscolhido = null;
       atualizarPrevia();
@@ -467,9 +405,7 @@
         mostrarIdentidade(atual);
         abrir(false);
 
-        // A barra de cima tem o mesmo avatar e o mesmo nome. Redesenhar
-        // aqui seria copiar a regra do navbar.js para dentro desta tela;
-        // recarregar deixa uma fonte só de verdade.
+        // Recarrega para a barra mostrar o nome e a foto novos.
         window.location.reload();
 
       } catch (err) {
@@ -485,23 +421,7 @@
     onde.hidden = false;
   }
 
-  /**
-   * Transforma o arquivo escolhido numa imagem pequena, pronta para
-   * caber numa coluna de texto do banco.
-   *
-   * POR QUE REDUZIR, E NÃO MANDAR O ARQUIVO: a foto vai inteira para
-   * `usuarios.avatar_url`, que é lida em TODA navegação para desenhar o
-   * avatar da barra. Uma foto de celular tem 3 ou 4 MB — isso viajaria
-   * em cada troca de página. Reduzida para 192 pixels e em JPEG, ela
-   * fica em uns 15 KB, que é o tamanho de um ícone.
-   *
-   * 192 e não 76 (o tamanho em tela) por causa das telas retina, que
-   * desenham o dobro de pixels, e para a foto não ficar borrada se o
-   * avatar crescer algum dia.
-   *
-   * O recorte é QUADRADO E CENTRAL: o avatar é um círculo, e uma foto
-   * retangular esticada para caber deforma o rosto da pessoa.
-   */
+  /** Reduz a foto a 192×192 (recorte quadrado central) antes de salvar. */
   const LADO = 192;
   const QUALIDADE = 0.82;
 
@@ -527,9 +447,7 @@
 
           pincel.drawImage(img, x, y, lado, lado, 0, 0, LADO, LADO);
 
-          // JPEG e não PNG: para fotografia o PNG sai várias vezes maior
-          // sem ganho visível. Perde a transparência, que um avatar
-          // recortado em círculo não usa.
+          // JPEG (menor que PNG para foto).
           resolve(tela.toDataURL('image/jpeg', QUALIDADE));
         } catch (err) {
           reject(err);
@@ -547,13 +465,7 @@
 
   /* ── Utilidades ────────────────────────────────────────────────── */
 
-  /**
-   * Desenha foto ou iniciais no mesmo lugar.
-   *
-   * Se a imagem não carregar — endereço quebrado, site fora do ar, link
-   * que não era de imagem — o onerror devolve as iniciais. Sem isso a
-   * pessoa ficaria com um quadrado vazio e nenhuma pista do motivo.
-   */
+  /** Foto ou iniciais (onerror volta às iniciais). */
   function desenharAvatar(alvo, nome, url) {
     if (!alvo) return;
 

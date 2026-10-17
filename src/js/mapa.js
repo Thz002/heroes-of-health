@@ -1,10 +1,5 @@
-// mapa.js — mapa interativo do bairro (src/pages/mapa.html)
-// A base do mapa (Mapa01.png) só tem ruas, córrego e rio — nenhuma
-// construção. Todo prédio/casa é uma imagem recortada, posicionada por
-// cima com coordenadas medidas manualmente sobre Mapa02.jpg (o mapa
-// original, com as construções desenhadas, usado só como referência de
-// posicionamento), 1408x768px. Ajuste x/y/w/h abaixo conforme necessário
-// para refinar o alinhamento visual.
+// mapa.js — mapa do bairro (mapa.html). Cada construção é um recorte posicionado
+// sobre a base, em pixels da imagem original (1408x768).
 
 (function () {
   const MAPA_W = 1408;
@@ -107,9 +102,7 @@
       nome: "Casa",
       imagem: "Casa.png",
       descricao: "Visitas do ACS a moradores diferentes, cada um com uma história e um problema de saúde distinto a ser identificado e resolvido.",
-      // Interior padrão da casa. Hoje todas as casas do mapa têm foto
-      // própria; isto existe para a próxima casa desenhada não abrir o
-      // modal com o aviso de "em breve" enquanto a foto dela não vem.
+      // Interior padrão para casa sem foto própria.
       interior: "Casa.jpeg",
     },
   };
@@ -147,14 +140,7 @@
     { tipo: "ruas", imagemHotspot: "Ruas15.png", x: 610, y: 175, w: 190, h: 128 },
 
 
-    // Cada casa aponta para o seu interior: o recorte da fachada e a foto
-    // de dentro são a mesma casa (Casa03.png -> Casa03.jpg). Hoje todas
-    // têm a sua; uma casa nova sem foto cai no padrão de CENARIOS.casa.
-    // `casa` é o número da casa, que vai na URL da missão e escolhe a
-    // família mostrada lá (familia03.png). As laterais continuam a
-    // contagem depois da Casa16: CasaLateral01 = 17 ... CasaLateral04 = 20.
-    // As laterais abrem o rótulo para dentro do mapa: "Casa da família
-    // Nascimento", centralizado em cima delas, sairia pela borda.
+    // Casas: `casa` é o número (escolhe a família); interior próprio de cada uma. Laterais = casas 17 a 20.
     { tipo: "casa", casa: 1, imagem: "Casa.png", x: 253, y: 230, w: 125, h: 126, interior: "Casa.jpeg" },
     { tipo: "casa", casa: 3, imagem: "Casa03.png", x:465, y: 387, w: 85, h: 110, interior: "Casa03.jpg" },
     { tipo: "casa", casa: 13, imagem: "Casa013.png", x: 372, y: 390, w: 85, h: 105, interior: "Casa13.jpg" },
@@ -168,8 +154,7 @@
     { tipo: "casa", casa: 12, imagem: "Casa012.png", x: 880, y: 502, w: 110, h: 110, interior: "Casa12.jpg" },
     { tipo: "casa", casa: 2, imagem: "Casa02.png", x: 253, y: 139, w: 127, h: 107, interior: "Casa02.jpeg" },
     { tipo: "casa", casa: 15, imagem: "Casa015.png", x: 238, y: 20, w: 145, h: 100, tooltipPos: "bottom", interior: "Casa15.jpg" },
-    // Rente à borda esquerda: centralizado, o rótulo vazaria do mapa.
-    // `tooltipInicio` o alinha à esquerda da casa, crescendo para dentro.
+    // Rente à borda esquerda: rótulo alinhado à esquerda da casa.
     { tipo: "casa", casa: 5, imagem: "Casa05.png", x: 80, y: 20, w: 80, h: 90, tooltipPos: "bottom", tooltipInicio: true, interior: "Casa05.jpg" },
     { tipo: "casa", casa: 4, imagem: "Casa04.png", x: 1041, y: 515, w: 85, h: 105, tooltipPos: "bottom", interior: "Casa04.jpg" },
     { tipo: "casa", casa: 16, imagem: "Casa016.png", x: 1182, y: 8, w: 150, h: 100, tooltipPos: "bottom", interior: "Casa16.jpg" },
@@ -180,29 +165,14 @@
     { tipo: "casa", casa: 20, imagem: "CasaLateral04.png", x: 1335, y: 430, w: 73, h: 113, tooltipPos: "left", interior: "CasaLateral04.jpg" },
   ];
 
-  // ── Objetos clicáveis dentro da foto do interior ──────────────────
-  //
-  // A mesma ideia dos HOTSPOTS, só que dentro do modal: um recorte
-  // (src/imgs/Interiores/) posicionado exatamente por cima do objeto
-  // desenhado na foto, que acende no hover. A chave é o arquivo da foto,
-  // porque as coordenadas são dela: x/y/w/h em pixels sobre a foto
-  // original (`largura` x `altura`). O modal corta a foto (object-fit:
-  // cover); a camada dos objetos é cortada igual (ver mapa.css), então os
-  // percentuais continuam batendo em qualquer tamanho de tela.
-  //
-  // `acao` diz o que o clique faz:
-  //   link   -> abre o endereço numa aba nova (o mapa continua aberto)
-  //   hqs    -> o modal vira o visor das HQs, uma por vez (HQS abaixo)
-  //   imagem -> o modal vira o visor de uma imagem só
-  // `segredo` é o código da insígnia (regra DESCOBERTA, db/insignias.sql)
-  // que achar o objeto dá — ver SEGREDOS mais abaixo.
+  // ── Objetos clicáveis do interior ── recortes sobre a foto, em pixels dela (chave = arquivo da foto).
+  // acao: link (aba nova), hqs (visor das HQs) ou imagem. `segredo` = insígnia DESCOBERTA.
   const OBJETOS_DO_INTERIOR = {
     "Banca.jpg": {
       largura: 1408,
       altura: 768,
       itens: [
-        // A foto da banca não tem mais a TV nem os jornais desenhados: os
-        // recortes são o único desenho deles, apoiados no balcão.
+        // Recortes apoiados no balcão (a foto não os tem).
         { nome: "Ler as HQs", imagem: "jornais.png", x: 321, y: 419, w: 251, h: 91,
           acao: { tipo: "hqs", segredo: "segredo-hqs" } },
         { nome: "Assistir vídeos sobre saúde", imagem: "televisão.png", x: 953, y: 359, w: 124, h: 132,
@@ -220,26 +190,13 @@
     },
   };
 
-  // As HQs da banca (src/imgs/hqs/), na ordem de leitura. O servidor não
-  // lista pastas, então uma HQ nova entra aqui à mão. (A 3 é mesmo
-  // "hq-03", com hífen.)
+  // HQs da banca (src/imgs/hqs/), na ordem de leitura.
   const HQS = [
     "hq01.jpeg", "hq02.jpeg", "hq-03.jpeg", "hq04.jpeg", "hq05.jpeg", "hq06.jpeg",
     "hq07.jpeg", "hq08.jpeg", "hq09.jpeg", "hq10.jpeg", "hq11.jpeg", "hq12.jpeg",
   ];
 
-  // ── Os segredos e as dicas ────────────────────────────────────────
-  //
-  // Cada objeto acima dá uma insígnia da regra DESCOBERTA a quem o acha
-  // (POST /api/descobrir), e chegar à última HQ dá mais uma. Enquanto a
-  // pessoa não tiver a insígnia, abrir o lugar mostra uma DICA no canto
-  // da tela — no cartão das conquistas —, que sugere onde clicar sem
-  // dizer.
-  //
-  // Cada lista interna é uma CORRENTE: aparece a dica do primeiro elo
-  // ainda não conquistado. É o que deixa a dica das HQs mudar de
-  // "procure" para "termine de ler" e só sumir com a última página.
-  // Os códigos são os de db/insignias.sql; trocar lá exige trocar aqui.
+  // ── Segredos e dicas ── cada corrente mostra a dica do primeiro elo não conquistado.
   const HQS_TODAS = "segredo-hqs-todas";
 
   const DICAS = {
@@ -258,12 +215,7 @@
   };
 
 
-  // ── As 8 barras da saúde ──────────────────────────────────────────
-  //
-  // Cor e ícone de cada área. As CHAVES são exatamente os nomes da
-  // tabela `areas` do banco — é por elas que o progresso do aluno é
-  // casado com a área que o cenário alimenta. Mudar um nome aqui sem
-  // mudar lá quebra o casamento em silêncio (a barra some da lista).
+  // ── As 8 barras ── cor e ícone por área (chaves = nomes da tabela areas).
   const AREAS_VISUAL = {
     "Saúde":       { icone: "❤️", cor: "#f87171" },
     "Educação":    { icone: "📚", cor: "#6b8eff" },
@@ -305,22 +257,7 @@
   const visorVoltar = document.getElementById("cenario-visor-voltar");
   const visorClose = document.getElementById("cenario-visor-close");
 
-  /* ═══════════════════════════════════════════════════════════════════
-     PROGRESSO POR ÁREA
-
-     Duas chamadas, uma vez só, no carregamento da página:
-
-       API.getCenarios()     -> quais áreas cada lugar do bairro alimenta
-       API.getMeuProgresso() -> quanto este aluno já tem em cada área
-
-     O hover não busca nada: ele só cruza os dois mapas já em memória.
-     Fosse uma chamada por passada de mouse, atravessar o bairro
-     dispararia dezenas de requisições e a barra piscaria a cada
-     movimento do cursor.
-
-     Enquanto a resposta não chega, `areasPorSlug` fica null — e é isso
-     que distingue "ainda carregando" de "este lugar não pontua nada".
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Progresso por área ── carregado uma vez; o hover só cruza os dados. */
 
   let areasPorSlug = null;      // slug do cenário -> ["Saúde", "Limpeza", ...]
   let progressoPorArea = null;  // nome da área    -> { pontos, pontos_possiveis, porcentagem, sem_missoes }
@@ -330,8 +267,7 @@
   let hotspotDoModal = null;    // o ponto que o modal está mostrando agora
   let missaoEscolhida = null;   // o quiz escolhido na lista do modal
 
-  // slug do cenário -> as missões (quizzes do professor) pendentes que
-  // cobrem aquele lugar, a mais recente primeiro. null = ainda não chegou.
+  // slug -> missões pendentes que cobrem o lugar (null = carregando).
   let quizzesPorSlug = null;
 
   async function carregarAreas() {
@@ -351,18 +287,11 @@
       erroAreas = err.message;
     }
 
-    // O mouse pode já estar parado sobre um ponto quando a resposta
-    // chega — sem isto a lateral ficaria presa no "carregando", e o botão
-    // do modal aberto junto com ela.
+    // Atualiza a lateral se o mouse já estiver sobre um ponto.
     if (hotspotAtual) mostrarCenario(hotspotAtual);
   }
 
-  /**
-   * As áreas de um lugar. Devolve null enquanto o servidor não respondeu
-   * (ou quando a busca falhou), e [] para um ponto do mapa que ainda não
-   * virou cenário no banco — banca, igreja, rio e ruas são cenário só
-   * visual por enquanto.
-   */
+  /** Áreas de um lugar: null enquanto carrega, [] se não pontua nada. */
   function areasDoCenario(tipo) {
     if (!areasPorSlug) return null;
     return areasPorSlug.get(tipo) || [];
@@ -397,8 +326,7 @@
       return;
     }
 
-    // A régua das barras são as missões da turma. Sem turma, ela seria só
-    // o que o aluno já acertou — e tudo apareceria em 100%.
+    // Sem turma não há régua para as barras.
     if (semTurma) {
       container.appendChild(avisoDeArea(
         "Entre numa turma (em Minha turma) para ver aqui o seu progresso nas missões."
@@ -410,8 +338,7 @@
       const visual = AREAS_VISUAL[nome] || { icone: "•", cor: "#6bdfb8" };
       const registro = progressoPorArea ? progressoPorArea.get(nome) : null;
       const pct = Math.round(registro ? registro.porcentagem || 0 : 0);
-      // Nenhuma missão do aluno vale ponto nesta área: "0%" soaria como
-      // fracasso, quando na verdade ainda não chegou tarefa dela.
+      // Área sem missões: "sem missões" em vez de "0%".
       const semMissoes = !registro || registro.sem_missoes;
 
       const el = document.createElement("div");
@@ -440,8 +367,7 @@
     }
   }
 
-  // O nome de um ponto do mapa. As casas levam o sobrenome de quem mora
-  // nelas (familias.js); os outros lugares, o nome do tipo.
+  // Nome do ponto: casas levam o sobrenome da família.
   function nomeDoPonto(h) {
     const familia = h.tipo === "casa" && window.FAMILIAS && FAMILIAS[h.casa];
     return familia ? `Casa da família ${familia}` : CENARIOS[h.tipo].nome;
@@ -477,19 +403,7 @@
     return quiz.total - quiz.restantes > 0;
   }
 
-  /**
-   * O botão aparece sempre — sem missão escolhida ele mostra a versão
-   * cinza, bloqueada, em vez de sumir: o botão faltando fazia o aluno
-   * achar que o modal tinha carregado errado.
-   *
-   * Só se joga dentro de uma missão (quiz do professor), e o aluno
-   * escolhe qual na lista ao lado. Até escolher, o botão fica travado;
-   * escolhida uma que já tem resposta, ele vira "Continuar".
-   *
-   * Enquanto as missões não chegaram, todo lugar parece sem missão; dizer
-   * "sem missões" aí seria mentira, então o carregamento tem o seu próprio
-   * rótulo.
-   */
+  /** Botão "Jogar": sempre visível; bloqueado até escolher uma missão. */
   function atualizarBotaoJogar(h) {
     if (!modalPlay) return;
 
@@ -509,8 +423,7 @@
     modalPlay.dataset.cenario = h.tipo;
     if (quiz) modalPlay.dataset.quiz = quiz.id;
     else delete modalPlay.dataset.quiz;
-    // Qual casa foi clicada: a tela da missão usa o número para mostrar o
-    // interior daquela casa e a família que mora nela.
+    // Número da casa vai para a tela da missão.
     if (h.casa) modalPlay.dataset.casa = h.casa;
     else delete modalPlay.dataset.casa;
   }
@@ -525,14 +438,7 @@
     if (hotspotDoModal) atualizarBotaoJogar(hotspotDoModal);
   }
 
-  /**
-   * A lista de missões do lugar, embaixo da foto, ao lado do botão.
-   * Mesmo card da lista de "Missões ativas", só que clicar nele escolhe em
-   * vez de jogar — quem leva para a missão é o botão. Fica separada de
-   * `abrirModal` porque `carregarMissoes` chama só isto (e o botão) quando
-   * a resposta chega com o modal já aberto — remontar o modal inteiro
-   * recarregaria a família e voltaria a rolagem ao topo no meio da leitura.
-   */
+  /** Missões do lugar no modal (clicar escolhe; o botão joga). */
   function desenharMissoesDoModal(h) {
     if (!modalMissoes) return;
     modalMissoes.innerHTML = "";
@@ -554,8 +460,7 @@
     }
 
     const cenario = CENARIOS[h.tipo] || {};
-    // A miniatura é a do ponto clicado (cada casa tem a sua fachada), não
-    // a do primeiro lugar que o quiz cobre, como na lista de baixo.
+    // Miniatura do ponto clicado.
     const imagem = h.imagem || cenario.imagem;
 
     for (const quiz of quizzes) {
@@ -579,16 +484,10 @@
     }
   }
 
-  /**
-   * Numa casa, a família que mora nela fica no centro da foto — a mesma
-   * figura (familia03.png para a casa 3) que a tela da missão mostra.
-   * Os outros lugares não têm morador.
-   */
+  /** Família da casa no centro da foto. */
   function mostrarFamilia(h) {
     if (!modalFamilia) return;
-    // Esconde já: a figura da casa anterior não pode piscar sobre a nova
-    // foto enquanto a próxima carrega. E solta o onload antigo, senão uma
-    // família ainda carregando apareceria por cima de um lugar sem morador.
+    // Esconde a anterior enquanto a nova carrega.
     modalFamilia.hidden = true;
     modalFamilia.onload = modalFamilia.onerror = null;
     if (h.tipo !== "casa" || !h.casa) return;
@@ -601,11 +500,7 @@
     modalFamilia.src = `../imgs/familias/familia${String(h.casa).padStart(2, "0")}.png`;
   }
 
-  /**
-   * Os objetos clicáveis da foto (OBJETOS_DO_INTERIOR). A maioria dos
-   * lugares não tem nenhum e a camada fica vazia. A proporção da foto vai
-   * para o CSS, que a usa para cortar a camada igual à foto.
-   */
+  /** Monta os objetos clicáveis da foto. */
   function montarObjetos(interior) {
     if (!modalObjetos) return;
     modalObjetos.innerHTML = "";
@@ -659,17 +554,12 @@
     }
   }
 
-  /* ── Visor: o modal vira só uma imagem (as HQs ou o calendário) ──
-     A classe no card esconde a foto e as missões (sem apagar nada) e tira
-     a moldura do modal, deixando só a imagem, quase na tela toda — por
-     isso "Voltar" só desfaz a classe. */
+  /* ── Visor ── o modal vira só a imagem; "Voltar" desfaz. */
 
   const modalCard = modal?.querySelector(".mapa-modal");
   const visorQuadro = visor?.querySelector(".mapa-visor__quadro");
 
-  // O quadro toma a proporção de cada imagem que chega (as HQs não são
-  // todas iguais, e o calendário é em pé) — é o que deixa os controles
-  // dentro da imagem, e não numa faixa vazia ao lado dela.
+  // O quadro assume a proporção de cada imagem.
   visorImg?.addEventListener("load", () => {
     if (!visorImg.naturalHeight) return;
     visorQuadro.style.setProperty("--proporcao", visorImg.naturalWidth / visorImg.naturalHeight);
@@ -678,11 +568,7 @@
 
   let hqAtual = null;   // índice em HQS; null = o visor não está nas HQs
 
-  /* ── Os segredos: o que a pessoa já achou ──
-     Uma chamada só, no carregamento: código -> { imagem, conquistada },
-     das insígnias DESCOBERTA do catálogo. null enquanto não chegou (ou
-     se falhou) — aí não aparece dica nem se registra achado: sem a
-     lista, não dá para saber se a insígnia existe neste banco. */
+  /* ── Segredos ── código -> { imagem, conquistada } (null = não carregou: sem dicas). */
 
   let segredos = null;
   const descobrindo = new Set();   // pedidos em andamento, contra o clique duplo
@@ -707,8 +593,7 @@
 
     const lista = [];
     for (const corrente of DICAS[tipo] || []) {
-      // Corrente cuja insígnia final não existe neste banco (o
-      // insignias.sql novo ainda não rodou): sem prêmio, sem dica.
+      // Pula a corrente se a insígnia não existe no banco.
       if (!segredos || !segredos.has(corrente[corrente.length - 1].codigo)) continue;
 
       const elo = corrente.find(d => !jaAchou(d.codigo));
@@ -769,8 +654,7 @@
     visorAnterior.disabled = i === 0;
     visorProxima.disabled = i === HQS.length - 1;
     visorContador.textContent = `HQ ${i + 1} de ${HQS.length}`;
-    // Seta que acabou de travar no fim (ou no começo) perderia o foco do
-    // teclado para a página; ele passa para a outra.
+    // Mantém o foco do teclado quando a seta trava.
     if (document.activeElement && document.activeElement.disabled) {
       (visorAnterior.disabled ? visorProxima : visorAnterior).focus();
     }
@@ -789,22 +673,13 @@
   });
   visorClose?.addEventListener("click", () => fecharModal());
 
-  /**
-   * O texto do modal. Numa casa, quem é a família que mora nela
-   * (familias.js); nos outros lugares, e numa casa sem descrição, o que
-   * aquele tipo de lugar ensina.
-   */
+  /** Texto do modal: descrição da família (casas) ou do lugar. */
   function descricaoDoPonto(h) {
     const familia = h.tipo === "casa" && window.FAMILIAS_DESCRICAO && FAMILIAS_DESCRICAO[h.casa];
     return familia || CENARIOS[h.tipo].descricao;
   }
 
-  /**
-   * Sempre abre recolhida, em duas linhas. O "Ler mais" só aparece se o
-   * texto não coube nelas — a descrição curta de um prédio não ganha um
-   * botão que não abre nada. A medida é feita aqui, com o texto já
-   * posto: o modal ainda está transparente, mas já tem tamanho.
-   */
+  /** Abre recolhida; "Ler mais" só se o texto não couber. */
   function mostrarDescricao(texto) {
     modalDesc.textContent = texto;
     modalDesc.scrollTop = 0;
@@ -833,14 +708,11 @@
     modalNome.textContent = nomeDoPonto(h);
     mostrarDescricao(descricaoDoPonto(h));
 
-    // A foto do interior vem do hotspot quando ele tem a sua (cada casa
-    // do bairro tem um morador e uma sala diferentes) e, na falta dela,
-    // da do tipo de lugar. Só a rua fica sem foto e cai no aviso.
+    // Foto do interior: a do ponto ou a do tipo de lugar.
     const interior = h.interior || cenario.interior;
     modalInterior.hidden = !interior;
     modalEmBreve.hidden = Boolean(interior);
-    // Trocar o src só quando há imagem: apagá-lo faria o navegador pedir a
-    // própria página como imagem e o alt ficaria piscando por trás do aviso.
+    // Só troca o src quando há imagem.
     if (interior) {
       modalInterior.src = `../imgs/Interiores/${interior}`;
       modalInterior.alt = `Interior — ${nomeDoPonto(h)}`;
@@ -854,9 +726,7 @@
     desenharMissoesDoModal(h);
     atualizarBotaoJogar(h);
 
-    // O modal tem tamanho fixo; o que rola é a lista de missões, para o
-    // lado. Sem isto um segundo lugar abriria rolado até onde o anterior
-    // ficou, com as primeiras missões fora de vista.
+    // Volta a lista de missões ao início.
     if (modalMissoes) modalMissoes.scrollLeft = 0;
 
     modal.classList.add("open");
@@ -873,14 +743,12 @@
 
   modalClose?.addEventListener("click", fecharModal);
 
-  // Só o clique no fundo fecha. Comparar o alvo com o próprio overlay é o
-  // que impede um clique dentro do card de fechar o modal por borbulhamento.
+  // Só o clique no fundo fecha.
   modal?.addEventListener("click", (e) => {
     if (e.target === modal) fecharModal();
   });
 
-  // Com o visor aberto, o Esc volta para o lugar em vez de fechar tudo, e
-  // as setas do teclado passam as HQs.
+  // Com o visor aberto, Esc volta ao lugar e as setas passam as HQs.
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (fecharVisor()) modalClose?.focus();
@@ -952,36 +820,19 @@
   document.getElementById("mapa-viewport")?.addEventListener("mouseleave", limparSidebar);
   AUTH.exigirLogin();
 
-  // O perfil diz se o aluno tem turma (sem turma não há régua para as
-  // barras, nem missões) e dá o id para o aviso de "novas missões". Uma
-  // promessa só, usada pelas duas buscas abaixo.
+  // Perfil compartilhado pelas duas buscas abaixo.
   const perfilPromessa = AUTH.perfilAtual().catch(() => null);
 
   carregarAreas();
   carregarSegredos();
 
 
-  /* ═══════════════════════════════════════════════════════════════════
-     MISSÕES ATIVAS — a lista embaixo do mapa
-
-     "Missão" é o nome que o aluno vê para o quiz que o professor passou
-     para a turma. Uma chamada só (API.getMeuMapa) devolve as que ainda
-     têm pergunta para responder — quiz concluído não vem, então esta
-     lista nunca precisa filtrar: o que chega, aparece.
-
-     A mesma resposta acende o botão "Jogar" dos lugares do mapa: um
-     lugar é jogável quando alguma missão pendente o cobre.
-
-     Cada card usa a IMAGEM do primeiro lugar que o quiz cobre, a mesma
-     do mapa — é o que amarra a lista ao bairro.
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Missões ativas ── lista embaixo do mapa; a mesma resposta acende o "Jogar" dos lugares. */
 
   const listaMissoes = document.getElementById("missions-list");
   const contadorMissoes = document.getElementById("missoes-contador");
 
-  // Cada acerto vale 10 pontos em cada barra que a questão alimenta.
-  // Fixo por enquanto; quando a curva de progressão for definida com a
-  // equipe de Medicina, este número sai daqui.
+  // Pontos por acerto em cada barra (mostrado no card).
   const PONTOS_POR_ACERTO = 10;
 
   carregarMissoes();
@@ -999,8 +850,7 @@
       erro = err.message;
     }
 
-    // Um quiz aparece em cada lugar que cobre. A resposta já vem da mais
-    // recente para a mais antiga, e essa ordem se mantém por lugar.
+    // Um quiz aparece em cada lugar que cobre, do mais recente ao mais antigo.
     quizzesPorSlug = new Map();
     for (const quiz of quizzes) {
       for (const slug of quiz.cenarios || []) {
@@ -1034,8 +884,7 @@
   function desenharMissoes(quizzes, alunoSemTurma = false) {
     listaMissoes.innerHTML = "";
 
-    // É pela turma que as missões chegam. Sem ela, a lista vazia não é
-    // "espere o professor" — é "escolha a sua turma".
+    // Sem turma, convida a escolher uma.
     if (alunoSemTurma) {
       if (contadorMissoes) contadorMissoes.textContent = "sem turma";
 
@@ -1073,16 +922,10 @@
     }
   }
 
-  /**
-   * Clique num card de "Missões ativas": abre o modal do lugar que a
-   * missão cobre, já com ela escolhida. Lugar com vários pontos no mapa
-   * (as casas, as ruas) sorteia um — cada casa tem a sua família, então o
-   * sorteio é o que varia quem o aluno vai visitar.
-   */
+  /** Card de "Missões ativas": abre o modal do lugar com a missão escolhida (sorteia entre os pontos). */
   function abrirMissaoNoModal(quiz) {
     const slug = (quiz.cenarios || []).find(s => HOTSPOTS.some(h => h.tipo === s));
-    // Missão de um lugar que não está desenhado no mapa: sem modal para
-    // abrir, vai direto para ela.
+    // Lugar sem ponto no mapa: vai direto para a missão.
     if (!slug) {
       window.location.href = `missao.html?quiz=${encodeURIComponent(quiz.id)}`;
       return;
@@ -1098,10 +941,7 @@
     card.scrollIntoView({ block: "nearest" });
   }
 
-  /**
-   * "Novas missões chegaram!", acima da lista. A régua das barras cresceu
-   * desde a última vez que o aluno dispensou o aviso (novas-missoes.js).
-   */
+  /** Aviso "Novas missões chegaram!" (novas-missoes.js). */
   function mostrarAvisoDeNovas(usuarioId, progresso) {
     if (!listaMissoes || typeof NOVAS_MISSOES === "undefined") return;
 
@@ -1111,11 +951,7 @@
     listaMissoes.before(NOVAS_MISSOES.montarAviso({ novas, dispensar }));
   }
 
-  /**
-   * O card de uma missão (quiz do professor). Sem ação de clique — quem
-   * usa decide: a lista de baixo abre o modal do lugar, o modal só escolhe.
-   * `imagem` troca a miniatura (o modal usa a do ponto clicado).
-   */
+  /** Card de uma missão; `imagem` troca a miniatura. */
   function montarCard(quiz, imagem) {
     const slug = (quiz.cenarios || [])[0];
     const cenario = CENARIOS[slug] || {};
@@ -1198,8 +1034,7 @@
   function aplicarTransform() {
     if (!canvas) return;
     clampPan();
-    // Arredonda o deslocamento: translate em pixel fracionado faz o navegador
-    // reamostrar o mapa inteiro em subpixel e o desenho sai borrado.
+    // Deslocamento arredondado (evita borrar).
     canvas.style.transform = `translate(${Math.round(panX)}px, ${Math.round(panY)}px) scale(${zoom})`;
     if (zoomResetBtn) zoomResetBtn.textContent = Math.round(zoom * 100) + "%";
     if (viewport) viewport.style.cursor = zoom > 1 ? "grab" : "default";
@@ -1227,8 +1062,7 @@
     { passive: false }
   );
 
-  // O navegador tenta arrastar/selecionar a imagem sob o cursor; isso pinta o
-  // recorte de azul e cancela o pan no meio do movimento.
+  // Impede o navegador de arrastar a imagem.
   viewport?.addEventListener("dragstart", (e) => e.preventDefault());
   viewport?.addEventListener("selectstart", (e) => {
     if (dragging) e.preventDefault();

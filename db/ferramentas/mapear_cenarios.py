@@ -1,32 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-mapear_cenarios.py — decide em que ponto do mapa cada questão nova entra
-
-O documento da equipe de Medicina não diz o cenário de nenhuma questão.
-Mas ele FOI ESCRITO com os cenários em mente: as questões vêm em blocos
-temáticos contíguos, e um deles até pergunta "Qual princípio resume
-melhor o cenário Farmácia?". O que falta é só o rótulo.
-
-DUAS REGRAS, NESTA ORDEM
-------------------------
-1. A FAIXA. Os blocos são contíguos, então a posição da questão dentro
-   do nível diz quase tudo. É o sinal mais confiável que existe aqui:
-   não depende de palavra solta no enunciado nem de interpretação.
-
-2. O ASSUNTO. Só para a cauda do nível 3 — quarenta e poucas questões
-   estilo ENEM, de biologia e biotecnologia, que não vieram em bloco
-   temático. Ali vale a palavra-chave, com a ordem das regras
-   importando: a primeira que casar decide.
-
-Nada aqui grava no banco. A saída é uma PRÉVIA, para a equipe conferir
-antes de qualquer insert.
-
-Uso:
-    python db/ferramentas/mapear_cenarios.py
-    python db/ferramentas/mapear_cenarios.py --md ARQ.md
-    python db/ferramentas/mapear_cenarios.py --listar ubs   # confere um cenário
-"""
-
 import importlib.util
 import os
 import re
@@ -46,10 +17,7 @@ FAIXA_NOME = {1: '7 a 10 anos', 2: '11 a 14 anos', 3: '15 a 18 anos'}
 QTD_MIN = 3
 
 
-# ── 1. OS BLOCOS ─────────────────────────────────────────────────────
-#
-# (primeira, última) contando a partir de 1, dentro das questões NOVAS
-# daquele nível, na ordem do documento. Faixas lidas uma a uma.
+# 1. Blocos (primeira, última) de cada nível, contados a partir de 1.
 BLOCOS = {
     1: [
         ((1, 1),   'terreno-baldio'),  # vizinhos removendo recipientes
@@ -77,12 +45,7 @@ BLOCOS = {
         ((119, 133), 'ubs'),
         ((134, 148), 'upa'),
     ],
-    # O nível 3 tem os blocos mais longos, e alguns misturam assuntos que
-    # pertencem a lugares diferentes do bairro. Por isso estas faixas são
-    # mais finas: o bloco de DCNT, por exemplo, vira cinco destinos —
-    # obesidade é escolha de compra (mercado), sedentarismo é movimento
-    # (quadra), hipertensão e diabetes são o acompanhamento que o agente
-    # comunitário faz na visita (casa).
+    # Nível 3: faixas mais finas, porque alguns blocos misturam lugares.
     3: [
         ((1, 8),     'terreno-baldio'),  # arboviroses e o Aedes
         ((9, 16),    'farmacia'),        # vacinas e imunização
@@ -119,29 +82,20 @@ BLOCOS = {
 }
 
 
-# ── 2. O ASSUNTO (só para a cauda do nível 3) ────────────────────────
-#
-# A ORDEM IMPORTA: a primeira regra que casar decide. As mais
-# específicas vêm antes — "vacina" antes de "medicamento", senão toda
-# questão de vacina cairia em farmácia por outro motivo.
+# 2. Assunto -> lugar (cauda do nível 3). A primeira regra que casar decide.
 POR_ASSUNTO = [
-    # Urgência antes de tudo: veneno de cobra e hemorragia são UPA,
-    # mesmo que o enunciado fale de plaqueta ou de soro.
+    # Urgência vem antes de tudo.
     ('upa',            r'hemorragia|cascavel|serpente|picad|envenenament|intoxicac|parada card|'
                        r'urgenc|emergenc|socorro'),
 
     ('terreno-baldio', r'dengue|aedes|mosquit|arbovir|leishman|filarios|chagas|triatom|vetor'),
     ('corrego',        r'esquistossom|saneament|esgoto|agua contaminada|leptospir|\brio\b'),
 
-    # Regulação e produto farmacêutico vêm ANTES da genética: "a Anvisa
-    # aprovou uma terapia gênica" é uma questão sobre medicamento, não
-    # sobre cromossomo.
+    # Regulação e medicamentos antes de genética.
     ('farmacia',       r'vacina|imuniz|anvisa|terapia genica|terapia celular|antiveneno|'
                        r'anticorpo monoclonal|rna mensageiro|rnam'),
 
-    # E a genética vem antes de criança e de músculo, senão "distrofia
-    # muscular de Duchenne" cai na quadra e "trissomia do 21" na creche,
-    # quando as duas são conteúdo de aula de ciências.
+    # Genética antes de criança e músculo.
     ('escola',         r'mutaca|cromossom|trissomia|clonagem|biotecnolog|genotoxic|micronucleo|'
                        r'equilibrio genetico|hereditar|distrofia|dna recombinante|\bgene\b'),
 

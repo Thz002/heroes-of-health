@@ -1,27 +1,5 @@
--- =====================================================================
---  O CATÁLOGO DE INSÍGNIAS — Heróis da Saúde
---
---  Todas as insígnias do jogo, com a arte de cada uma (64 linhas):
---
---     5  perguntas certas em qualquer lugar      perguntas1..5.png
---     3  dias seguidos de entrada                diaria1..3.png
---     4  missões concluídas pelos lugares        missoes1..4.png
---     4  segredos achados no mapa                tvs, hqs, all-hqs, calendar.png
---    48  acertos em cada lugar: 16 × 3 degraus   <lugar>1..3.png
---
---  Dialeto: PostgreSQL (Supabase).
---  Onde rodar: painel do Supabase -> SQL Editor, DEPOIS do db/setup.sql
---  (é ele que cria a tabela, as colunas cenario_slug e grupo e as
---  regras). Pode ser executado mais de uma vez sem quebrar nada.
---
---  ESTE ARQUIVO É A FONTE DA VERDADE. Para calibrar um alvo, trocar um
---  nome ou ligar uma arte nova, edite aqui e rode de novo. Quem já
---  conquistou não perde: a conquista mora em insignias_usuarios e não é
---  recalculada quando a linha muda.
---
---  Os alvos e o XP das insígnias novas (missões e lugares) são um
---  primeiro chute, a calibrar quando houver turma jogando de verdade.
--- =====================================================================
+-- Catálogo de insígnias (64). Rode depois do setup.sql; pode rodar de novo.
+-- Editar aqui e rodar atualiza; conquistas já ganhas não são recalculadas.
 
 
 -- ── Guarda: o setup.sql novo tem de ter rodado antes ─────────────────
@@ -36,17 +14,7 @@ begin
 end $$;
 
 
--- ── As peças avulsas ─────────────────────────────────────────────────
---
--- PERGUNTAS (ACERTOS): questões distintas acertadas, em qualquer lugar.
--- A primeira a 10 é de propósito: uma estante que só começa a 25 fica
--- vazia tempo demais.
---
--- DIÁRIAS (DIAS): dias SEGUIDOS de entrada — o prêmio diário.
---
--- MISSÕES (MISSOES_CENARIO): cada lugar de um quiz concluído conta 1.
--- Um quiz com perguntas da UBS, da Escola e do Mercado vale 3 — é a
--- missão como o aluno a vê no mapa, um lugar de cada vez.
+-- Peças avulsas: acertos, dias seguidos e missões concluídas por lugar.
 
 insert into insignias (codigo, nome, descricao, publico, regra, alvo, xp, ordem, imagem) values
   ('primeiros-passos',     'Primeiros Passos',     'Acertou as 10 primeiras perguntas do bairro.',                 'ALUNO', 'ACERTOS',          10,  50,  1, 'perguntas1.png'),
@@ -59,8 +27,7 @@ insert into insignias (codigo, nome, descricao, publico, regra, alvo, xp, ordem,
   ('semana-cheia',         'Semana Cheia',         'Sete dias seguidos cuidando do bairro.',                       'ALUNO', 'DIAS',              7, 150,  7, 'diaria2.png'),
   ('presenca-de-ouro',     'Presença de Ouro',     'Trinta dias seguidos.',                                        'ALUNO', 'DIAS',             30, 600,  8, 'diaria3.png'),
 
-  -- ordem 9 a 11 ficou vaga: era das insígnias de tarefas do professor,
-  -- excluídas (ver o fim deste arquivo).
+  -- ordem 9 a 11 vaga (insígnias de professor excluídas).
   ('primeira-parada',      'Primeira Parada',      'Concluiu a primeira missão num lugar do bairro.',              'ALUNO', 'MISSOES_CENARIO',   1,  50, 12, 'missoes1.png'),
   ('volta-no-quarteirao',  'Volta no Quarteirão',  'Cinco missões concluídas pelos lugares do bairro.',            'ALUNO', 'MISSOES_CENARIO',   5, 100, 13, 'missoes2.png'),
   ('conhece-cada-esquina', 'Conhece Cada Esquina', 'Vinte e cinco missões concluídas. O bairro inteiro sabe seu nome.', 'ALUNO', 'MISSOES_CENARIO', 25, 250, 14, 'missoes3.png'),
@@ -78,28 +45,7 @@ on conflict (codigo) do update set
   grupo        = null;
 
 
--- ── Os segredos do mapa ──────────────────────────────────────────────
---
--- DESCOBERTA: objetos clicáveis dentro da foto de um lugar (mapa.js,
--- OBJETOS_DO_INTERIOR). Não há contagem — o alvo é 1 e quem dá a
--- insígnia é POST /api/descobrir, quando a pessoa acha o segredo:
---
---   segredo-tv          clicou na TV da banca (os vídeos da Fiocruz)
---   segredo-hqs         abriu as HQs, nas pilhas de jornal da banca
---   segredo-hqs-todas   chegou à última HQ — o visor só passa uma por
---                       clique, então quem chega lá passou por todas
---   segredo-calendario  abriu o Calendário das Cores, na farmácia
---
--- O CÓDIGO É O QUE O MAPA PEDE: mapa.js manda estes códigos e mostra
--- as dicas enquanto a pessoa não os tiver. Trocar um aqui exige trocar
--- lá.
---
--- XP baixo de propósito: é o navegador que diz "achei", e qualquer um
--- pode pedir pelo console. Ninguém sobe de nível com isto.
---
--- A descrição aparece também na estante, com a peça ainda bloqueada.
--- Por isso diz o que a pessoa fez sem entregar onde: o caminho fica
--- para as dicas do mapa.
+-- Segredos do mapa (regra DESCOBERTA), dados por POST /api/descobrir. Códigos usados em mapa.js.
 
 insert into insignias (codigo, nome, descricao, publico, regra, alvo, xp, ordem, imagem) values
   ('segredo-tv',         'Sintonizado',          'Achou o canal de vídeos de saúde da Fiocruz escondido no bairro.', 'ALUNO', 'DESCOBERTA', 1, 30, 16, 'tvs.png'),
@@ -119,34 +65,7 @@ on conflict (codigo) do update set
   grupo        = null;
 
 
--- ── Acertos em cada lugar do bairro ──────────────────────────────────
---
--- Uma peça por lugar, com três degraus que SE SOBREPÕEM: os três ficam
--- no mesmo `grupo` (cenario-<slug>), e a estante mostra só o mais alto
--- já conquistado. Cada degrau tem a própria arte — <arte>1, 2 e 3.
---
--- `arte` é o começo do nome do arquivo e nem sempre é igual ao slug:
--- quadra é "campo-lazer" e igreja é "centro-religioso", porque é assim
--- que o aluno chama esses lugares no mapa.
---
--- Os 16 lugares são os do mapa (src/js/mapa.js). Banca, igreja, rio e
--- ruas ainda não têm linha em cenarios nem perguntas, então as deles
--- ficam bloqueadas até isso mudar — e o slug que entrar em cenarios tem
--- de ser o mesmo daqui, senão a ligação se perde.
---
--- Escrito como tabela de lugares × tabela de degraus para que os 48
--- nomes fiquem lado a lado, fáceis de revisar e trocar.
---
--- OS MARCOS: 5, 25 e 50 acertos no lugar. O primeiro é baixo de
--- propósito, para cada lugar render uma peça logo na primeira visita;
--- o último cabe no conteúdo que os lugares com mais perguntas têm hoje.
---
--- O código é cenario-<slug>-<DEGRAU>, e não o alvo: recalibrar um marco
--- aqui atualiza a mesma linha. Um código com o alvo dentro viraria uma
--- linha nova a cada ajuste, e a antiga ficaria órfã na estante.
---
--- ordem: 101 em diante, 3 por lugar. Os lugares vêm depois de todas as
--- peças avulsas, e o espaço até 100 fica livre para as que vierem.
+-- Acertos por lugar: 3 degraus (5, 25, 50) no mesmo grupo. ordem a partir de 101.
 
 insert into insignias (codigo, nome, descricao, publico, regra, alvo, xp, ordem, imagem, cenario_slug, grupo)
 select
@@ -199,28 +118,12 @@ on conflict (codigo) do update set
   grupo        = excluded.grupo;
 
 
--- ── Insígnias excluídas ──────────────────────────────────────────────
---
--- Tirar uma linha daqui NÃO a apaga do banco: os inserts acima só
--- criam e atualizam. Quem sai do catálogo sai por um delete explícito,
--- que fica registrado aqui para qualquer banco que tenha rodado uma
--- versão antiga deste arquivo.
---
--- Tarefas do professor (Primeira Missão, Mão na Massa, Missão
--- Cumprida — regra MISSOES, alvos 1, 5 e 10), excluídas em outubro de
--- 2026 por serem redundantes com as de missões nos lugares: todo quiz
--- concluído já conta para as duas.
---
--- ATENÇÃO: o delete leva junto, pelo "on delete cascade", o registro de
--- quem já tinha ganhado essas insígnias em insignias_usuarios, e com
--- ele o XP delas. Quando foram excluídas, só 1 aluno tinha 1 delas.
--- Rode `npm run backup` antes.
+-- Insígnias excluídas (o delete leva junto quem as tinha e o XP). Rode npm run backup antes.
 
 delete from insignias where codigo in ('primeira-missao', 'mao-na-massa', 'missao-cumprida');
 
 
--- ── Conferir ─────────────────────────────────────────────────────────
--- Deve devolver 64 linhas, todas com imagem preenchida.
+-- Conferir: devem vir 64 linhas, todas com imagem.
 
 -- select codigo, nome, regra, alvo, xp, ordem, imagem, cenario_slug, grupo
 --   from insignias order by publico, ordem;

@@ -1,32 +1,8 @@
-/**
- * api.js — Heróis da Saúde
- *
- * A camada de dados da tela. Expõe o objeto global `API`.
- *
- * Ela fala com DOIS lugares diferentes, e saber qual é qual importa:
- *
- *   1. DIRETO COM O SUPABASE — só o que é público ou inofensivo:
- *      a lista de escolas e de turmas, que o aluno precisa ver ANTES de
- *      ter conta.
- *
- *   2. COM O SERVIDOR EXPRESS — tudo que envolve regra de jogo:
- *      corrigir resposta, pontuar, painel do professor. Essas decisões
- *      não podem acontecer aqui, porque tudo neste arquivo está ao
- *      alcance de quem abrir o console do navegador.
- *
- * Depende de supabase.js, carregado antes (objetos SUPA e AUTH).
- */
+/** api.js — global `API`. Fala direto com o Supabase só no que é público;
+    o resto (regras do jogo) vai pelo servidor Express. */
 
 const API = (() => {
-  // ── Configuração ───────────────────────────
-  //
-  // Quando a página é servida pelo próprio Express (http://localhost:3000/pages/...
-  // ou pelo IP da máquina na rede local), a API está na mesma origem — um
-  // caminho relativo funciona em qualquer host, sem hardcoded.
-  //
-  // O fallback fixo em localhost:3000 só entra em jogo se a página ainda
-  // for aberta direto por file:// (Origin: null), onde não existe origem
-  // própria para montar um caminho relativo.
+  // Mesma origem quando servido pelo Express; localhost:3000 no fallback por file://.
   const BASE_URL = (window.location.protocol === 'file:')
     ? 'http://localhost:3000/api'
     : '/api';
@@ -42,14 +18,7 @@ const API = (() => {
     return err;
   }
 
-  /**
-   * Chama o servidor Express, já com o crachá da sessão.
-   *
-   * Repare que NÃO existe fallback para dado de mentira aqui. É de
-   * propósito: se o servidor estiver fora do ar, quem chamou precisa
-   * VER o erro. Um fallback faria toda falha parecer sucesso, que é o
-   * pior tipo de bug para achar.
-   */
+  /** Chama o servidor com o token. Sem fallback: erro aparece como erro. */
   async function request(method, endpoint, body = null, options = {}) {
     const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
 
@@ -97,12 +66,7 @@ const API = (() => {
   const patch = (e, b, o = {}) => request('PATCH',  e, b,    o);
   const del   = (e, o = {})    => request('DELETE', e, null, o);
 
-  // =====================================================================
-  //  ESCOLAS E TURMAS — direto com o Supabase
-  //
-  //  Precisam funcionar SEM conta: o aluno escolhe a escola antes de se
-  //  cadastrar. Por isso não passam pelo servidor, que exige login.
-  // =====================================================================
+  // ── Escolas e turmas (direto no Supabase, sem login) ──
 
   /** true quando o supabase.js foi carregado antes deste arquivo */
   function temSupabase() {
@@ -111,14 +75,7 @@ const API = (() => {
 
 
 
-  /**
-   * Descobre a turma a partir do código curto (ex: '7B-K3M9').
-   * Devolve null quando o código não existe.
-   *
-   * Passa por uma função do banco em vez de um select comum: assim a
-   * pergunta é fechada — manda-se um código e recebe-se uma turma, sem
-   * poder varrer a tabela atrás de todos os códigos.
-   */
+  /** Turma pelo código (RPC). Devolve null se não existir. */
   async function getTurmaPorCodigo(codigo) {
     const limpo = String(codigo || '').trim().toUpperCase();
     if (!limpo) return null;
@@ -138,35 +95,16 @@ const API = (() => {
     };
   }
 
-  // =====================================================================
-  //  O JOGO — pelo servidor Express
-  // =====================================================================
+  // ── O jogo (pelo servidor) ──
 
   /** Os pontos do bairro que aparecem no mapa */
   const getCenarios = () => get('/cenarios');
 
-  /**
-   * Envia uma resposta e recebe { acertou, explicacao, pontos }.
-   *
-   * Quem confere é o servidor. A `explicacao` volta mesmo quando a pessoa
-   * erra — mas a letra certa nunca volta: a ideia é que ela tente de novo
-   * com o conteúdo em mãos, não que copie a resposta.
-   *
-   * O `quizId` é obrigatório: só se responde pergunta dentro de uma
-   * missão (quiz) que o professor passou para a turma.
-   */
+  /** Envia a resposta (quizId obrigatório). Devolve { acertou, explicacao, pontos }, nunca a letra certa. */
   const responder = (questaoId, resposta, quizId) =>
     post('/responder', { questao_id: questaoId, resposta, quiz_id: quizId });
 
-  /**
-   * As missões ativas deste aluno, numa chamada só.
-   *
-   * Devolve { quizzes, total_pendente }. Cada quiz traz `cenarios` (os
-   * lugares do mapa que ele cobre), `restantes` e `total`. Quiz vazio ou
-   * já concluído NÃO vem na lista.
-   *
-   * É a fonte da lista embaixo do mapa e do botão "Jogar" de cada lugar.
-   */
+  /** Missões ativas: { quizzes, total_pendente }. */
   const getMeuMapa = () => get('/meu-mapa');
 
   /** As tarefas que o professor passou para a turma deste aluno */
@@ -175,75 +113,31 @@ const API = (() => {
   /** As questões congeladas de um quiz — mesma ordem para a turma toda */
   const getQuestoesDoQuiz = (quizId) => get(`/quizzes/${quizId}/questoes`);
 
-  /**
-   * As 8 barras do aluno, sempre as 8, mesmo as zeradas:
-   * [{ area, pontos, pontos_possiveis, porcentagem, sem_missoes }].
-   *
-   * A régua é DELE — o que as missões da turma valem, mais o que já
-   * conquistou —, então quando chega missão nova a barra desce.
-   */
+  /** As 8 barras do aluno. */
   const getMeuProgresso = () => get('/meu-progresso');
 
-  /**
-   * O cabeçalho da tela "Meu progresso": a turma do aluno, a posição
-   * dele entre os colegas e os quatro números do topo (missões, XP,
-   * sequência de dias e taxa de acerto).
-   *
-   * Devolve { turma, posicao, estatisticas }. `turma` e `posicao` vêm
-   * nulos para quem ainda não entrou em nenhuma turma — a tela mostra o
-   * resto normalmente.
-   */
+  /** Cabeçalho de "Meu progresso": { turma, posicao, estatisticas }. */
   const getMeuResumo = () => get('/meu-resumo');
 
-  /**
-   * A turma do aluno e quem mais está nela.
-   *
-   * Devolve { turma, colegas, posicao }. `colegas` sai ordenado por XP,
-   * e o próprio aluno vem marcado com `eu: true` — é assim que a tela
-   * destaca a linha dele sem ter de comparar nome com nome.
-   *
-   * Não confundir com getMinhasTurmas(), que é do PROFESSOR e devolve
-   * as turmas que ele criou.
-   */
+  /** Turma do aluno: { turma, colegas, posicao }. */
   const getMinhaTurma = () => get('/minha-turma');
 
-  /**
-   * Põe o aluno SEM turma numa turma. Devolve o mesmo que getMinhaTurma().
-   * Quem já tem turma recebe erro 409: trocar é com o professor.
-   */
+  /** Entra numa turma (só quem não tem; senão 409). */
   const entrarNaTurma = (turmaId) => post('/minha-turma', { turma_id: turmaId });
 
-  /**
-   * Marca que a pessoa apareceu hoje e devolve o que isso rendeu.
-   *
-   * Pode ser chamada à vontade: quem decide se vale prêmio é a chave
-   * (usuario_id, dia) do banco, não o navegador. Devolve
-   * { ganhou_hoje, pontos_do_dia, xp, nivel, streak_dias, insignias_novas }.
-   */
+  /** Marca a presença de hoje. Devolve XP, nível, sequência e insígnias novas. */
   const marcarPresenca = () => post('/presenca');
 
   /** A estante inteira — o que já foi conquistado e o que falta */
   const getMinhaEstante = () => get('/minha-estante');
 
-  /**
-   * Os segredos do mapa (insígnias DESCOBERTA): { descobertas:
-   * [{ codigo, nome, imagem, conquistada }] }. O mapa usa para saber
-   * quais dicas ainda mostrar.
-   */
+  /** Segredos do mapa: { descobertas: [{ codigo, nome, imagem, conquistada }] }. */
   const getMinhasDescobertas = () => get('/minhas-descobertas');
 
-  /**
-   * Avisa que um segredo foi achado. Devolve { insignias_novas, xp?,
-   * nivel? } — insignias_novas vazio quando a pessoa já o tinha.
-   */
+  /** Registra um segredo achado. Devolve { insignias_novas, xp?, nivel? }. */
   const descobrir = (codigo) => post('/descobrir', { codigo });
 
-  /**
-   * Muda o nome e a foto de quem está logado.
-   *
-   * Só esses dois. Idade, tipo e turma decidem o que a pessoa vê e pode
-   * no jogo, e por isso não são editáveis por ela.
-   */
+  /** Muda nome e foto. */
   const salvarMeuPerfil = ({ nome, avatar_url }) => {
     const mudancas = {};
     if (nome !== undefined) mudancas.nome = nome;
@@ -253,28 +147,13 @@ const API = (() => {
 
   // ── Professor ──────────────────────────────
   const getMinhasTurmas = () => get('/professor/turmas');
-  /**
-   * Cria um quiz para a turma. Dois modos:
-   *   modo 'auto'   — o servidor sorteia `qtd_questoes` entre as que casam
-   *                   com `cenarios` (obrigatório) e `areas`;
-   *   modo 'manual' — vão as `questao_ids` escolhidas, na ordem da lista;
-   *                   cenários e áreas do quiz saem das próprias questões.
-   */
+  /** Cria um quiz: modo 'auto' (sorteio) ou 'manual' (questao_ids). */
   const criarQuiz = ({ turma_id, titulo, descricao, modo, cenarios, areas, qtd_questoes, questao_ids, tempo_limite_segundos }) =>
     post('/professor/quizzes', {
       turma_id, titulo, descricao, modo, cenarios, areas, qtd_questoes, questao_ids, tempo_limite_segundos
     });
 
-  /**
-   * As questões que o professor pode pôr num quiz.
-   *   origem:   'sistema' (as da equipe de Medicina) ou 'minhas'
-   *   nivel:    1, 2 ou 3 (opcional)
-   *   cenarios: lista de slugs (opcional)
-   *   areas:    lista de nomes de área (opcional)
-   *
-   * As do sistema vêm SEM gabarito; as minhas vêm com resposta_correta
-   * e explicacao, porque foi o próprio professor quem as escreveu.
-   */
+  /** Questões para o quiz: origem 'sistema' (sem gabarito) ou 'minhas'; filtros opcionais. */
   const getQuestoesProfessor = ({ origem = 'sistema', nivel, cenarios = [], areas = [] } = {}) => {
     const p = new URLSearchParams({ origem });
     if (nivel) p.set('nivel', nivel);
@@ -283,10 +162,7 @@ const API = (() => {
     return get(`/professor/questoes?${p}`);
   };
 
-  /**
-   * Cria uma questão do professor. Quem ela pertence o servidor decide
-   * pelo login — não existe campo de "dono" aqui.
-   */
+  /** Cria uma questão do professor (o dono vem do login). */
   const criarQuestao = ({ cenario, nivel_etario, enunciado, opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao, areas }) =>
     post('/professor/questoes', {
       cenario, nivel_etario, enunciado, opcao_a, opcao_b, opcao_c, opcao_d, resposta_correta, explicacao, areas
@@ -297,21 +173,10 @@ const API = (() => {
 
   const getQuizzesDaTurma = (turmaId) => get(`/professor/quizzes?turma_id=${turmaId}`);
 
-  /**
-   * O histórico inteiro: todos os quizzes que este professor já criou,
-   * de todas as turmas, do mais novo para o mais velho. Cada item traz o
-   * nome e a cor da turma junto, para a lista não virar um monte de id.
-   */
+  /** Histórico de quizzes do professor, com nome e cor da turma. */
   const getQuizzesCriados = () => get('/professor/quizzes');
 
-  /**
-   * As turmas do professor ordenadas por desempenho, da melhor para a
-   * pior. Cada item traz respostas, acertos e a taxa em porcentagem.
-   *
-   * A ORDEM não é a taxa crua: o servidor equilibra turmas que
-   * responderam pouco, senão três respostas certas viram 100% e passam
-   * na frente de quem respondeu quatrocentas.
-   */
+  /** Turmas ordenadas por desempenho. */
   const getRankingDasTurmas = () => get('/professor/ranking');
 
   const excluirQuiz = (quizId) => del(`/professor/quizzes/${quizId}`);
@@ -319,39 +184,16 @@ const API = (() => {
     post('/professor/turmas', { nome, cor, ano_escolar });
   const getAlunosDaTurma = (turmaId) => get(`/professor/turmas/${turmaId}/alunos`);
 
-  /**
-   * Muda nome, cor e/ou ano de uma turma. Só o que vier no objeto é
-   * alterado — o código da turma nunca muda, senão a sala inteira
-   * perderia o acesso.
-   */
+  /** Muda nome, cor e/ou ano de uma turma. */
   const editarTurma = (turmaId, mudancas) =>
     patch(`/professor/turmas/${turmaId}`, mudancas);
 
-  /**
-   * Desfaz uma turma. Os alunos que estavam nela não são apagados — só
-   * ficam sem turma, e podem entrar em outra com um código novo.
-   */
+  /** Desfaz uma turma (os alunos ficam sem turma). */
   const excluirTurma = (turmaId) => del(`/professor/turmas/${turmaId}`);
 
-  // ── API pública ─────────────────────────────
-  // =====================================================================
-  //  ESQUECI MINHA SENHA — pelo servidor, e sem token
-  //
-  //  São as únicas chamadas da API que não levam crachá: quem perdeu a
-  //  senha não consegue entrar, então não tem sessão para apresentar.
-  //
-  //  O que NÃO está aqui também importa. O código não é conferido neste
-  //  arquivo, nem o prazo, nem o número de tentativas — tudo isso mora
-  //  no servidor. Qualquer verificação escrita aqui seria enfeite: está
-  //  ao alcance de quem abrir o console.
-  // =====================================================================
+  // ── Esqueci minha senha (pelo servidor, sem token) ──
 
-  /**
-   * O e-mail é real? Confere o formato e se o domínio recebe mensagem.
-   *
-   * Devolve { ok, motivo }. Não diz se a CAIXA existe — isso não se
-   * descobre de fora, e quem prova é o código chegando lá.
-   */
+  /** Confere formato e domínio do e-mail. Devolve { ok, motivo }. */
   async function conferirEmail(email) {
     return post('/auth/conferir-email', { email });
   }
@@ -371,13 +213,7 @@ const API = (() => {
     return post('/auth/nova-senha', { email, ticket, senha });
   }
 
-  // =====================================================================
-  //  PAINEL DA EQUIPE (ADMIN)
-  //
-  //  Tudo pelo servidor, que confere o tipo ADMIN antes de qualquer
-  //  coisa. Nada aqui fala direto com o Supabase: apagar conta e dar XP
-  //  pelo navegador seria entregar a chave do jogo a quem abrir o console.
-  // =====================================================================
+  // ── Painel do admin (pelo servidor) ──
 
   const adminResumo      = ()   => get('/admin/resumo');
   const adminProfessores = ()   => get('/admin/professores');

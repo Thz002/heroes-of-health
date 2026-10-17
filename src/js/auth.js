@@ -1,13 +1,8 @@
-/**
- * auth.js — Heróis da Saúde
- * Controla a tela index.html, que serve tanto para LOGIN quanto para CADASTRO.
- * Depende do objeto global API (src/js/api.js), carregado antes deste arquivo.
- */
+/** auth.js — login e cadastro (index.html). */
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  // Faixa etária atendida pelo jogo. Fora dela o aluno não teria missão
-  // nenhuma compatível, porque as missões só cobrem de 7 a 18 anos.
+  // Faixa etária do jogo.
   const IDADE_MIN = 7;
   const IDADE_MAX = 18;
 
@@ -97,8 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnSpin) btnSpin.style.display = ligado ? 'block' : 'none';
   }
 
-  // Nome diferente de AUTH.perfilAtual() de propósito: essa aqui só lê o
-  // rádio marcado na tela (síncrona), não consulta o banco.
+  // Lê o tipo marcado na tela (não consulta o banco).
   function tipoSelecionado() {
     const marcado = document.querySelector('input[name="tipo"]:checked');
     return marcado ? marcado.value : 'ALUNO';
@@ -109,9 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return tipoSelecionado() === 'PROFESSOR' ? 'Cadastrar Professor' : 'Cadastrar Aluno';
   }
 
-  // ── Idade ─────────────────────────────────────
-  // A idade é digitada livremente. A regra dos 7 aos 18 mora aqui, e o banco
-  // repete a mesma regra do outro lado — nunca confie só na tela.
+  // ── Idade ── de 7 a 18 (o banco confere de novo).
   function validarIdade(valor) {
     const bruto = String(valor ?? '').trim();
     if (!bruto) return { ok: false, msg: 'Informe sua idade.' };
@@ -150,16 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ── Código da turma ───────────────────────────
-  //
-  // Havia dois modos aqui, e um botão para alternar: o código, ou
-  // escolher escola e turma em duas listas encadeadas. Ficou o código.
-  //
-  // A lista dependia de alguém ter cadastrado a escola com o nome
-  // certo, e o cadastro aceitava qualquer nome de qualquer pessoa —
-  // em poucos dias de teste o banco já tinha "Harvard College". O
-  // código resolve a turma numa chamada só, não depende de lista
-  // nenhuma, e é o que o professor já entrega para a sala.
+  // ── Código da turma ──
 
   // Descobre a turma a partir do código e mostra o nome para confirmação.
   async function resolverCodigo() {
@@ -185,8 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (codigoInput) {
-    // Espera a pessoa parar de digitar antes de consultar, em vez de
-    // consultar a cada tecla.
+    // Espera parar de digitar antes de consultar.
     let espera;
     codigoInput.addEventListener('input', () => {
       turmaPorCodigo = null;
@@ -216,8 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tipo = tipoSelecionado();
     const base = { nome, email: email.trim(), password: senha, tipo };
 
-    // O PROFESSOR não tem mais nada a preencher além do comum: ele
-    // cria as turmas depois, no painel.
+    // Professor não preenche mais nada.
     if (tipo === 'PROFESSOR') return { dados: base };
 
     // ALUNO
@@ -275,9 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  // O aluno passa pelo menu inicial antes do mapa; o professor vai direto
-  // para o painel. Quem muda o destino do aluno muda aqui — esta função é
-  // usada pelo login, pelo cadastro e pela entrada automática.
+  // Destino depois do login: aluno -> menu inicial, professor -> painel.
   function destinoDoTipo(tipo) {
     return (tipo === 'PROFESSOR' || tipo === 'ADMIN')
       ? { pagina: 'dashboard.html', saudacao: 'Bem-vindo, Mestre! ' }
@@ -314,10 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const { erro, dados } = montarCadastro(email, senha);
         if (erro) { showAlert(erro, 'error'); return; }
 
-        // Última chance de pegar o e-mail escrito errado. Quem passa
-        // daqui com "@gmai.com" fica com uma conta que nunca recupera
-        // a senha. A resposta vem do cache do servidor quando o campo
-        // já foi conferido ao sair dele, então quase nunca custa nada.
+        // Confere o e-mail de novo antes de cadastrar.
         if (!(await conferirEmailDigitado())) {
           showAlert('Confira o e-mail antes de criar a conta.', 'error');
           if (emailInput) emailInput.focus();
@@ -367,17 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
-  // ── O e-mail digitado é real? ─────────────────
-  //
-  // Só no cadastro, e só ao sair do campo: conferir a cada tecla seria
-  // uma consulta de DNS por letra digitada.
-  //
-  // Uma conta criada com o e-mail errado é uma conta que nunca vai
-  // conseguir recuperar a senha — e o aluno só descobre no dia em que
-  // precisar. Por isso o aviso aparece agora, enquanto dá para corrigir.
-  //
-  // O que este aviso NÃO promete: que a caixa existe. Ele pega o
-  // domínio escrito errado ("@gmai.com"), que é o engano comum.
+  // Confere o e-mail ao sair do campo (só no cadastro).
   const emailHint = document.getElementById('email-hint');
   let emailReprovado = '';   // o último endereço que o servidor recusou
 
@@ -423,17 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ═══════════════════════════════════════════════
-  //  ESQUECI MINHA SENHA
-  //
-  //  Duas telas dentro do mesmo cartão, no lugar do formulário de
-  //  login: os cinco quadradinhos do código e, depois, a nova senha.
-  //
-  //  Nada é decidido aqui. O código é conferido pelo servidor, o prazo
-  //  é do servidor e o limite de tentativas também — este arquivo só
-  //  mostra a resposta. Qualquer verificação escrita deste lado seria
-  //  enfeite, porque está ao alcance de quem abrir o console.
-  // ═══════════════════════════════════════════════
+  // ── Esqueci minha senha ── código e nova senha no mesmo cartão; quem decide é o servidor.
 
   const SENHA_MIN = 6;
 
@@ -452,9 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginDivider = document.getElementById('login-divider');
   const registerRow  = document.querySelector('.register-row');
 
-  // O e-mail e o ticket vivem aqui enquanto a recuperação está aberta.
-  // O ticket é o que a última chamada apresenta: sem ele, o servidor
-  // recusa a troca de senha mesmo que o código já tenha sido acertado.
+  // E-mail e ticket da recuperação em andamento.
   let recEmail = '';
   let recTicket = '';
   let contagemReenvio = 0;
@@ -548,8 +502,7 @@ document.addEventListener("DOMContentLoaded", () => {
     caixa.addEventListener('input', () => {
       const bruto = limpar(caixa.value);
 
-      // Teclado de celular às vezes entrega mais de um caractere de uma
-      // vez, e o autopreenchimento entrega o código inteiro.
+      // Colagem ou autopreenchimento do código inteiro.
       if (bruto.length > 1) {
         caixa.value = '';
         if (preencher(bruto, i) === caixas.length) conferirCodigo();
@@ -628,9 +581,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Um reenvio não pode virar metralhadora: o servidor exige 60s entre
-  // dois pedidos, e o botão mostra essa espera em vez de deixar a
-  // pessoa clicar e tomar erro.
+  // Espera de 60s entre reenvios.
   if (btnReenviar) {
     btnReenviar.addEventListener('click', async () => {
       if (contagemReenvio) return;
@@ -729,10 +680,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ── A setinha de voltar ───────────────────────
-  //
-  // Volta um passo de cada vez, e não direto para o login: quem errou a
-  // senha nova não deveria ter que pedir um código novo por causa disso.
+  // Voltar: um passo de cada vez.
   if (recVoltar) {
     recVoltar.addEventListener('click', () => {
       hideAlert();

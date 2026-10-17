@@ -1,37 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-gerar_importacao.py — monta o SQL que insere as questões que faltam
-
-JUNTA TRÊS FONTES
------------------
-    todas as questões.docx     enunciado, alternativas, gabarito e os
-                               DOIS feedbacks (acerto e erro)
-    arquivos soltos            o cenário e as áreas de pontuação
-    o banco                    o que já está lá, para não duplicar
-
-De onde vem o cenário de cada questão, nesta ordem:
-
-  1. o arquivo original, quando a questão aparece em algum deles —
-     quem escreveu sabe para onde pensou a pergunta;
-  2. a dedução por assunto de mapear_cenarios.py, para as que não
-     aparecem em arquivo nenhum.
-
-AS ÁREAS DE PONTUAÇÃO seguem o mesmo caminho: as que o arquivo original
-indica, ou as que aquele cenário já pontua no banco. A primeira área
-vale 10 pontos e as demais 5 — e a calibragem das barras não depende
-disso, porque recalcular_metas() refaz as metas no fim.
-
-Uso:
-    python db/ferramentas/gerar_importacao.py --sql db/importar-faltantes.sql
-
-Depois que a importação já rodou, o banco não sabe mais o que faltava e
-uma nova geração sairia vazia. Para refazer o MESMO conjunto — quando a
-correção foi no parser, e não na escolha das questões:
-
-    python db/ferramentas/gerar_importacao.py \
-        --refazer db/importar-faltantes.sql --sql db/importar-faltantes.sql
-"""
-
 import importlib.util
 import os
 import re
@@ -62,8 +28,7 @@ LETRAS = 'ABCDE'
 PONTOS_PRINCIPAL = 10
 PONTOS_SECUNDARIA = 5
 
-# Fallback de áreas por cenário: o que aquele lugar já pontua no banco.
-# Só é usado quando o arquivo original não disse nada.
+# Áreas padrão por cenário, quando o arquivo original não diz.
 AREAS_PADRAO = {
     'casa':           ['Saúde', 'Educação', 'Felicidade'],
     'creche':         ['Saúde', 'Felicidade', 'Limpeza'],
@@ -116,19 +81,11 @@ def montar(refazer=None):
         if o['areas']:
             areas_da_equipe[id(q)] = o['areas']
 
-    # Quem já está no banco fica de fora — menos as que a própria
-    # geração anterior pôs lá, quando se pede para refazer o conjunto.
+    # Pula o que já está no banco (exceto o que a geração anterior inseriu).
     ja_tem = {cb.normalizar(l['enunciado']) for l in no_banco
               if not (refazer and l.get('codigo_externo') in refazer)}
 
-    # Ao refazer, o código e o cenário vêm da linha que a geração
-    # anterior gravou: é o registro do que foi decidido. Deduzir de novo
-    # daria outro resultado, porque a dedução lê o banco — e o banco
-    # mudou justamente por causa da importação.
-    #
-    # A chave leva o nível junto: cinco enunciados aparecem duas vezes no
-    # documento, uma na faixa de 11 a 14 e outra na de 15 a 18. Só pelo
-    # texto, as duas cairiam na mesma linha do banco.
+    # Ao refazer, reaproveita código e cenário da geração anterior; a chave inclui o nível.
     antes = {}
     if refazer:
         for l in no_banco:

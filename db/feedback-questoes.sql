@@ -1,42 +1,11 @@
--- =====================================================================
---  FEEDBACK DAS QUESTÕES — gerado por db/ferramentas/casar_com_banco.py
---
---  NÃO EDITE À MÃO. Para refazer:
---      python db/ferramentas/casar_com_banco.py --sql db/feedback-questoes.sql
---
---  O que este arquivo faz:
---    1. cria a coluna explicacao_erro
---    2. preenche os DOIS feedbacks das questões que já estavam no banco
---    3. corrige gabaritos, enunciados e alternativas que divergiam do
---       documento — inclusive as questões cujas alternativas chegaram
---       ao banco fora de ordem, com a letra certa apontando o texto
---       errado
---
---  A fonte é "todas as questões.docx", da equipe de Medicina, onde cada
---  questão traz "Se acertar:" e "Se errar:".
---
---  Onde rodar: SQL Editor do Supabase, COM NADA SELECIONADO.
---  Pode rodar mais de uma vez: só faz update, nunca insert.
--- =====================================================================
+-- Feedbacks das questões (gerado por db/ferramentas/casar_com_banco.py). Só update, pode rodar de novo.
 
 
--- O feedback de quem ERRA. É texto diferente do de quem acerta: um
--- confirma e aprofunda, o outro dá a pista sem entregar a resposta —
--- a ideia é que a pessoa tente de novo sabendo mais, e não que copie.
---
--- `explicacao` continua sendo o feedback de ACERTO, como já era.
+-- Feedback de quem erra (explicacao continua sendo o de acerto).
 alter table questoes add column if not exists explicacao_erro text;
 
 
--- ── ALTERNATIVAS REESCRITAS ──────────────────────────────────────
--- Chegaram ao banco com uma alternativa a menos e o nome do cenário
--- no lugar da última. As letras andaram uma casa e o gabarito passou
--- a apontar o texto errado.
---
---   id 120   nv1   Lucas terminou de brincar no parquinho e está na hora do lan…
---   id 121   nv1   SAMU quer ajudar o maior número de pessoas possível, mesmo e…
---   id 125   nv1   A frase "O corpo humano é uma máquina feita para o movimento…
---   id 497   nv3   A maior incidência de hepatite A em regiões com saneamento p…
+-- Alternativas reescritas: estavam fora de ordem no banco.
 
 
 update questoes set

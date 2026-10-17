@@ -1,11 +1,4 @@
-/**
- * server/rotas/jogo.js — as rotas que o aluno usa jogando
- *
- * O motivo deste arquivo existir: enquanto a correção da resposta
- * acontecia no navegador, ela não valia nada. O aluno lia
- * `resposta_correta` pelo console e escrevia a própria pontuação com um
- * update. Aqui a regra do jogo fica do lado de cá, fora do alcance dele.
- */
+/** Rotas do aluno jogando: correção, pontuação e progresso ficam no servidor. */
 
 const express = require('express');
 const { admin } = require('../supabase');
@@ -20,33 +13,14 @@ const { XP_POR_QUESTAO, acertosUnicosPorAluno } = PROG;
 const rotas = express.Router();
 rotas.use(autenticar);
 
-/**
- * Ponte enquanto a coluna `descricao` de quizzes_professores não existir
- * em todo banco. Roda a consulta; se o Postgres reclamar dessa coluna,
- * roda de novo sem ela.
- *
- * É temporário. Some quando todos os bancos rodarem:
- *   alter table quizzes_professores add column if not exists descricao varchar(200);
- *
- * A descrição é a frase que o aluno lê no card — perder a frase é bem
- * menos grave do que a tela inteira de tarefas parar de carregar.
- */
+/** Repete a consulta sem `descricao` se a coluna ainda não existir no banco. */
 async function comOuSemDescricao(montar) {
   const r = await montar(true);
   if (r.error && /descricao/.test(r.error.message || '')) return montar(false);
   return r;
 }
 
-// ── Cenários do mapa ─────────────────────────────────────────────────
-//
-// Cada cenário vem com a lista de ÁREAS que ele alimenta (Saúde,
-// Vacinação, ...). É o que o painel lateral do mapa usa para desenhar,
-// no hover, as barras de progresso do aluno naquele lugar.
-//
-// A lista NÃO é filtrada pela idade de quem pergunta: aqui a pergunta é
-// "o que este lugar ensina?", e não "o que eu posso jogar agora?".
-// Filtrar por faixa etária deixaria o painel vazio nos lugares cujo
-// conteúdo ainda só existe para outra idade.
+// ── Cenários do mapa ── com as áreas que cada um alimenta (sem filtro de idade).
 rotas.get('/cenarios', async (req, res) => {
   const cenarios = await admin
     .from('cenarios')
@@ -57,13 +31,7 @@ rotas.get('/cenarios', async (req, res) => {
     return falhou(res, 500, 'Não foi possível carregar o mapa.', cenarios.error, 'GET /cenarios');
   }
 
-  // Três consultas soltas em vez de um join aninhado: questoes_areas não
-  // tem ligação direta com cenarios — a ponte entre as duas é questoes.
-  // As duas primeiras passam de mil linhas fácil; daí o lerTudo.
-  //
-  // Só as questões do sistema: as de professor são de uma turma só, e
-  // uma pergunta escrita numa escola não pode acender barra no mapa dos
-  // alunos de todas as outras.
+  // Só questões do sistema; lerTudo porque passa de 1000 linhas.
   const [questoes, vinculos, areas] = await Promise.all([
     lerTudo(() => admin.from('questoes').select('id, cenario_id')
       .eq('criado_por', CRIADOR_SISTEMA).order('id')),
@@ -90,9 +58,7 @@ rotas.get('/cenarios', async (req, res) => {
     areasPorCenario.get(cenarioId).add(v.area_nome);
   }
 
-  // Sai na ordem canônica das 8 barras (areas.ordem), não na ordem em
-  // que o conteúdo foi cadastrado — assim Saúde vem sempre antes de
-  // Felicidade, em qualquer lugar do mapa.
+  // Áreas na ordem das 8 barras.
   res.json((cenarios.data || []).map(c => ({
     ...c,
     areas: [...(areasPorCenario.get(c.id) || [])]
@@ -100,13 +66,7 @@ rotas.get('/cenarios', async (req, res) => {
   })));
 });
 
-// ── Responder uma questão de um quiz ─────────────────────────────────
-//
-// Só existe resposta DENTRO de um quiz do professor. Quando havia
-// exploração livre pelo mapa, qualquer questão do banco podia ser
-// respondida; sem ela, aceitar uma questão avulsa deixaria o aluno
-// pontuar, pelo console, em perguntas que ninguém passou para ele —
-// bastava tentar todas as letras em cada uma.
+// ── Responder ── só dentro de um quiz do professor.
 rotas.post('/responder', async (req, res) => {
   const questaoId = Number(req.body?.questao_id);
   const resposta  = String(req.body?.resposta || '').trim().toUpperCase();
@@ -121,8 +81,7 @@ rotas.post('/responder', async (req, res) => {
     return res.status(400).json({ message: 'Responda pelas missões do seu professor.' });
   }
 
-  // O quiz tem de ser da turma de quem responde (ou do professor que o
-  // criou, testando a própria tarefa), e a questão tem de estar nele.
+  // O quiz tem de ser da turma (ou do professor que o criou) e conter a questão.
   const [quiz, vinculo] = await Promise.all([
     admin.from('quizzes_professores').select('turma_id, professor_id').eq('id', quizId).maybeSingle(),
     admin.from('quiz_questoes').select('questao_id')
@@ -138,8 +97,7 @@ rotas.post('/responder', async (req, res) => {
     return res.status(403).json({ message: 'Essa questão não faz parte de uma missão sua.' });
   }
 
-  // Ponte enquanto houver banco sem a coluna do feedback de erro. Some
-  // quando todos tiverem rodado db/feedback-questoes.sql.
+  // Fallback para bancos sem explicacao_erro.
   const CAMPOS = 'id, resposta_correta, explicacao';
 
   let questao = await admin
@@ -172,8 +130,7 @@ rotas.post('/responder', async (req, res) => {
   let pontosGanhos = [];
 
   if (acertou) {
-    // Pontua só no PRIMEIRO acerto de cada questão. Sem isso, bastava
-    // responder a mesma pergunta certa dez vezes para encher as barras.
+    // Pontua só no primeiro acerto de cada questão.
     const jaAcertou = await admin
       .from('respostas_alunos')
       .select('id')
@@ -202,16 +159,7 @@ rotas.post('/responder', async (req, res) => {
     }
   }
 
-  // As barras que este acerto mexeu, para o aviso de progresso da tela
-  // da missão (conquista-aviso.js) encher cada uma do antes ao depois.
-  //
-  // Só o DEPOIS é lido: progresso_do_aluno já conta esta resposta. O
-  // antes é o depois menos o que acabou de ser ganho, e isso é exato
-  // porque a régua (pontos_possiveis) não mudou — a questão está num
-  // quiz da turma, então já fazia parte do universo do aluno antes de
-  // ser acertada. Por isso só para quiz da PRÓPRIA turma: o professor
-  // testando a tarefa dele não tem essa garantia, e para ele a conta
-  // mentiria.
+  // Barras que o acerto mexeu, para o aviso de progresso (só quizzes da própria turma).
   let barras = [];
 
   if (pontosGanhos.length && quiz.data.turma_id === req.usuario.turma_id) {
@@ -234,9 +182,7 @@ rotas.post('/responder', async (req, res) => {
   // Terminou o quiz com esta resposta? É o marco que premia os dois.
   const conclusao = acertou ? await PROG.registrarConclusao(req.usuario, quizId) : null;
 
-  // O XP e o nível DEPOIS desta resposta, para a barra subir na hora em
-  // vez de só na próxima troca de página. É o pedido de "progressão
-  // notável": o número tem de se mexer no momento do acerto.
+  // XP e nível depois da resposta.
   const retrato = await PROG.xpDoAluno(req.usuario.id);
 
   const novas = retrato.erro ? [] : await PROG.conquistar(
@@ -245,20 +191,10 @@ rotas.post('/responder', async (req, res) => {
 
   const xp = (retrato.total || 0) + novas.reduce((s, i) => s + (i.xp || 0), 0);
 
-  // O que volta para a tela. Mesmo errando, a pessoa recebe a explicação
-  // — mas NUNCA a letra certa: a ideia é que ela tente de novo com o
-  // conteúdo em mãos, e não que copie a resposta.
+  // Nunca devolve a letra certa.
   res.json({
     acertou,
-    // DOIS TEXTOS DIFERENTES, escolhidos aqui e não na tela.
-    //
-    // Quem acerta recebe a confirmação, que aprofunda o que ele já
-    // sabia. Quem erra recebe a pista — e a pista nunca entrega a letra
-    // certa, porque a ideia é que a pessoa tente de novo sabendo mais,
-    // não que copie a resposta.
-    //
-    // Banco antigo, sem o texto de erro: cai no de acerto, que é o que
-    // sempre aparecia antes. Pior do que a pista, melhor do que nada.
+    // Explicação de acerto ou de erro (sem a de erro, usa a de acerto).
     explicacao: (acertou ? questao.data.explicacao
                          : questao.data.explicacao_erro || questao.data.explicacao),
     pontos: pontosGanhos,
@@ -348,10 +284,7 @@ rotas.get('/quizzes/:id/questoes', async (req, res) => {
   const porId = new Map((questoes.data || []).map(q => [q.id, q]));
   const ordenadas = ids.map(id => porId.get(id)).filter(Boolean);
 
-  // As que a pessoa já acertou saem da vez. Sem isto, quem fecha a aba no
-  // meio recomeça do zero — e o "faltam 4" do card do mapa não bateria
-  // com o que a tela mostra. A ordem sorteada é preservada: a fila é a
-  // mesma para a turma inteira, só sem o que cada um já resolveu.
+  // Tira da fila as que a pessoa já acertou, mantendo a ordem.
   const acertadas = await admin
     .from('respostas_alunos').select('questao_id')
     .eq('usuario_id', req.usuario.id).eq('acertou', true)
@@ -369,16 +302,7 @@ rotas.get('/quizzes/:id/questoes', async (req, res) => {
 });
 
 
-// ── As missões ativas deste aluno ────────────────────────────────────
-//
-// "Missão" é o nome que o aluno vê para o quiz que o professor passou.
-// Esta rota devolve os quizzes da turma que ainda têm pergunta para
-// responder — é a lista embaixo do mapa, e é por ela que o mapa sabe
-// quais lugares têm o botão "Jogar" aceso.
-//
-// Um quiz guarda uma LISTA de cenários, então ele não mora num lugar
-// só: aparece em cada ponto que cobre. Responder num deles conta nos
-// outros — é a mesma tarefa vista de janelas diferentes.
+// ── Missões ativas ── quizzes da turma com perguntas pendentes.
 rotas.get('/meu-mapa', async (req, res) => {
   if (!req.usuario.turma_id) return res.json({ quizzes: [], total_pendente: 0 });
 
@@ -407,8 +331,7 @@ rotas.get('/meu-mapa', async (req, res) => {
   const total = new Map();
   for (const v of vinculos.data) total.set(v.quiz_id, (total.get(v.quiz_id) || 0) + 1);
 
-  // Conta QUESTÕES acertadas, não acertos: a mesma questão acertada duas
-  // vezes (numa segunda rodada) não pode contar em dobro.
+  // Conta questões distintas acertadas.
   const prontas = new Map();
   for (const f of feitas.data) {
     if (!prontas.has(f.quiz_id)) prontas.set(f.quiz_id, new Set());
@@ -437,18 +360,7 @@ rotas.get('/meu-mapa', async (req, res) => {
 });
 
 
-// ── As 8 barras do aluno ─────────────────────────────────────────────
-//
-// A régua de cada barra é DESTE aluno: os pontos que ele pode ganhar
-// com as missões da turma dele, mais o que já conquistou. Quem calcula
-// é progresso_do_aluno() (db/setup.sql), que explica a regra inteira.
-//
-// Devolve sempre as 8, na ordem das barras:
-//   pontos            o que ele já ganhou na área
-//   pontos_possiveis  o que as missões dele valem na área, ao todo
-//   porcentagem       inteiro de 0 a 100, arredondado PARA BAIXO — 100
-//                     só quando fez tudo; 99,6% não pode virar "dominado"
-//   sem_missoes       nenhuma missão dele vale ponto nesta área (ainda)
+// ── As 8 barras do aluno ── (progresso_do_aluno() no banco). porcentagem arredondada para baixo.
 rotas.get('/meu-progresso', async (req, res) => {
   const { data, error } = await admin.rpc('progresso_do_aluno', { p_usuario: req.usuario.id });
 
@@ -468,33 +380,10 @@ rotas.get('/meu-progresso', async (req, res) => {
   }));
 });
 
-/* ═══════════════════════════════════════════════════════════════════
-   O RESUMO DO ALUNO  —  GET /meu-resumo
+/* ── GET /meu-resumo ── turma, posição e os números da tela de progresso. */
 
-   Tudo o que a tela "Meu progresso" mostra acima das barras: a turma em
-   que a pessoa está, a posição dela entre os colegas, e os quatro
-   números do topo.
-
-   Por que numa rota só e não em quatro: os quatro números saem TODOS da
-   mesma leitura de respostas_alunos. Buscar a mesma tabela quatro vezes
-   para contar coisas diferentes dela seria quatro viagens ao banco para
-   responder uma pergunta só — "como eu estou indo?".
-
-   O XP e o nível NÃO são calculados aqui: vêm de server/progressao.js,
-   que é o único lugar do projeto que sabe quanto cada coisa vale. Esta
-   rota só pergunta e repassa.
-   ═══════════════════════════════════════════════════════════════════ */
-
-/**
- * A turma do aluno, quem mais está nela e em que lugar ele fica.
- *
- * Serve as duas rotas: /meu-resumo usa só a turma e a posição, e
- * /minha-turma usa a lista inteira. Ficava duplicado, e duplicado é
- * onde as duas telas começam a discordar sobre quem está em primeiro.
- *
- * Devolve { erro } quando o banco falhar, { turma: null } quando a
- * turma sumiu — são coisas diferentes e a rota trata cada uma.
- */
+/** Turma do aluno, colegas e posição (usado por /meu-resumo e /minha-turma).
+    Devolve { erro } ou { turma: null }. */
 async function turmaComColegas(eu, turmaId) {
   const turma = await admin
     .from('turmas')
@@ -514,9 +403,7 @@ async function turmaComColegas(eu, turmaId) {
 
   const alunos = matriculados.data || [];
 
-  // O professor é mostrado ao aluno com a mesma cara de um perfil: foto,
-  // nome e patente. É a outra metade da dupla que o jogo quer formar —
-  // o aluno precisa ver que o professor dele também está subindo.
+  // Professor da turma, com foto e patente.
   let dadosProfessor = null;
 
   if (professor.data) {
@@ -544,9 +431,7 @@ async function turmaComColegas(eu, turmaId) {
 
   if (!alunos.length) return { turma: dados, colegas: [], posicao: null };
 
-  // XP COMPLETO, a mesma régua do perfil: questões, presença, insígnias
-  // e conclusões. Antes aqui só entravam os acertos, e o mesmo aluno
-  // aparecia com um número no perfil e outro no ranking da turma.
+  // XP completo de cada colega.
   const porAluno = await PROG.xpDeVarios(alunos.map(a => a.id));
 
   const colegas = alunos.map(a => {
@@ -560,8 +445,7 @@ async function turmaComColegas(eu, turmaId) {
     };
   }).sort((a, b) => b.xp - a.xp || a.nome.localeCompare(b.nome, 'pt-BR'));
 
-  // Empate é a MESMA posição: dois alunos com o mesmo XP são os dois
-  // segundos. Contar quantos estão à frente dá isso de graça.
+  // Empate = mesma posição.
   const meuXp = porAluno.get(eu) || 0;
   const naFrente = colegas.filter(c => !c.eu && c.xp > meuXp).length;
 
@@ -587,14 +471,7 @@ rotas.get('/meu-resumo', async (req, res) => {
   const certas = minhas.data.filter(r => r.acertou);
   const distintas = new Set(certas.map(r => r.questao_id));
 
-  // O professor também passa por aqui (a tela de perfil é a mesma), e o
-  // XP dele NÃO sai de respostas_alunos — ele não responde pergunta
-  // nenhuma. Sem este desvio, esta rota devolvia 0 XP para um professor
-  // que a barra, pela /presenca, mostrava com 156: dois números para a
-  // mesma coisa, que é o jeito mais rápido de ninguém confiar em nenhum.
-  //
-  // As respostas já estão lidas: passar a lista evita que o módulo de
-  // progressão vá buscar a mesma coisa de novo.
+  // Professor: XP vem de xpDoProfessor().
   const retrato = req.usuario.tipo === 'PROFESSOR'
     ? await PROG.xpDoProfessor(eu)
     : await PROG.xpDoAluno(eu, minhas.data);
@@ -610,10 +487,7 @@ rotas.get('/meu-resumo', async (req, res) => {
     taxa: respostas ? Math.round((certas.length / respostas) * 100) : null,
     acertos_unicos: distintas.size,
 
-    // O XP agora soma três fontes: questões, dias de presença e
-    // insígnias. `de_questoes`/`de_dias`/`de_insignias` vão junto para a
-    // tela poder explicar de onde veio, em vez de mostrar um total que
-    // a pessoa não sabe como cresceu.
+    // XP total e as partes de cada fonte.
     xp: retrato.total,
     xp_de_questoes: retrato.de_questoes,
     xp_de_dias: retrato.de_dias,
@@ -623,8 +497,7 @@ rotas.get('/meu-resumo', async (req, res) => {
 
     conclusoes: retrato.conclusoes,
 
-    // Só o professor tem estes. Para o aluno vêm undefined e somem do
-    // JSON — a tela dele não pergunta por eles.
+    // Só para o professor.
     quizzes_criados: retrato.quizzes_criados,
     acertos_da_turma: retrato.acertos_da_turma,
     taxa_media: retrato.taxa_media,
@@ -668,8 +541,7 @@ rotas.get('/meu-resumo', async (req, res) => {
     const total = new Map();
     for (const v of vinculos.data) total.set(v.quiz_id, (total.get(v.quiz_id) || 0) + 1);
 
-    // Mesma conta do mapa: questões distintas acertadas dentro daquele
-    // quiz. Acertar de novo numa segunda rodada não conta duas vezes.
+    // Questões distintas acertadas no quiz.
     const prontas = new Map();
     for (const r of certas) {
       if (!r.quiz_id) continue;
@@ -677,8 +549,7 @@ rotas.get('/meu-resumo', async (req, res) => {
       prontas.get(r.quiz_id).add(r.questao_id);
     }
 
-    // Um quiz sem questão nenhuma não é missão: não entra nem como
-    // pendente nem como concluída.
+    // Quiz sem questões não conta.
     const valem = idsQuiz.filter(id => (total.get(id) || 0) > 0);
 
     estatisticas.missoes_totais = valem.length;
@@ -693,9 +564,7 @@ rotas.get('/meu-resumo', async (req, res) => {
     return falhou(res, 500, 'Não foi possível carregar sua turma.', daTurma.erro, 'GET /meu-resumo');
   }
 
-  // Repare que os COLEGAS ficam de fora daqui. Esta rota responde "como
-  // eu estou indo?", e para isso "3º de 24" basta — quem são os outros
-  // dois da frente é assunto da tela da turma, não desta.
+  // Os colegas ficam de fora desta rota.
   res.json({
     turma: daTurma.turma,
     posicao: daTurma.posicao,
@@ -703,23 +572,7 @@ rotas.get('/meu-resumo', async (req, res) => {
   });
 });
 
-/* ═══════════════════════════════════════════════════════════════════
-   A TURMA DO ALUNO  —  GET /minha-turma
-
-   O que o aluno vê sobre a turma dele: nome, ano, escola, professor, e
-   quem mais está lá dentro.
-
-   Por que não dá para reaproveitar turma.html (a tela do professor):
-   aquela página pede `?id=` na URL e chama rotas de /professor, que
-   recusam quem não é dono da turma. O aluno também não deve escolher
-   turma por parâmetro de URL — a dele sai da conta, e só ela.
-
-   O QUE ESTA ROTA NÃO DEVOLVE: taxa de acerto de colega. A lista sai
-   por XP, que é um número que só sobe — dá para ficar em último e ainda
-   assim ter "40 XP", que é algo que a pessoa conquistou. Uma coluna de
-   "45% de acerto" ao lado do nome de uma criança de 8 anos, exposta
-   para a turma toda, é outra coisa.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── GET /minha-turma ── a turma do aluno e os colegas (sem taxa de acerto). */
 
 rotas.get('/minha-turma', async (req, res) => {
   if (!req.usuario.turma_id) {
@@ -735,23 +588,8 @@ rotas.get('/minha-turma', async (req, res) => {
   res.json(daTurma);
 });
 
-/* ═══════════════════════════════════════════════════════════════════
-   ENTRAR NUMA TURMA  —  POST /minha-turma   { turma_id }
-
-   Para o aluno que ficou sem turma: cadastrou sem escolher, ou o
-   professor desfez a turma dele. Os dois caminhos da tela são os mesmos
-   do cadastro (código da turma, ou escola + turma na lista), e os dois
-   chegam aqui como um turma_id.
-
-   SÓ QUEM NÃO TEM TURMA. Trocar de turma muda de quem são as missões e
-   em que ranking a pessoa aparece — é decisão do professor, não um
-   botão do aluno. O "turma_id is null" vai no próprio update, e não só
-   num if antes: duas abas clicando juntas não conseguem gravar duas
-   turmas.
-
-   É a ÚNICA porta: a coluna turma_id não é gravável pelo navegador
-   (grant por coluna em db/setup.sql).
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── POST /minha-turma ── entra numa turma, só quem ainda não tem.
+   "turma_id is null" no próprio update evita corrida. */
 
 rotas.post('/minha-turma', async (req, res) => {
   if (req.usuario.tipo !== 'ALUNO') {
@@ -796,21 +634,7 @@ rotas.post('/minha-turma', async (req, res) => {
   res.json(daTurma);
 });
 
-/* ═══════════════════════════════════════════════════════════════════
-   A PRESENÇA DO DIA  —  POST /presenca
-
-   O prêmio diário precisava de um gatilho, e o login não serve: quem
-   faz o login é o Supabase, direto do navegador, sem passar por aqui.
-   Além disso quem fica dias com a aba aberta nunca "loga" de novo.
-
-   Então o gatilho é a primeira vez que a pessoa aparece no servidor em
-   cada sessão do navegador. O banco é que decide se vale prêmio: a
-   chave (usuario_id, dia) recusa o segundo do mesmo dia. Chamar demais
-   é inofensivo — e é por isso que o navegador pode chamar sem medo.
-
-   É POST e não GET porque esta rota ESCREVE. Um GET que grava é a
-   receita para o navegador repetir a chamada sozinho ao recarregar.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── POST /presenca ── marca o dia (o banco recusa o segundo do mesmo dia). */
 
 rotas.post('/presenca', async (req, res) => {
   const eu = req.usuario.id;
@@ -822,9 +646,7 @@ rotas.post('/presenca', async (req, res) => {
     return falhou(res, 500, 'Não foi possível registrar sua entrada.', presenca.erro, 'POST /presenca');
   }
 
-  // Depois de marcar, e não antes: o dia de hoje já tem de estar contado
-  // quando a sequência for medida, senão a insígnia de 7 dias só sairia
-  // na visita seguinte.
+  // Mede a sequência depois de marcar o dia.
   const retrato = sou === 'PROFESSOR'
     ? await PROG.xpDoProfessor(eu)
     : await PROG.xpDoAluno(eu);
@@ -839,8 +661,7 @@ rotas.post('/presenca', async (req, res) => {
 
   const novas = await PROG.conquistar(eu, sou === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO', medidas);
 
-  // Uma insígnia dá XP, então o total mudou depois de conquistá-la. Sem
-  // recontar, a tela comemoraria a insígnia e mostraria o XP de antes.
+  // Soma o XP das insígnias recém-ganhas.
   const xp = retrato.total + novas.reduce((s, i) => s + (i.xp || 0), 0);
 
   res.json({
@@ -856,19 +677,7 @@ rotas.post('/presenca', async (req, res) => {
 });
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   OS SEGREDOS DO MAPA  —  GET /minhas-descobertas, POST /descobrir
-
-   Objetos clicáveis dentro da foto de alguns lugares (a TV e as HQs da
-   banca, o calendário da farmácia) dão uma insígnia da regra
-   DESCOBERTA a quem os acha. O mapa pede a lista uma vez ao carregar,
-   para saber quais dicas ainda mostrar, e avisa cada achado.
-
-   O LIMITE, DITO COM TODAS AS LETRAS: quem diz "achei" é o navegador.
-   O servidor só garante que esta porta dá apenas insígnias DESCOBERTA
-   (nunca as de acerto ou de dias) e uma vez cada — por isso elas valem
-   pouco XP.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Segredos do mapa ── GET /minhas-descobertas e POST /descobrir (só insígnias DESCOBERTA). */
 
 rotas.get('/minhas-descobertas', async (req, res) => {
   const eu = req.usuario.id;
@@ -933,33 +742,9 @@ rotas.post('/descobrir', async (req, res) => {
 });
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   A ESTANTE  —  GET /minha-estante
+/* ── GET /minha-estante ── o catálogo inteiro; degraus do mesmo grupo viram uma peça. */
 
-   Devolve o catálogo INTEIRO, não só o que a pessoa já tem. É o que
-   transforma a prateleira vazia em objetivo: o aluno vê a silhueta da
-   próxima insígnia e sabe que faltam 12 acertos para ela.
-
-   O professor recebe a estante dele, que hoje está vazia porque as
-   regras ainda não foram combinadas. A tela trata isso como estado
-   normal — a estante existe, as peças é que não.
-
-   OS DEGRAUS. Insígnias com o mesmo `grupo` (os 5/25/50 acertos de
-   cada lugar) viram UMA peça, no lugar do primeiro degrau: o mais alto
-   já conquistado, ou o primeiro se nenhum foi. Juntar aqui, e não na
-   tela, é o que faz a estante e o perfil mostrarem a mesma coisa.
-
-   `conquistadas` e `total` contam DEGRAUS, não peças: cada degrau é uma
-   conquista com o próprio XP. A peça leva `degraus` e `degraus_feitos`
-   para a tela desenhar quantos já caíram.
-   ═══════════════════════════════════════════════════════════════════ */
-
-/**
- * A peça de um grupo de degraus. `proximo` é o degrau seguinte ao
- * mostrado, para a peça já conquistada continuar dizendo quanto falta.
- * `escada` são todos os degraus, para o modal da estante mostrar o
- * caminho inteiro do lugar.
- */
+/** Peça de um grupo de degraus, com o próximo e a escada inteira. */
 function pecaDoGrupo(degraus) {
   const escada = [...degraus].sort((a, b) => a.alvo - b.alvo);
 
@@ -987,9 +772,7 @@ rotas.get('/minha-estante', async (req, res) => {
   const eu = req.usuario.id;
   const sou = req.usuario.tipo === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO';
 
-  // ouVazio: num banco que ainda não rodou o setup.sql novo, a estante
-  // volta vazia em vez de dar erro. A tela já sabe desenhar prateleira
-  // sem peça — é o estado do professor hoje.
+  // Banco sem as tabelas: estante vazia em vez de erro.
   const [bruto1, bruto2] = await Promise.all([
     admin.from('insignias')
       .select('codigo, nome, descricao, regra, alvo, xp, imagem, ordem, cenario_slug, grupo')
@@ -1037,8 +820,7 @@ rotas.get('/minha-estante', async (req, res) => {
       grupo: i.grupo || null,
       conquistada: tenho,
       conquistada_em: quando.get(i.codigo) || null,
-      // Quanto falta, para a insígnia bloqueada virar objetivo e não
-      // enigma. Nunca passa do alvo: "62 de 50" não faz sentido.
+      // Nunca passa do alvo.
       progresso: Math.min(agora, i.alvo),
       porcentagem: Math.min(100, Math.round((agora / i.alvo) * 100))
     };
@@ -1051,8 +833,7 @@ rotas.get('/minha-estante', async (req, res) => {
     porGrupo.get(d.grupo).push(d);
   }
 
-  // Na ordem do catálogo: a peça de um grupo ocupa o lugar do primeiro
-  // degrau dele, e os outros degraus não abrem lugar próprio.
+  // A peça de um grupo ocupa o lugar do primeiro degrau.
   const insignias = [];
   for (const d of degraus) {
     if (!d.grupo) insignias.push(d);
@@ -1070,31 +851,11 @@ rotas.get('/minha-estante', async (req, res) => {
 });
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   EDITAR O PRÓPRIO PERFIL  —  PATCH /meu-perfil
-
-   Só nome e foto. `tipo`, `idade` e `turma_id` ficam de fora de
-   propósito: os três decidem o que a pessoa VÊ e PODE no jogo — a idade
-   escolhe as questões, o tipo abre o painel do professor, a turma traz
-   as tarefas. Deixá-los editáveis aqui seria entregar as três chaves
-   para quem está do lado de fora.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── PATCH /meu-perfil ── só nome e foto. */
 
 const NOME_MAX = 100;
 
-/* A foto chega de dois jeitos, e os dois são aceitos:
-
-     https://...              um endereço que a pessoa colou
-     data:image/jpeg;base64,  a imagem inteira, escolhida do computador
-
-   O segundo existe para não depender de o aluno ter a foto publicada em
-   algum lugar da internet — e para não precisar de bucket no Supabase
-   Storage, que é infraestrutura a mais para um círculo de 34 pixels.
-
-   O limite de 120 KB não é chute: a tela reduz a imagem para 192×192
-   antes de enviar, o que dá uns 15 KB em base64. 120 KB aceita uma foto
-   bem mais pesada que isso e ainda assim impede que alguém grave um
-   arquivo de megabytes numa coluna lida em toda navegação. */
+/* Foto: https:// ou data:image (até 120 KB; a tela reduz para 192×192). */
 const URL_MAX = 500;
 const FOTO_MAX = 120 * 1024;
 const FOTO_EMBUTIDA = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
@@ -1118,12 +879,7 @@ rotas.patch('/meu-perfil', async (req, res) => {
       mudancas.avatar_url = null;          // tirar a foto é uma escolha válida
 
     } else if (foto.startsWith('data:')) {
-      // Imagem escolhida do computador, já reduzida pelo navegador.
-      //
-      // A expressão confere o tipo E o alfabeto do base64. Isso importa:
-      // "data:image/svg+xml" é tecnicamente uma imagem e pode conter
-      // <script> — fora da lista de propósito. Os três formatos aceitos
-      // são todos de pixel, sem código dentro.
+      // Só png, jpeg ou webp em base64 (svg fica de fora: pode ter script).
       if (foto.length > FOTO_MAX) {
         return res.status(400).json({ message: 'Essa imagem é pesada demais. Tente outra.' });
       }
@@ -1136,9 +892,7 @@ rotas.patch('/meu-perfil', async (req, res) => {
       return res.status(400).json({ message: 'O endereço da imagem é longo demais.' });
 
     } else if (!/^https:\/\//i.test(foto)) {
-      // Só https: um endereço http numa página https não carrega, e
-      // javascript: dentro de um src é porta de entrada para script de
-      // terceiro na tela de todo mundo que vir o avatar.
+      // Só https.
       return res.status(400).json({ message: 'O endereço da imagem precisa começar com https://' });
 
     } else {
@@ -1158,8 +912,7 @@ rotas.patch('/meu-perfil', async (req, res) => {
     .single();
 
   if (r.error) {
-    // A coluna da foto pode não existir ainda no banco de quem não rodou
-    // o setup.sql mais novo. Dizer isso é melhor do que "erro interno".
+    // Banco sem a coluna avatar_url.
     if (/avatar_url/.test(r.error.message || '')) {
       console.warn('  ⚠ usuarios.avatar_url não existe neste banco.\n' +
                    '    Rode: alter table usuarios add column if not exists avatar_url text;');

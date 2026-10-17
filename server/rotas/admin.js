@@ -1,23 +1,5 @@
-/**
- * server/rotas/admin.js — o painel de quem mantém o jogo
- *
- * Tudo aqui é para a equipe do projeto. O `exigirTipo('ADMIN')` lá
- * embaixo é a única coisa que separa estas rotas do resto do mundo, e
- * ele não é decorativo: daqui se apaga conta, se promove gente e se dá
- * XP. É a parte mais perigosa da API.
- *
- * DUAS REGRAS QUE ATRAVESSAM O ARQUIVO
- *
- * 1. Nada é editado no lugar quando dá para registrar. XP dado à mão
- *    vira uma LINHA em `xp_ajustes`, com autor e motivo, e o total da
- *    pessoa passa a ser o que ela ganhou somado aos ajustes. Um número
- *    sobrescrito não conta a história de como chegou ali.
- *
- * 2. O admin não se desarma sozinho. Rebaixar a si mesmo, suspender a
- *    si mesmo ou apagar a própria conta são recusados — e tirar o
- *    ÚLTIMO admin do sistema também. Um painel sem ninguém que possa
- *    abri-lo é um banco que só o SQL Editor salva.
- */
+/** Painel do admin (exigirTipo('ADMIN')). XP manual vira linha em xp_ajustes;
+    o admin não pode se rebaixar, suspender ou apagar, nem remover o último admin. */
 
 const express = require('express');
 
@@ -43,9 +25,7 @@ async function outrosAdmins(exceto) {
 }
 
 
-// ═══════════════════════════════════════════════════════════════════
-//  O PANORAMA
-// ═══════════════════════════════════════════════════════════════════
+// ── Panorama ──
 
 rotas.get('/resumo', async (req, res) => {
   const [usuarios, turmas, questoes, respostas, quizzes, conclusoes] = await Promise.all([
@@ -62,9 +42,7 @@ rotas.get('/resumo', async (req, res) => {
                   usuarios.error, 'GET /admin/resumo');
   }
 
-  // As outras cinco caem em `|| []` mais abaixo, o que transforma uma
-  // tabela quebrada em "0 turmas". Zero e quebrado se parecem demais
-  // numa tela de números, então o terminal fica sabendo.
+  // Avisa no terminal quando uma contagem falhou (senão vira "0").
   for (const [nome, r] of Object.entries({ turmas, questoes, respostas, quizzes, conclusoes })) {
     if (r.error) console.error(`  ✖ GET /admin/resumo — ${nome} [${r.error.code}]: ${r.error.message}`);
   }
@@ -77,8 +55,7 @@ rotas.get('/resumo', async (req, res) => {
     if (u.suspenso) suspensos++;
   }
 
-  // "Ativo" aqui é quem respondeu alguma coisa nos últimos 7 dias. É a
-  // medida honesta de uso: contar login seria contar quem abriu e saiu.
+  // Ativo = respondeu algo nos últimos 7 dias.
   const semana = Date.now() - 7 * 86_400_000;
   const ativos = new Set(
     (respostas.data || [])
@@ -156,20 +133,14 @@ rotas.get('/professores', async (req, res) => {
     };
   });
 
-  // O nível de cada um, para o cartão mostrar a patente.
-  //
-  // Em lote para os alunos (uma consulta para a lista inteira) e um a
-  // um para professores e equipe, que têm outra régua de XP — mas são
-  // poucos por busca, e as chamadas vão em paralelo.
+  // Nível de cada pessoa da lista (alunos em lote).
   await enfeitarComNivel(lista);
 
   res.json(lista);
 });
 
 
-// ═══════════════════════════════════════════════════════════════════
-//  PROCURAR GENTE
-// ═══════════════════════════════════════════════════════════════════
+// ── Procurar gente ──
 
 rotas.get('/usuarios', async (req, res) => {
   const termo = String(req.query.q || '').trim();
@@ -183,14 +154,7 @@ rotas.get('/usuarios', async (req, res) => {
 
   if (tipo) consulta = consulta.eq('tipo', tipo);
 
-  // Três formas de achar alguém, porque são três coisas diferentes:
-  //
-  //   id     o uuid que o painel do Supabase mostra — busca exata
-  //   e-mail mora em auth.users, que é do Supabase e não desta tabela
-  //   nome   a coluna daqui mesmo
-  //
-  // O id vem primeiro: quem cola um uuid sabe exatamente quem quer, e
-  // procurar esse texto dentro de `nome` nunca acharia nada.
+  // Busca por id (uuid), e-mail (auth.users) ou nome.
   const EH_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   if (termo && EH_UUID.test(termo)) consulta = consulta.eq('id', termo);
@@ -235,21 +199,14 @@ rotas.get('/usuarios', async (req, res) => {
     }
   }
 
-  // Depois do fallback por e-mail, e não antes: a lista pode ter sido
-  // trocada inteira ali em cima.
+  // Depois do fallback por e-mail, que pode trocar a lista.
   await enfeitarComNivel(lista);
 
   res.json(lista);
 });
 
 
-/**
- * Acrescenta `nivel` a cada pessoa da lista, no lugar.
- *
- * Falha em silêncio de propósito: a patente é enfeite do cartão, e uma
- * busca que para de funcionar porque o XP não pôde ser calculado seria
- * um péssimo negócio.
- */
+/** Acrescenta `nivel` a cada pessoa (falha em silêncio). */
 async function enfeitarComNivel(lista) {
   if (!lista.length) return;
 
@@ -285,9 +242,7 @@ rotas.get('/usuarios/:id', async (req, res) => {
     .select('id, nome, tipo, idade, turma_id, suspenso, suspenso_em, suspenso_motivo, avatar_url, created_at')
     .eq('id', id).maybeSingle();
 
-  // Erro de consulta e pessoa inexistente são coisas diferentes, e
-  // juntar as duas num 404 foi o que escondeu a coluna errada acima:
-  // a tela dizia "não encontrado" sobre uma conta que existia.
+  // Erro de consulta não é 404.
   if (perfil.error) {
     return falhou(res, 500, 'A consulta ao banco falhou. Veja o terminal do servidor.',
                   perfil.error, 'GET /admin/usuarios/:id');
@@ -310,9 +265,7 @@ rotas.get('/usuarios/:id', async (req, res) => {
 });
 
 
-// ═══════════════════════════════════════════════════════════════════
-//  MEXER NUMA PESSOA
-// ═══════════════════════════════════════════════════════════════════
+// ── Mexer numa pessoa ──
 
 // ── XP à mão ────────────────────────────────────────────────────────
 
@@ -347,15 +300,7 @@ rotas.post('/usuarios/:id/xp', async (req, res) => {
 });
 
 
-/**
- * Levar alguém a um NÍVEL exato.
- *
- * Por dentro é um ajuste de XP como qualquer outro: a conta é feita
- * aqui e vira uma linha em `xp_ajustes`, com o motivo dizendo que veio
- * daqui. Guardar o nível direto criaria uma segunda verdade — o nível
- * gravado e o nível que o XP indica — e as duas divergiriam no primeiro
- * acerto da pessoa.
- */
+/** Leva a um nível exato gravando um ajuste de XP. */
 rotas.post('/usuarios/:id/nivel', async (req, res) => {
   const id = String(req.params.id);
   const alvo = Math.trunc(Number(req.body?.nivel));
@@ -420,8 +365,7 @@ rotas.patch('/usuarios/:id', async (req, res) => {
       });
     }
 
-    // Último admin de pé não desce. Sem isto, um clique distraído fecha
-    // o painel para todo mundo e só o SQL Editor reabre.
+    // O último admin não pode ser rebaixado.
     if (!souEu && tipo !== 'ADMIN') {
       const alvo = await admin.from('usuarios').select('tipo').eq('id', id).maybeSingle();
       if (alvo.data?.tipo === 'ADMIN' && (await outrosAdmins(id)) === 0) {
@@ -472,12 +416,7 @@ rotas.patch('/usuarios/:id', async (req, res) => {
 });
 
 
-// ── Mandar o e-mail de recuperação de senha ─────────────────────────
-//
-// O admin NÃO define a senha de ninguém. Ele dispara o mesmo fluxo que
-// a pessoa dispararia sozinha, e o código vai para o e-mail dela.
-// Deixar um admin escolher a senha de outra pessoa significa que ele
-// pode entrar na conta dela e ninguém saberia diferenciar.
+// Dispara o e-mail de recuperação (o admin não escolhe a senha).
 
 rotas.post('/usuarios/:id/recuperar-senha', async (req, res) => {
   const id = String(req.params.id);
@@ -502,16 +441,7 @@ rotas.post('/usuarios/:id/recuperar-senha', async (req, res) => {
 });
 
 
-// ── Definir a senha direto ──────────────────────────────────────────
-//
-// A rota acima é a preferível: ela manda um código e quem escolhe a
-// senha é o dono da conta. Esta aqui existe porque foi pedida, e serve
-// ao caso real de uma criança de sete anos que esqueceu a senha e não
-// tem e-mail aberto na escola.
-//
-// O custo é inescapável e fica registrado: depois disto o admin conhece
-// a senha de outra pessoa, e nada no sistema distingue um acesso dele
-// de um acesso dela. Por isso o log sai com nome e alvo.
+// Define a senha direto (fica registrado no log).
 rotas.post('/usuarios/:id/senha', async (req, res) => {
   const id = String(req.params.id);
   const senha = String(req.body?.senha || '');
@@ -550,8 +480,7 @@ rotas.delete('/usuarios/:id', async (req, res) => {
     });
   }
 
-  // Apagar a conta em auth.users derruba a linha de `usuarios` por
-  // cascata, e com ela respostas, progresso e insígnias. Não volta.
+  // Apaga a conta e, em cascata, todo o progresso. Não volta.
   const r = await admin.auth.admin.deleteUser(id);
 
   if (r.error) {
@@ -564,9 +493,7 @@ rotas.delete('/usuarios/:id', async (req, res) => {
 });
 
 
-// ═══════════════════════════════════════════════════════════════════
-//  AS PATENTES
-// ═══════════════════════════════════════════════════════════════════
+// ── Patentes ──
 
 rotas.get('/patentes', async (_req, res) => {
   const r = await admin.from('patentes').select('id, tipo, ate, nome').order('tipo').order('ate');
@@ -584,14 +511,7 @@ rotas.get('/patentes', async (_req, res) => {
 });
 
 
-/**
- * Reescreve as faixas de um papel de uma vez.
- *
- * Tudo ou nada: a lista que chega substitui a que havia. Editar linha a
- * linha deixaria o sistema passar por estados inválidos no meio do
- * caminho — uma faixa apagada antes da seguinte ser criada, e nesse
- * intervalo alguém sem patente nenhuma.
- */
+/** Substitui todas as faixas de um papel de uma vez. */
 rotas.put('/patentes', async (req, res) => {
   const tipo = String(req.body?.tipo || '').toUpperCase();
   const faixas = Array.isArray(req.body?.faixas) ? req.body.faixas : null;
@@ -624,9 +544,7 @@ rotas.put('/patentes', async (req, res) => {
     return res.status(400).json({ message: 'Duas faixas terminam no mesmo nível.' });
   }
 
-  // A última faixa TEM que cobrir o teto. Sem isso, quem chegasse ao
-  // nível 100 com a última faixa terminando em 90 ficaria sem patente —
-  // ou, pior, herdaria a de 90 sem que ninguém tivesse decidido isso.
+  // A última faixa precisa chegar ao nível máximo.
   if (limpas[limpas.length - 1].ate !== PROG.TOTAL_DE_NIVEIS) {
     return res.status(400).json({
       message: `A última faixa precisa terminar no nível ${PROG.TOTAL_DE_NIVEIS}.`,

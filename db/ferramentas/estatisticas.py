@@ -2,18 +2,13 @@
 """
 estatisticas.py — o inventário do conteúdo do jogo
 
-Responde duas perguntas que vivem sendo feitas:
+  1. Quantas questões a equipe de Medicina já produziu
 
-  1. Quantas questões a equipe de Medicina já produziu, por faixa etária?
-  2. Quantas estão NO JOGO, por cenário e por faixa?
 
 As duas contagens são diferentes de propósito. O documento é o que foi
 escrito; o banco é o que o aluno encontra ao abrir o mapa. A distância
 entre eles é justamente o que precisa de decisão.
 
-Uso:
-    python db/ferramentas/estatisticas.py
-    python db/ferramentas/estatisticas.py --md db/ferramentas/ESTATISTICAS.md
 """
 
 import importlib.util
@@ -39,8 +34,7 @@ QTD_MIN = 3
 def montar():
     doc, avisos = cb.pu.extrair()
     banco = cb.ler_banco()
-    # Por texto e faixa, e não por identidade: casar() lê o documento de
-    # novo, então os objetos são outros ainda que a questão seja a mesma.
+    # Casa por texto e faixa etária.
     pares = {(q['nivel'], cb.normalizar(q['enunciado']))
              for _, q, _ in cb.casar()[0]}
 
@@ -71,12 +65,7 @@ def linhas_relatorio():
 
     p('## 1. Por faixa etária')
     p()
-    # Uma questão do documento que não casou com nenhuma linha do banco
-    # não é necessariamente conteúdo perdido: as faixas 11-14 e 15-18
-    # repetem alguns enunciados, e no jogo eles existem uma vez só. Por
-    # isso a coluna conta o que ficou DE FORA, e não a diferença entre
-    # os dois totais — que subtrai coisas diferentes e chega a dar
-    # número negativo.
+    # Conta as questões do documento que ficaram de fora do banco.
     fora = Counter(q['nivel'] for q in doc
                    if (q['nivel'], cb.normalizar(q['enunciado'])) not in pares)
 

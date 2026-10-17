@@ -1,30 +1,5 @@
-/**
- * quiz-modal.js — o modal "Criar quiz"
- *
- * Usado por dashboard.html (menu do card da turma → "Criar quiz") e por
- * quizzes.html (botão "+ Criar quiz"). É literalmente o mesmo modal nas
- * duas: este arquivo desenha o HTML e cuida de tudo. Expõe QUIZ_MODAL:
- *
- *   QUIZ_MODAL.abrir({ turma, aoCriar })
- *     turma    a turma já escolhida (vindo do card). Sem ela, o passo 1
- *              ganha um seletor com as turmas do professor.
- *     aoCriar  chamado com o quiz criado, para a página atualizar a lista.
- *
- * Dois modos, escolhidos nos cartões do passo 2:
- *
- *   auto   — o servidor sorteia entre as perguntas que casam com os
- *            cenários (obrigatórios) e as áreas marcadas.
- *   manual — os cenários e as áreas viram FILTRO de uma lista de
- *            perguntas, e o professor marca as que quer. A lista tem
- *            duas abas: as do sistema e as que ele mesmo criou.
- *
- * As marcadas ficam guardadas mesmo quando o filtro muda e elas somem
- * da lista — trocar de cenário para procurar mais perguntas não pode
- * apagar o que já foi escolhido. Trocar de TURMA, sim, limpa: a faixa
- * etária pode mudar, e o servidor recusaria perguntas de outra idade.
- *
- * Depende de api.js e questoes-ui.js, carregados antes.
- */
+/** quiz-modal.js — modal "Criar quiz" (dashboard.html e quizzes.html), global QUIZ_MODAL.abrir({ turma, aoCriar }).
+    Modos: auto (sorteio) e manual (lista com filtros). As marcadas sobrevivem ao filtro, não à troca de turma. */
 const QUIZ_MODAL = (() => {
   'use strict';
 
@@ -43,18 +18,13 @@ const QUIZ_MODAL = (() => {
   let origem = 'sistema';
   let nivelDoQuiz = null;
 
-  // id -> questão, na ordem em que foram marcadas. É essa a ordem em que
-  // a turma vai responder.
+  // id -> questão, na ordem de marcação (= ordem de resposta).
   const selecionadas = new Map();
 
-  // Cada recarga da lista ganha um número. Resposta que chega fora de
-  // ordem (o professor clicou rápido em três cenários) é descartada, para
-  // a lista não mostrar o filtro de dois cliques atrás.
+  // Descarta respostas da lista que chegam fora de ordem.
   let pedidoDaLista = 0;
 
-  /* ═══════════════════════════════════════════════════════════════════
-     O HTML
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── HTML ── */
   function montar() {
     modal = document.createElement('div');
     modal.className = 'modal modal-quiz';
@@ -221,9 +191,7 @@ const QUIZ_MODAL = (() => {
     modal.querySelectorAll('[data-fechar]').forEach(b => b.addEventListener('click', fechar));
     modal.addEventListener('click', (e) => { if (e.target === modal) fechar(); });
 
-    // Bolha, não captura: o modal "Nova pergunta" fica por cima deste e
-    // trata o Esc na captura, parando o evento antes de chegar aqui —
-    // assim o Esc fecha só ele, e este continua aberto.
+    // Esc na fase de bolha (o modal "Nova pergunta" trata o dele antes).
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !modal.hidden) fechar();
     });
@@ -244,9 +212,7 @@ const QUIZ_MODAL = (() => {
     el.salvar.addEventListener('click', salvar);
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     ABRIR E FECHAR
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Abrir e fechar ── */
 
   async function abrir({ turma = null, aoCriar = null } = {}) {
     if (!modal) montar();
@@ -311,9 +277,7 @@ const QUIZ_MODAL = (() => {
     aoCriarAtual = null;
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     A TURMA E O NÍVEL
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Turma e nível ── */
 
   function preencherTurmas(turmas, rotulo) {
     const vazio = document.createElement('option');
@@ -331,8 +295,7 @@ const QUIZ_MODAL = (() => {
   function escolherTurma(id) {
     const turma = turmasDoProfessor.find(t => t.id === id) || null;
 
-    // Outra turma pode ser de outra faixa etária: o que estava marcado
-    // deixaria de valer, e o servidor recusaria.
+    // Trocar de turma limpa as marcadas.
     selecionadas.clear();
     atualizarContador();
 
@@ -364,9 +327,7 @@ const QUIZ_MODAL = (() => {
     return null;
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     MODO E ABAS
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Modo e abas ── */
 
   function trocarModo(novo, recarregar = true) {
     modo = novo === 'manual' ? 'manual' : 'auto';
@@ -408,9 +369,7 @@ const QUIZ_MODAL = (() => {
     if (recarregar) carregarBanco();
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     A LISTA DE PERGUNTAS (modo manual)
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Lista de perguntas (modo manual) ── */
 
   async function carregarBanco() {
     if (!turmaDoQuiz) {
@@ -482,8 +441,7 @@ const QUIZ_MODAL = (() => {
     el.contador.classList.toggle('banco__contador--cheio', n > 0);
   }
 
-  // O modal "Nova pergunta" abre POR CIMA deste; ao salvar, a pergunta já
-  // aparece em "Minhas questões" e entra marcada, se for do nível da turma.
+  // A pergunta criada entra marcada se for do nível da turma.
   function criarPergunta() {
     QUESTOES_UI.abrirCriacao({
       cenario: seletorCenarios.valores()[0],
@@ -496,9 +454,7 @@ const QUIZ_MODAL = (() => {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     SALVAR
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Salvar ── */
 
   async function salvar() {
     const titulo = el.nome.value.trim();
@@ -542,8 +498,7 @@ const QUIZ_MODAL = (() => {
           + 'o banco ainda não tem mais perguntas para esse filtro.'
         : `Quiz "${quiz.titulo}" criado com ${veio} questões. A turma já pode responder.`;
 
-      // O modal fica aberto, com o resumo: é comum passar mais de um
-      // quiz seguido. Só o título é limpo, para o próximo.
+      // O modal fica aberto; só o título é limpo.
       el.nome.value = '';
       if (manual) {
         selecionadas.clear();

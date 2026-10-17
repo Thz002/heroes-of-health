@@ -1,23 +1,4 @@
-/**
- * server/rotas/recuperacao.js — esqueci minha senha
- *
- * Três passos, três rotas, e nenhum deles confia no passo anterior ter
- * acontecido no navegador:
- *
- *   1. POST /api/auth/recuperar        { email }            -> manda o código
- *   2. POST /api/auth/conferir-codigo  { email, codigo }    -> devolve um ticket
- *   3. POST /api/auth/nova-senha       { email, ticket, senha }
- *
- * POR QUE TUDO AQUI E NADA NO NAVEGADOR: trocar senha é tomar conta.
- * Se o navegador decidisse "o código bate", bastaria abrir o console e
- * responder que bate. O código, o prazo, as tentativas e a troca em si
- * acontecem deste lado, com a chave secreta.
- *
- * ESTAS ROTAS NÃO PASSAM PELO `autenticar`. Não podem: quem esqueceu a
- * senha não consegue entrar, então não tem token. É a única parte da
- * API aberta a quem não está logado — e por isso é a que mais precisa
- * de limite de tentativa e de prazo curto.
- */
+/** Recuperação de senha em 3 passos (código -> ticket -> nova senha). Sem `autenticar`. */
 
 const crypto = require('crypto');
 const express = require('express');
@@ -30,13 +11,7 @@ const rotas = express.Router();
 
 // ── As regras do código ──────────────────────────────────────────────
 
-// Letras maiúsculas e números. 36^5 = 60.466.176 combinações.
-//
-// Um aviso para quem for mexer: `O` e `0`, `I` e `1` são o mesmo rabisco
-// em muitas fontes, e o código vai ser copiado à mão de um e-mail para
-// a tela. Tirar esses quatro do alfabeto deixaria 32 símbolos e ainda
-// 33 milhões de combinações. Está assim porque foi o pedido; é uma
-// linha para mudar.
+// Alfabeto do código: 36^5 combinações.
 const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const TAMANHO  = 5;
 
@@ -48,20 +23,14 @@ const ESPERA_SEG     = 60;  // intervalo mínimo entre dois pedidos
 
 const SENHA_MIN = 6;        // o mesmo mínimo que o Supabase exige no cadastro
 
-// A frase é SEMPRE esta, exista a conta ou não. É o que impede que a
-// tela vire um detector de quem estuda na escola: sem isso, qualquer
-// pessoa testaria e-mails um a um e saberia quais estão cadastrados.
+// Mesma resposta exista ou não a conta.
 const RESPOSTA_NEUTRA =
   'Se existir uma conta com esse e-mail, o código acabou de ser enviado.';
 
 
 // ── Ferramentas ──────────────────────────────────────────────────────
 
-/**
- * O código em si. `randomInt` do módulo crypto, e não Math.random():
- * Math.random() é previsível o bastante para alguém reconstruir a
- * sequência a partir de alguns códigos observados.
- */
+/** Código com crypto.randomInt (Math.random é previsível). */
 function sortearCodigo() {
   let codigo = '';
   for (let i = 0; i < TAMANHO; i++) {
@@ -70,20 +39,12 @@ function sortearCodigo() {
   return codigo;
 }
 
-/**
- * Guardamos o hash, nunca o código.
- *
- * SHA-256 puro basta aqui, e não é o mesmo caso de uma senha: uma senha
- * vive anos e costuma ser palavra de dicionário; este código tem 60
- * milhões de possibilidades, morre em 10 minutos e só aceita 5 palpites.
- * Não há o que uma tabela de hashes prontos resolva.
- */
+/** Guarda só o hash SHA-256 do código. */
 function embaralhar(texto) {
   return crypto.createHash('sha256').update(String(texto)).digest('hex');
 }
 
-/** Comparação em tempo constante: sem ela, o tempo de resposta conta
- *  quantos caracteres iniciais o palpite acertou. */
+/** Comparação em tempo constante. */
 function iguais(a, b) {
   const x = Buffer.from(String(a));
   const y = Buffer.from(String(b));
@@ -94,8 +55,7 @@ function normalizarEmail(valor) {
   return String(valor || '').trim().toLowerCase();
 }
 
-// Formato, só. Não diz que a caixa existe — nada diz, de fora. Quem
-// prova que o endereço é real é o código chegando nele.
+// Só o formato do e-mail.
 const FORMATO_EMAIL = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 function daquiA(minutos) {
@@ -103,23 +63,9 @@ function daquiA(minutos) {
 }
 
 
-/**
- * Sorteia o código, grava o hash e manda o e-mail.
- *
- * Extraída da rota porque o painel do admin precisa exatamente disto:
- * disparar uma recuperação para alguém que pediu ajuda. O que ela NÃO
- * faz é conferir limite de tentativa nem domínio — essas são decisões
- * da rota pública, que atende visitante anônimo. Chamada pelo admin,
- * que já provou quem é, elas só atrapalhariam.
- *
- * Repare no que continua impossível: nem esta função nem o admin
- * escolhem a senha de ninguém. O código vai para o e-mail da PESSOA, e
- * só ela o lê. Um admin que pudesse definir senha alheia poderia entrar
- * na conta de um aluno sem deixar diferença entre ele e o aluno.
- */
+/** Sorteia o código, grava o hash e envia o e-mail (também usada pelo painel do admin). */
 async function criarEEnviarCodigo(email) {
-  // Códigos antigos do mesmo e-mail morrem agora. Dois códigos vivos ao
-  // mesmo tempo dobram a chance de alguém acertar um deles no chute.
+  // Invalida os códigos anteriores do mesmo e-mail.
   await admin
     .from('codigos_recuperacao')
     .update({ usado_em: new Date().toISOString() })
@@ -141,16 +87,7 @@ async function criarEEnviarCodigo(email) {
 }
 
 
-// ── 0. O e-mail é real? ──────────────────────────────────────────────
-//
-// Usada pela tela de CADASTRO, antes de criar a conta. Vale a pena
-// gastar uma consulta de DNS aqui: uma conta criada com o e-mail
-// escrito errado é uma conta que nunca vai conseguir recuperar a senha,
-// e o aluno só descobre isso no dia em que precisar.
-//
-// Repare no que ela NÃO responde: se já existe conta com esse e-mail.
-// Essa pergunta é respondida no cadastro, quando a pessoa está de fato
-// criando a conta — aqui viraria um jeito de varrer endereços.
+// ── 0. POST /conferir-email ── formato e domínio, antes do cadastro (não diz se a conta existe).
 rotas.post('/conferir-email', async (req, res) => {
   const email = normalizarEmail(req.body?.email);
 
@@ -161,8 +98,7 @@ rotas.post('/conferir-email', async (req, res) => {
   try {
     res.json(await conferirEndereco(email));
   } catch (erro) {
-    // A conferência é um favor, não um portão. Se ela mesma quebrar, o
-    // cadastro segue — barrar alguém por causa de um bug nosso é pior.
+    // Se a conferência quebrar, o cadastro segue.
     console.error('  ✖ conferir-email:', erro.message);
     res.json({ ok: true });
   }
@@ -178,17 +114,13 @@ rotas.post('/recuperar', async (req, res) => {
     return res.status(400).json({ message: 'Digite um e-mail válido.' });
   }
 
-  // O domínio existe e recebe e-mail? Dizer isso não revela nada sobre
-  // contas — "gmai.com não existe" é verdade para qualquer visitante.
-  // E sem isto a pessoa ficaria esperando um código que saiu para um
-  // endereço impossível.
+  // O domínio recebe e-mail?
   const endereco = await conferirEndereco(email);
   if (!endereco.ok) {
     return res.status(400).json({ message: endereco.motivo });
   }
 
-  // Freio de abuso. Vem do banco e não da memória do processo: reiniciar
-  // o servidor não pode zerar o limite de quem está martelando a rota.
+  // Limite de pedidos por hora (guardado no banco).
   const umaHora = new Date(Date.now() - 3_600_000).toISOString();
   const recentes = await admin
     .from('codigos_recuperacao')
@@ -219,8 +151,7 @@ rotas.post('/recuperar', async (req, res) => {
     }
   }
 
-  // A conta existe? A resposta ao usuário não muda — mas sem conta não
-  // há para quem mandar, e gerar o código seria desperdício.
+  // Sem conta, não gera código (a resposta é a mesma).
   const conta = await admin.rpc('conta_por_email', { p_email: email });
 
   if (conta.error) {
@@ -233,18 +164,14 @@ rotas.post('/recuperar', async (req, res) => {
     return res.json({ message: RESPOSTA_NEUTRA });
   }
 
-  // Faxina. A tabela só cresce, e nenhuma linha vencida serve para
-  // nada: nem para conferir código, nem para o limite da última hora.
-  // Vai de carona num pedido que já está mexendo nela.
+  // Apaga códigos com mais de um dia.
   const ontem = new Date(Date.now() - 86_400_000).toISOString();
   await admin.from('codigos_recuperacao').delete().lt('criado_em', ontem);
 
   try {
     await criarEEnviarCodigo(email);
   } catch (erro) {
-    // O e-mail pode não ter saído, mas o código está gravado. Dizer
-    // "deu erro" aqui revelaria que a conta existe — quem não tem conta
-    // recebeu a frase neutra alguns passos acima. Detalhe no terminal.
+    // Falha de envio não muda a resposta (não revela se a conta existe).
     console.error('  ✖ recuperação:', erro.message);
   }
 
@@ -279,8 +206,7 @@ rotas.post('/conferir-codigo', async (req, res) => {
                   busca.error, 'POST /auth/conferir-codigo');
   }
 
-  // Uma frase só para "não existe", "venceu" e "errado". Separá-las
-  // contaria a quem está tentando em que parte ele chegou.
+  // Mesma mensagem para código inexistente, vencido ou errado.
   const recusar = () =>
     res.status(400).json({ message: 'Código incorreto ou vencido. Peça um novo.' });
 
@@ -305,10 +231,7 @@ rotas.post('/conferir-codigo', async (req, res) => {
     });
   }
 
-  // Acertou. O código continua aberto (usado_em segue nulo) porque a
-  // troca de senha ainda não aconteceu — se o aluno fechar a aba agora,
-  // o mesmo código ainda serve dentro do prazo. O que muda é que existe
-  // um ticket, e é ele que a próxima rota exige.
+  // Acertou: gera o ticket exigido pela troca de senha.
   const ticket = crypto.randomBytes(32).toString('hex');
 
   const marcou = await admin
@@ -386,8 +309,7 @@ rotas.post('/nova-senha', async (req, res) => {
       trocou.error, 'POST /auth/nova-senha (updateUserById)');
   }
 
-  // Queima o código. Daqui em diante aquele papel no e-mail não vale
-  // mais nada, mesmo dentro dos 10 minutos.
+  // Invalida o código depois da troca.
   await admin.from('codigos_recuperacao')
     .update({ usado_em: agora, ticket_hash: null }).eq('id', linha.id);
 
@@ -397,9 +319,6 @@ rotas.post('/nova-senha', async (req, res) => {
 });
 
 
-/* O router é o que o index.js monta. A função vai de carona como
-   propriedade dele para o painel do admin poder reaproveitar o mesmo
-   caminho de recuperação, sem um segundo lugar que saiba gerar código
-   — dois geradores é um a mais do que deveria existir. */
+/* Exporta também criarEEnviarCodigo para o painel do admin. */
 module.exports = rotas;
 module.exports.criarEEnviarCodigo = criarEEnviarCodigo;

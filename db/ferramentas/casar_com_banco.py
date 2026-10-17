@@ -38,8 +38,7 @@ spec = importlib.util.spec_from_file_location('pu', os.path.join(AQUI, 'parser_u
 pu = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pu)
 
-# Abaixo disto o par não é aceito: é mais provável serem duas questões
-# diferentes sobre o mesmo assunto do que a mesma questão reescrita.
+# Similaridade mínima para casar duas questões.
 LIMITE = 0.88
 
 # Texto de marcação do documento que vazou para dentro de uma alternativa.
@@ -49,9 +48,7 @@ RE_MARCADOR = re.compile(r'gabarito|resposta\s+correta', re.I)
 def normalizar(texto):
     t = texto or ''
 
-    # Dois enunciados do banco vieram com as alternativas coladas dentro
-    # ("…quer nos dizer que: A) Devemos passar o dia todo sentados…").
-    # Para comparar, interessa só o que vem antes da primeira delas.
+    # Ignora alternativas coladas dentro do enunciado.
     corte = re.search(r'\s[A-E]\)\s+\S', t)
     if corte and corte.start() > 20:
         t = t[:corte.start()]
@@ -92,9 +89,7 @@ def alternativas_embaralhadas(linha, q):
     banco = [normalizar(o) for o in cruas]
     doc = [normalizar(o) for o in q['opcoes']]
 
-    # Uma alternativa que carrega "Gabarito: alternativa E" dentro de si
-    # entrega a resposta ao aluno. É sempre errado, por mais parecida
-    # que a frase seja com a do documento.
+    # Alternativa com o gabarito escrito dentro é sempre errada.
     if any(RE_MARCADOR.search(o) for o in cruas):
         return True
 
@@ -244,9 +239,7 @@ alter table questoes add column if not exists explicacao_erro text;
             campos.append(f'enunciado = {aspas(q["enunciado"])}')
             corrigidos_enun.append(linha)
 
-        # Alternativas fora de lugar levam o gabarito junto: a letra
-        # continua a mesma e passa a apontar outro texto. Por isso a
-        # lista é reescrita inteira, e a resposta junto com ela.
+        # Alternativas fora de lugar: reescreve a lista e a resposta juntas.
         if alternativas_embaralhadas(linha, q):
             ops = list(q['opcoes']) + [None] * (5 - len(q['opcoes']))
             for i, letra in enumerate('abcde'):
