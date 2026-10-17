@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": "src",
+  "redirects": [
+    { "source": "/", "destination": "/pages/index.html", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/api/:caminho*", "destination": "/api" }
+  ],
+  "functions": {
+    "api/index.js": { "excludeFiles": "src/**" }
+  },
+  "regions": ["gru1"],
+  "crons": [
+    { "path": "/api/manter-vivo", "schedule": "0 9 * * *" }
+  ]
+}

@@ -8,3 +8,7 @@ backups/
 
 # Cache do Python, gerado pelas ferramentas em db/ferramentas/
 __pycache__/
+
+# Gerados no build do Vercel (scripts/vendor.js) e pela CLI do Vercel
+src/vendor/
+.vercel/
