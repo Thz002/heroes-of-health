@@ -1,43 +1,5 @@
-/**
- * conquista-aviso.js — o aviso de "conquista desbloqueada"
- *
- * O cartão que desliza no canto superior direito quando a pessoa ganha
- * uma insígnia, como nos videogames: a arte, o nome, a descrição e o XP
- * que ela rendeu. Some sozinho depois de alguns segundos, ou com um
- * clique.
- *
- * QUEM CHAMA. As insígnias novas chegam em duas respostas do servidor,
- * sempre no campo `insignias_novas`:
- *   - POST /api/presenca  (navbar.js, ao abrir qualquer página: dias
- *                          seguidos, e o que o catálogo ganhou desde a
- *                          última visita)
- *   - POST /api/responder (quiz.js, a cada resposta: acertos, missões)
- * O servidor já junta os degraus do mesmo lugar que caem juntos, então
- * aqui cada item é um aviso.
- *
- * MUITAS DE UMA VEZ. Um aluno veterano, na primeira visita depois que
- * o catálogo cresceu, pode ganhar dez de uma vez. Uma fila de dez
- * avisos de seis segundos seria um minuto de tela coberta; então
- * entram no máximo MAX_VISIVEIS juntos, empilhados, e o resto vira um
- * cartão "e mais N" que leva à estante.
- *
- * O AVISO DE PROGRESSO. O outro cartão desta pilha: a cada acerto na
- * missão, as barras das áreas que a questão alimenta enchem do antes
- * ao depois, com a porcentagem contando junto. Mora aqui, e não em
- * quiz.js, para dividir a MESMA pilha com as insígnias — dois avisos
- * no mesmo canto, cada um com a sua pilha, se sobreporiam.
- *
- * A DICA. O terceiro cartão: ao abrir a banca ou a farmácia no mapa,
- * uma charada sobre o segredo daquele lugar que a pessoa ainda não
- * achou (mapa.js). Mesmo cartão da conquista, com a medalha em
- * silhueta — a mesma da estante bloqueada —, para dizer "isto aqui é
- * uma insígnia que você ainda pode ganhar" sem dizer onde.
- *
- * Global: CONQUISTA_AVISO.mostrar(lista),
- *         CONQUISTA_AVISO.progresso(barras) e
- *         CONQUISTA_AVISO.dicas(lista).
- * Carregado antes de navbar.js.
- */
+/** conquista-aviso.js — avisos no canto superior direito (global CONQUISTA_AVISO):
+    mostrar(insígnias), progresso(barras) e dicas(lista). Carregado antes de navbar.js. */
 const CONQUISTA_AVISO = (() => {
   'use strict';
 
@@ -48,14 +10,11 @@ const CONQUISTA_AVISO = (() => {
   const INTERVALO = 450;       // o atraso entre um aviso e o seguinte
   const MAX_VISIVEIS = 3;
 
-  // O enchimento da barra. A espera é o tempo de o cartão terminar de
-  // deslizar: encher enquanto ele ainda entra seria um movimento que
-  // ninguém vê.
+  // Espera o cartão entrar antes de encher a barra.
   const ESPERA_ENCHER = 450;
   const TEMPO_ENCHER = 1100;
 
-  // Menor crescimento que ainda se enxerga, em % da barra. Um ganho de
-  // 0,4% seria meio pixel: a pessoa acertou e não veria nada se mexer.
+  // Crescimento mínimo visível da barra (%).
   const PISO = 3;
 
   let cartaoDeProgresso = null;   // o que está na tela agora, se houver
@@ -126,18 +85,7 @@ const CONQUISTA_AVISO = (() => {
     return el;
   }
 
-  /**
-   * O aviso de progresso de um acerto.
-   *
-   * `barras` vem de POST /api/responder:
-   *   [{ area, ganhou, pontos, possiveis, cor }]
-   * `pontos` já conta este acerto; o antes é pontos − ganhou. `cor` é
-   * posta por quem chama (quiz.js tem as cores das áreas).
-   *
-   * Um acerto novo SUBSTITUI o aviso anterior em vez de empilhar: quem
-   * responde rápido não pode ver o canto da tela virar uma coluna de
-   * cartões de progresso.
-   */
+  /** Aviso de progresso de um acerto: [{ area, ganhou, pontos, possiveis, cor }]. Substitui o anterior. */
   function progresso(barras) {
     if (!Array.isArray(barras) || !barras.length) return;
 
@@ -194,9 +142,7 @@ const CONQUISTA_AVISO = (() => {
       return { el, encher() {} };
     }
 
-    // As porcentagens escritas são arredondadas PARA BAIXO, como em
-    // /meu-progresso: 100% só aparece quando está tudo feito. As
-    // larguras usam o valor exato, para a barra crescer de verdade.
+    // Porcentagem escrita arredondada para baixo; largura exata.
     const exatoAntes = Math.min(100, Math.max(0, b.pontos - b.ganhou) * 100 / b.possiveis);
     const exatoDepois = Math.min(100, b.pontos * 100 / b.possiveis);
     const pctAntes = Math.floor(exatoAntes);
@@ -238,14 +184,7 @@ const CONQUISTA_AVISO = (() => {
     requestAnimationFrame(passo);
   }
 
-  /**
-   * As dicas de um lugar: [{ titulo, texto, imagem }]. `imagem` é a arte
-   * da insígnia que o segredo dá, desenhada em silhueta.
-   *
-   * Abrir o lugar de novo SUBSTITUI as dicas que ainda estão na tela,
-   * como o aviso de progresso: entrar e sair da banca três vezes não pode
-   * empilhar seis cartões iguais.
-   */
+  /** Dicas de um lugar: [{ titulo, texto, imagem }]. Substituem as que estiverem na tela. */
   function dicas(lista) {
     cartoesDeDica.forEach(el => sair(el, true));
     cartoesDeDica = [];
@@ -255,8 +194,7 @@ const CONQUISTA_AVISO = (() => {
       const el = cartaoDeDica(d);
       cartoesDeDica.push(el);
       setTimeout(() => {
-        // Trocadas antes de entrar (o lugar foi aberto de novo no meio
-        // do intervalo): esta já não vale.
+        // Ignora a dica se foi trocada antes de entrar.
         if (cartoesDeDica.includes(el)) entrar(el, DURACAO_DICA);
       }, n * INTERVALO);
     });
@@ -309,8 +247,7 @@ const CONQUISTA_AVISO = (() => {
     let inicio = Date.now();
     let timer = setTimeout(() => sair(el), restante);
 
-    // Passar o mouse segura o aviso: quem está lendo a descrição não
-    // pode ver o cartão sumir no meio da frase.
+    // Hover segura o aviso.
     el.addEventListener('mouseenter', () => {
       clearTimeout(timer);
       restante -= Date.now() - inicio;
@@ -326,11 +263,7 @@ const CONQUISTA_AVISO = (() => {
     }
   }
 
-  /**
-   * `jaVaiOutro`: o cartão está saindo para um novo tomar o lugar. Aí
-   * ele sai do fluxo da pilha na hora, senão o novo entraria embaixo
-   * dele e depois daria um pulo para cima quando o velho sumisse.
-   */
+  /** `jaVaiOutro`: sai do fluxo na hora para o novo não pular. */
   function sair(el, jaVaiOutro = false) {
     if (el === cartaoDeProgresso) cartaoDeProgresso = null;
     cartoesDeDica = cartoesDeDica.filter(c => c !== el);
@@ -345,8 +278,7 @@ const CONQUISTA_AVISO = (() => {
       el.style.top = `${el.offsetTop}px`;
     }
 
-    // Remove ao fim da transição; o timeout cobre quem desligou as
-    // animações (prefers-reduced-motion), em que transitionend não vem.
+    // Remove ao fim da transição (com timeout para quem desligou animações).
     const remover = () => el.remove();
     el.addEventListener('transitionend', remover, { once: true });
     setTimeout(remover, 600);

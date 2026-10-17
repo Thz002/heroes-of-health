@@ -1,25 +1,7 @@
-/**
- * supabase.js — Heróis da Saúde
- *
- * A conexão única com o Supabase. Todo o resto do site fala com o banco
- * através daqui.
- *
- * Deve ser carregado ANTES de api.js e auth.js.
- * Expõe dois objetos globais:
- *   SUPA  -> a conexão com o banco
- *   AUTH  -> cadastro, login, logout e quem está logado
- */
+/** supabase.js — conexão com o Supabase. Carregue antes de api.js e auth.js.
+    Globais: SUPA (cliente) e AUTH (cadastro, login, logout, sessão). */
 
-// =====================================================================
-//  CONFIGURAÇÃO
-//
-//  A chave abaixo é a "publishable" — ela foi feita para ficar visível no
-//  navegador, e é normal que apareça no repositório. Ela não dá permissão
-//  nenhuma sozinha: quem decide o que cada pessoa pode ver são as regras
-//  de segurança escritas dentro do banco.
-//
-//  A chave que começa com "sb_secret_" NUNCA pode vir para cá.
-// =====================================================================
+// Chave publishable: feita para ficar visível. A sb_secret_ nunca vem para cá.
 
 const SUPABASE_URL = "https://xmdmzmuhorlrptifgfhz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_CF0Sre41ZkH_a05rEko5SA_lvr740Yd";
@@ -31,9 +13,7 @@ const SUPA = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const AUTH = (() => {
 
-  // ── Tradução das mensagens de erro ─────────────
-  // O Supabase responde em inglês. Aqui viram frases que fazem sentido
-  // para quem está usando o site.
+  // Traduz as mensagens de erro do Supabase.
   function traduzir(mensagem) {
     const m = (mensagem || '').toLowerCase();
 
@@ -50,26 +30,9 @@ const AUTH = (() => {
   }
 
   // ── Cadastro ───────────────────────────────────
-  /**
-   * Cria a conta. UMA chamada só.
-   *
-   * Antes eram três escritas separadas: criar a conta, criar a escola, e
-   * inserir a linha em `usuarios`. Como não formavam uma transação, quando
-   * a terceira falhava sobrava uma conta que fazia login mas que o jogo
-   * não conhecia — o usuário aparecia na aba "Users" do Supabase e não
-   * aparecia na tabela `usuarios`.
-   *
-   * Agora os dados do perfil viajam junto, dentro de `options.data`, e
-   * quem cria a linha em `usuarios` é um gatilho no banco (migração 03,
-   * função `criar_perfil_do_novo_usuario`). Se algo falhar, falha tudo
-   * junto e não sobra conta órfã.
-   *
-   * Recebe o objeto montado pelo auth.js e devolve { ok, message }.
-   */
+  /** Cria a conta numa chamada só; o perfil é criado por um gatilho no banco. Devolve { ok, message }. */
   async function register(dados) {
-    // Tudo aqui é lido pelo gatilho, do lado do banco. E é lá que os
-    // valores são conferidos: o que vem do navegador é informação que a
-    // própria pessoa controla, então 'ADMIN' é rebaixado para 'ALUNO'.
+    // Lido pelo gatilho, que confere os valores (ADMIN vira ALUNO).
     const perfil = {
       nome: dados.nome,
       tipo: dados.tipo
@@ -91,10 +54,7 @@ const AUTH = (() => {
       return { ok: false, message: traduzir(conta.error.message) };
     }
 
-    // O perfil já existe neste ponto — o gatilho rodou dentro da mesma
-    // transação que criou a conta. Sem sessão significa apenas que o
-    // Supabase está exigindo confirmação por e-mail antes de deixar
-    // entrar. Os e-mails escolares muitas vezes não recebem a mensagem.
+    // Sem sessão: o Supabase está exigindo confirmação por e-mail.
     if (!conta.data.session) {
       return {
         ok: false,
@@ -117,9 +77,7 @@ const AUTH = (() => {
     return { ok: true };
   }
 
-  // ── Tipo lembrado (atalho de velocidade) ───────
-  // Guardar ALUNO/PROFESSOR junto da sessão evita uma consulta ao banco
-  // só para decidir para qual página mandar quem já estava logado.
+  // Tipo lembrado no navegador (decide o destino sem consultar o banco).
   const CHAVE_TIPO = 'herois_tipo';
 
   function lembrarTipo(tipo) {
@@ -148,14 +106,7 @@ const AUTH = (() => {
     const conta = await contaAtual();
     if (!conta) return null;
 
-    // A foto é pedida à parte do resto por um motivo: `avatar_url` é
-    // coluna nova, e num banco que ainda não rodou o setup.sql mais
-    // recente o PostgREST recusa a consulta INTEIRA por causa dela. Sem
-    // esta ponte, uma coluna faltando derrubaria o login de todas as
-    // telas de uma vez.
-    //
-    // É temporário. Some quando todos os bancos tiverem rodado:
-    //   alter table usuarios add column if not exists avatar_url text;
+    // avatar_url é buscada à parte (fallback para bancos sem a coluna).
     const COLUNAS = 'id, nome, tipo, idade, turma_id';
 
     let r = await SUPA
@@ -183,13 +134,7 @@ const AUTH = (() => {
     return conta;
   }
 
-  /**
-   * O token da sessão atual, ou string vazia.
-   *
-   * É o crachá que o api.js manda ao servidor Express. Quem o emitiu foi
-   * o Supabase Auth, e é o Supabase que o servidor consulta para saber se
-   * ele vale — o servidor não guarda senha nem inventa sessão própria.
-   */
+  /** Token da sessão (vai no Authorization das chamadas ao servidor). */
   async function tokenAtual() {
     const r = await SUPA.auth.getSession();
     return r.data.session ? r.data.session.access_token : '';

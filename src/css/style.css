@@ -1,7 +1,4 @@
-/* =============================================
-   HERÓIS DA SAÚDE — style.css
-   Paleta: teal profundo + menta + dourado
-   ============================================= */
+/* style.css — estilos globais (teal + menta + dourado). */
 
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap');
 
@@ -24,23 +21,7 @@
   --glass-border:   rgba(255, 255, 255, 0.18);
   --input-bg:       rgba(255, 255, 255, 0.08);
   --input-border:   rgba(255, 255, 255, 0.2);
-  /* ── AS DEZ PATENTES ──────────────────────────────────────────
-     Uma cor por faixa, e a MESMA para a faixa correspondente de aluno
-     e de professor: "Pequeno Aprendiz" e "Monitor" são o mesmo degrau
-     com nomes diferentes, e precisam se parecer.
-
-     O caminho é uma volta pelo círculo cromático saindo de onde o jogo
-     já está (o verde-azulado do fundo) e terminando no dourado que a
-     paleta já tinha:
-
-        172° → 160° → 188° → 209° → 239° → 271° → 317° → 3° → 30° → 42°
-        cinza  verde  ciano  azul  anil  violeta  rosa  coral âmbar ouro
-
-     A faixa 1 é de propósito a menos saturada de todas: começar apagado
-     e terminar em ouro é o que faz a subida parecer subida. Todas as
-     dez foram medidas contra os três fundos do jogo (nenhuma abaixo de
-     3:1) e entre si (nenhum par abaixo de ΔE 15 no Lab). Mexer numa
-     delas pede refazer essa conta. */
+  /* ── As dez patentes ── uma cor por faixa, igual para aluno e professor (do cinza ao ouro). */
   --pat-1:  #8fb3ae;   /* Pequeno Aprendiz  · Monitor                 */
   --pat-2:  #6bdfb8;   /* Estudante         · Mentor Iniciante        */
   --pat-3:  #3fc9dd;   /* Discípulo         · Instrutor               */
@@ -64,28 +45,10 @@
 
 html { font-size: 16px; scroll-behavior: smooth; }
 
-/* ── hidden precisa ganhar de todo mundo ──────────────────────────────
-   O atributo `hidden` do HTML vale `display: none`, mas essa regra vem
-   do NAVEGADOR — e qualquer `display: flex` escrito aqui no projeto
-   ganha dela. O efeito é traiçoeiro: o JS marca hidden = true, ninguém
-   vê erro nenhum, e o elemento continua desenhado na tela.
-
-   Foi o que aconteceu com o aviso "você ainda não está em nenhuma
-   turma": ele aparecia para aluno COM turma, porque .turma-faixa é
-   display:flex.
-
-   O projeto vinha remendando caso a caso (.modal[hidden],
-   .mapa-sidebar__empty[hidden], .missao-jogo[hidden]…), e cada elemento
-   novo com display próprio precisava lembrar de repetir o remendo. Esta
-   linha resolve para todos, inclusive os que ainda não existem. É o
-   único !important do arquivo, e ele se justifica: `hidden` querer dizer
-   escondido não é questão de estilo. */
+/* `hidden` sempre esconde, mesmo com display próprio. */
 [hidden] { display: none !important; }
 
-/* A classe .hidden faz o mesmo e existia só dentro do <style> do
-   index.html. Qualquer outra página que usasse class="hidden" teria o
-   elemento visível, sem erro nenhum — o mesmo tipo de armadilha de
-   cima. Subiu para cá para valer no projeto inteiro. */
+/* .hidden faz o mesmo. */
 .hidden { display: none !important; }
 
 body {
@@ -396,13 +359,7 @@ img { max-width: 100%; display: block; }
   color: rgba(255,255,255,0.35);
 }
 
-/* ── A ETIQUETA DE PATENTE ────────────────────
-   [ERUDITO] Ana Clara — a patente antes do nome, como em RPG. Os
-   colchetes são do CSS e não do texto, para que o nome copiado da tela
-   continue sendo o nome.
-
-   A cor sai de --pat, que cada modificador --1..--10 define. Sem o
-   modificador a etiqueta ainda funciona, em cinza-claro. */
+/* ── Etiqueta de patente ── [ERUDITO] antes do nome; cor em --pat (modificadores --1..--10). */
 .patente-tag {
   --pat: var(--text-muted);
 
@@ -421,9 +378,7 @@ img { max-width: 100%; display: block; }
 
   color: var(--pat);
 
-  /* As duas linhas simples são o plano B: navegador que não entenda
-     color-mix fica com elas e a etiqueta continua visível, só que sem a
-     tinta da faixa no fundo. */
+  /* Fallback para navegadores sem color-mix. */
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.16);
 
@@ -445,8 +400,7 @@ img { max-width: 100%; display: block; }
 .patente-tag--9  { --pat: var(--pat-9);  }
 .patente-tag--10 { --pat: var(--pat-10); }
 
-/* Só a cor, sem o chip: para um texto que já tem lugar e tamanho
-   definidos, como a patente dentro da barrinha estreita da navbar. */
+/* Só a cor, sem o chip. */
 .patente-cor--1  { --pat: var(--pat-1); color: var(--pat); }
 .patente-cor--2  { --pat: var(--pat-2); color: var(--pat); }
 .patente-cor--3  { --pat: var(--pat-3); color: var(--pat); }
@@ -507,14 +461,7 @@ img { max-width: 100%; display: block; }
   justify-content: center;
 }
 
-/* A barra tem altura fixa de 64px, e por isso ela NÃO pode quebrar
-   linha: o que não couber some para fora da caixa em vez de empurrar
-   para baixo. Foi o que apareceu quando o ADMIN ganhou o sétimo item e
-   "Minha turma" virou duas linhas dentro de uma faixa de uma linha.
-
-   Então: ninguém quebra (`nowrap`, aqui e dentro de cada link) e, se
-   ainda assim faltar largura, a lista desliza na horizontal. Rolagem é
-   feia; texto picado no meio de uma barra é pior. */
+/* Altura fixa: os links não quebram linha e rolam na horizontal se faltar espaço. */
 .navbar__links {
   display: flex;
   align-items: center;
@@ -529,17 +476,14 @@ img { max-width: 100%; display: block; }
 }
 .navbar__links::-webkit-scrollbar { display: none; }
 
-/* O lado direito da barra: links, barrinha de nível e o canto do perfil. Era um
-   style="display:flex" repetido dentro de cada HTML. */
+/* Lado direito da barra: links, nível e perfil. */
 .navbar__acoes {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 14px;
 
-  /* Os links moram aqui dentro. Então este bloco PRECISA poder encolher
-     — é ele que cede largura quando os sete itens do ADMIN apertam. O
-     que não encolhe são as duas coisas da ponta, logo abaixo. */
+  /* Este bloco encolhe quando falta largura. */
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -548,13 +492,7 @@ img { max-width: 100%; display: block; }
 .navbar__acoes > .nivel-nav { flex: none; }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   O CANTO DO PERFIL
-
-   Ocupou o lugar do botão "Sair". O Sair continua ali dentro — sair da
-   conta é a ação mais destrutiva da barra, e não devia ser a mais fácil
-   de acertar sem querer com o dedo.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Canto do perfil ── (o "Sair" fica dentro do menu) */
 
 .perfil {
   position: relative;
@@ -613,9 +551,7 @@ img { max-width: 100%; display: block; }
 .perfil__botao[aria-expanded="true"] .perfil__seta { transform: rotate(180deg); }
 
 
-/* ── O painel que desce ───────────────────────────────────────────────
-   O verde é o --bg-light da paleta, clareado: precisa destacar-se da
-   barra (que é quase preta) sem virar uma cor nova no projeto. */
+/* Menu do perfil. */
 .perfil__menu {
   position: absolute;
   top: calc(100% + 10px);
@@ -649,8 +585,7 @@ img { max-width: 100%; display: block; }
   text-align: center;
 }
 
-/* max-width para o nome longo poder cortar com reticências em vez de
-   empurrar o menu inteiro para fora da tela. */
+/* Nome longo corta com reticências. */
 .perfil__cabeca-texto {
   display: flex;
   flex-direction: column;
@@ -683,9 +618,7 @@ img { max-width: 100%; display: block; }
   text-overflow: ellipsis;
 }
 
-/* A perspectiva mora AQUI, no pai. Sem ela o translateZ não tem de onde
-   ser visto e o item não se mexe um milímetro — é o erro clássico de
-   quem tenta 3D em CSS pela primeira vez. */
+/* perspective no pai, para o translateZ funcionar. */
 .perfil__lista {
   list-style: none;
   margin: 0;
@@ -711,9 +644,7 @@ img { max-width: 100%; display: block; }
   text-align: left;
   cursor: pointer;
 
-  /* O salto para a frente. O eixo Z aproxima o item de quem olha, como
-     se ele levantasse da superfície — a curva de saída é rápida e a de
-     volta é macia, que é o que faz parecer peso e não pisca-pisca. */
+  /* O item "levanta" no hover. */
   transform: translateZ(0);
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
               background 0.2s, color 0.2s, box-shadow 0.22s;
@@ -746,9 +677,7 @@ img { max-width: 100%; display: block; }
    susto. Fica só mais aceso, como os outros. */
 .perfil__item--sair:hover .perfil__icone { color: var(--white); }
 
-/* "Minhas conquistas" ainda não tem para onde ir. Fica visível, porque
-   some o que existe é pior do que mostrar o que vem — mas não salta e
-   não responde ao clique. */
+/* Item ainda sem destino: visível, mas inativo. */
 .perfil__item--breve {
   cursor: default;
   color: rgba(255, 255, 255, 0.45);
@@ -784,18 +713,7 @@ img { max-width: 100%; display: block; }
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   A BARRA DE NÍVEL
-
-   Entra em qualquer página com <div data-nivel></div>; quem preenche é
-   o navbar.js. Substituiu a pílula fixa que dizia "Nível Mestre da
-   Saúde" sem medir coisa alguma.
-
-   Largura fixa e não flexível: ela aparece no canto de barras de
-   boas-vindas ao lado de texto que varia de tamanho, e uma barra de
-   progresso que muda de largura conforme a frase ao lado não dá para
-   comparar de uma tela para outra.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Barra de nível ── <div data-nivel></div>, preenchida pelo navbar.js. */
 
 .nivelzinho {
   display: flex;
@@ -821,9 +739,7 @@ img { max-width: 100%; display: block; }
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 14px;
-  /* O dourado é só o padrão de quando ainda não se sabe a faixa. A
-     classe .patente-cor--N define --pat, e é ela que manda — pela
-     variável, e não por especificidade, que aqui daria empate. */
+  /* Cor da faixa via --pat (dourado por padrão). */
   color: var(--pat, var(--gold));
   white-space: nowrap;
   overflow: hidden;
@@ -862,8 +778,7 @@ img { max-width: 100%; display: block; }
   border-radius: 99px;
   background: linear-gradient(90deg, var(--primary), var(--gold));
 
-  /* Lenta de propósito: a barra subindo é o feedback do acerto, e uma
-     transição instantânea não é vista. 0,9s é tempo de perceber. */
+  /* Transição lenta para o ganho ser visto. */
   transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -884,16 +799,7 @@ img { max-width: 100%; display: block; }
 }
 
 
-/* ── A MESMA BARRA, ENCOLHIDA PARA A BARRA DE NAVEGAÇÃO ─────────────
-   Na navbar não cabe a versão inteira: patente, "Nível 5/20" e
-   "190 de 300 XP" em 64px de altura viram um amontoado. Então ali fica
-   a patente em cima e, embaixo, "Nv. 5" em letra pequena ao lado do
-   traço. O XP por extenso vai no title, para quem parar o mouse em cima.
-
-   É a MESMA marcação de "Meu progresso", desenhada pela mesma função:
-   o que muda é só o que o CSS deixa aparecer. Duas versões do desenho
-   acabariam divergindo na primeira mudança de regra.
-   ────────────────────────────────────────────────────────────────── */
+/* ── Versão da navbar ── patente em cima e "Nv. N" ao lado do traço. */
 
 /* Tira a moldura da versão grande: aqui ela flutua na própria barra. */
 .nivel-nav.nivelzinho {
@@ -932,9 +838,7 @@ img { max-width: 100%; display: block; }
   white-space: nowrap;
 }
 
-/* ── O "+10 XP" de qualquer ganho ────────────────────────────────────
-   Nasce logo abaixo da barra, sobe um pouco e some. O traço brilha ao
-   mesmo tempo, para o olho ligar o número à barra que cresceu. */
+/* "+N XP" que sobe e some abaixo da barra. */
 .nivelzinho__ganho {
   position: absolute;
   top: calc(100% + 4px);
@@ -980,8 +884,7 @@ img { max-width: 100%; display: block; }
   100%    { opacity: 0; }
 }
 
-/* Sem esta linha a barra ignora o `hidden` e aparece zerada antes de o
-   servidor responder: o display:flex de .nivelzinho vence o atributo. */
+/* [hidden] vence o display:flex. */
 .nivel-nav[hidden] { display: none; }
 
 /* No celular a barra encolhe, mas não some: é o único sinal de
@@ -1012,9 +915,7 @@ img { max-width: 100%; display: block; }
   text-decoration: none;
 }
 
-/* Entre 900 e 1100px cabem os sete itens do ADMIN, mas no limite.
-   Apertar a fonte e o respiro aqui evita a rolagem no caso mais comum,
-   que é justamente o notebook de quem está desenvolvendo. */
+/* Entre 900 e 1100px: fonte e respiro menores para caberem os itens do admin. */
 @media (max-width: 1100px) {
   .navbar { padding: 0 14px; }
   .navbar__links a { font-size: 13px; padding: 6px 8px; }
@@ -1330,13 +1231,7 @@ img { max-width: 100%; display: block; }
 /* ── Custom Styles for Dashboard Page ─────── */
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   AVISO DE NOVAS MISSÕES (novas-missoes.js)
-
-   Aparece no mapa e na tela de progresso quando a régua das barras
-   cresceu — o professor passou missão nova e as barras desceram. O tom
-   é de notícia boa, nunca de alerta: dourado, não vermelho.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Aviso de novas missões (novas-missoes.js) ── */
 
 .aviso-missoes {
   display: flex;
@@ -1413,20 +1308,7 @@ img { max-width: 100%; display: block; }
 .aviso-missoes__ok:hover { transform: translateY(-1px); opacity: 1; }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   O AVISO DE CONQUISTA (src/js/conquista-aviso.js)
-
-   O cartão de "conquista desbloqueada" dos videogames: entra pela
-   direita no canto superior, com a medalha, o nome, a descrição e o
-   XP, e sai sozinho. Fica por cima de tudo, inclusive dos modais
-   (z-index 9999/10000 em dashboard.css): ganhar uma insígnia com um
-   modal aberto não pode passar despercebido.
-
-   O topo é 96px e não 0 porque a barra de navegação não é fixa, e o
-   aviso não deve tampar o nível e o avatar quando a página está no
-   começo — nem o "+10 XP" que aparece logo abaixo da barrinha de
-   nível no mesmo acerto (.nivelzinho__ganho).
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Aviso de conquista (conquista-aviso.js) ── canto superior direito, acima dos modais. */
 
 .conquista-pilha {
   position: fixed;
@@ -1580,10 +1462,7 @@ img { max-width: 100%; display: block; }
 
 .conquista-aviso--resto:hover { text-decoration: underline; }
 
-/* ── A dica: o segredo de um lugar que a pessoa ainda não achou ──
-   O cartão da conquista, com a medalha em silhueta — como na estante,
-   bloqueada — e um "?" por cima. O rótulo sai do dourado para o verde
-   claro: dourado é conquista feita, isto é convite. */
+/* Dica: medalha em silhueta com "?" e rótulo verde. */
 .conquista-aviso--dica .conquista-aviso__rotulo { color: var(--accent); }
 
 .conquista-aviso--dica .conquista-aviso__arte { position: relative; }
@@ -1613,11 +1492,7 @@ img { max-width: 100%; display: block; }
 
 .conquista-aviso--dica .conquista-aviso__descricao { font-style: italic; }
 
-/* ── O aviso de progresso: as barras do acerto ─────────────────────
-   Mesmo cartão, mas em coluna e com a borda na cor do jogo (verde), e
-   não no dourado das insígnias: progresso é rotina, conquista é festa.
-   As barras seguem as de "Fim da rodada" (missao.css): o pedaço antigo
-   mais apagado, o novo em cor cheia, crescendo. */
+/* Aviso de progresso: as barras do acerto, com borda verde. */
 
 .progresso-aviso {
   flex-direction: column;

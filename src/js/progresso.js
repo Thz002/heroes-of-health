@@ -1,25 +1,5 @@
-/**
- * progresso.js — a tela "Meu progresso" (progresso.html)
- *
- * O buraco que esta tela fecha: o servidor já somava os pontos das 8
- * áreas desde o começo, e o aluno nunca via nada disso. Ele acertava, a
- * missão sumia da lista do mapa, e acabava. A recompensa do jogo existia
- * só dentro do banco.
- *
- * A tela tem três blocos, de cima para baixo:
- *
- *   1. os quatro números — missões, XP, sequência de dias, taxa de acerto
- *   2. a turma dele e a posição entre os colegas
- *   3. as 8 barras por tema
- *
- * REGRA QUE VALE PARA A TELA INTEIRA: nada aqui pode soar como fracasso.
- * Uma barra baixa é "começando", nunca "ruim"; e a porcentagem não
- * aparece escrita. Para uma criança de 7 anos, um "31%" vermelho é
- * motivo para largar o jogo — a barra curta com a palavra gentil ao lado
- * conta a mesma coisa sem a pancada.
- *
- * Carregado depois de supabase.js, api.js e navbar.js.
- */
+/** progresso.js — "Meu progresso" (progresso.html): números, turma e as 8 barras.
+    Nada soa como fracasso: rótulos gentis em vez de porcentagem. */
 (() => {
   'use strict';
 
@@ -34,14 +14,7 @@
 
   let usuarioId = null;
 
-  /* ── Os rótulos gentis ────────────────────────────────────────────
-     A faixa é escolhida pela PRIMEIRA linha cujo teto a porcentagem não
-     ultrapassa. A ordem importa, e o último teto é 100.
-
-     Nenhum rótulo é uma nota. "A explorar" diz que tem coisa nova ali;
-     "começando" diz que já começou. Os dois convidam a continuar, que é
-     o trabalho que esta coluna tem de fazer.
-     ─────────────────────────────────────────────────────────────── */
+  /* Rótulos gentis: a primeira faixa cujo teto não é ultrapassado (o último é 100). */
   /** Menor largura que ainda se enxerga numa barra, em % dela. */
   const PISO_VISIVEL = 4;
 
@@ -89,8 +62,7 @@
       mostrarTemas(areas, Boolean(resumo.turma));
 
     } catch (err) {
-      // Sem invenção: se não deu para carregar, a tela diz isso em vez de
-      // desenhar barras vazias que pareceriam progresso perdido.
+      // Se não carregar, mostra o erro.
       erro.textContent = err.message;
       erro.hidden = false;
       listaTemas.innerHTML = '';
@@ -117,11 +89,7 @@
       e.respostas ? `${e.acertos} de ${e.respostas} ${plural(e.respostas, 'resposta', 'respostas')}` : 'assim que você responder a primeira');
   }
 
-  /**
-   * A sequência é a única caixa que pode dar um empurrão, e é onde o tom
-   * mais importa: quem parou há uma semana não precisa ler que perdeu
-   * nada — precisa de um convite para voltar.
-   */
+  /** Nota da sequência: sempre um convite. */
   function notaDaSequencia(e) {
     if (e.jogou_hoje) return 'você jogou hoje';
     if (e.streak_dias) return 'jogue hoje para continuar';
@@ -142,8 +110,7 @@
     const ponto = document.getElementById('turma-cor');
     if (turma.cor) ponto.style.background = turma.cor;
 
-    // textContent e não innerHTML: nome de turma e de escola são texto
-    // escrito por pessoa, nunca código rodando na página.
+    // textContent: texto escrito por pessoas.
     escrever('turma-nome', turma.ano_escolar ? `${turma.nome} · ${turma.ano_escolar}` : turma.nome);
 
     // `turma.escola` saiu da resposta do servidor junto com as escolas.
@@ -160,15 +127,7 @@
 
   /* ── BLOCO 3 — as 8 barras ─────────────────────────────────────── */
 
-  /*
-   * A régua de cada barra é o que AS MISSÕES DESTE ALUNO valem (mais o
-   * que ele já conquistou) — ver GET /api/meu-progresso. Por isso:
-   *
-   *   - sem turma, não há barra para desenhar: a régua seria só o que ele
-   *     já acertou, e tudo apareceria "dominado". A tela convida a
-   *     escolher uma turma (bloco-sem-turma, acima);
-   *   - quando chega missão nova a barra desce, e o aviso explica por quê.
-   */
+  /* Barras por tema (régua = missões do aluno + o que já conquistou). Sem turma, não desenha. */
   function mostrarTemas(areas, temTurma) {
     listaTemas.innerHTML = '';
     caixaAviso.replaceChildren();
@@ -203,9 +162,7 @@
     const barra = linha.querySelector('.tema__barra i');
     const rotulo = linha.querySelector('.tema__rotulo');
 
-    // Nenhuma missão deste aluno vale ponto nesta área: a barra ficaria
-    // vazia e ele leria isso como culpa dele. Melhor dizer que ainda não
-    // chegou missão dessa área.
+    // Área sem missões: avisa em vez de mostrar barra vazia.
     if (a.sem_missoes) {
       linha.classList.add('tema--vazio');
       barra.style.width = '0%';
@@ -220,21 +177,13 @@
     linha.classList.add(faixa.classe);
     rotulo.textContent = faixa.rotulo;
 
-    // A régua cresce a cada missão nova, então quem acertou uma ou duas
-    // perguntas de um lote grande pode estar em 1% ou 2% — e 2% de uma
-    // barra são dois pixels, que a pessoa lê como "não aconteceu nada".
-    //
-    // Então quem já pontuou tem no mínimo um pedacinho visível. Não é
-    // mentira: a barra mostra que existe progresso, e o número exato
-    // continua inteiro no title.
+    // Quem já pontuou tem um pedaço mínimo visível.
     barra.style.width = pct > 0 && pct < PISO_VISIVEL ? `${PISO_VISIVEL}%` : `${pct}%`;
 
-    // O número exato existe, mas só para quem for atrás dele. Na tela
-    // fica a palavra; no title, a conta.
+    // O número exato fica no title.
     linha.title = `${a.pontos} de ${a.pontos_possiveis} pontos das suas missões em ${a.area}`;
 
-    // A barra que desceu por causa de missão nova ganha uma etiqueta —
-    // o aviso lá em cima diz o porquê.
+    // Etiqueta na barra que desceu por missão nova.
     if (temNovidade) {
       const selo = document.createElement('span');
       selo.className = 'tema__novo';

@@ -105,26 +105,12 @@
     <div id="detalhe"></div>
   </div>
 
-  <!-- Carrega o Supabase que já está instalado na pasta node_modules do projeto.
-       Não precisa de internet para carregar este arquivo. -->
+  <!-- Supabase local, de node_modules. -->
   <script src="node_modules/@supabase/supabase-js/dist/umd/supabase.js"></script>
 
   <script>
-    // =====================================================================
-    //  PREENCHA A LINHA DA CHAVE ABAIXO
-    //
-    //  ATENÇÃO: existem DUAS chaves no painel do Supabase.
-    //
-    //    sb_publishable_...  <- é ESTA que vai aqui.
-    //                           Ela pode aparecer no navegador, foi feita
-    //                           para isso.
-    //
-    //    sb_secret_...       <- esta NUNCA pode vir para cá. É a chave de
-    //                           administrador. O próprio Supabase bloqueia
-    //                           o uso dela no navegador.
-    //
-    //  Onde encontrar: painel do Supabase -> Project Settings -> API Keys
-    // =====================================================================
+    // Preencha a chave abaixo com a sb_publishable_ (nunca a sb_secret_).
+    // Onde: painel do Supabase -> Project Settings -> API Keys.
 
     const ENDERECO = "https://xmdmzmuhorlrptifgfhz.supabase.co";
     const CHAVE    = "sb_publishable_CF0Sre41ZkH_a05rEko5SA_lvr740Yd";
@@ -189,8 +175,7 @@
         return true;
       }
 
-      // A chave de administrador começa com "sb_secret_". Ela não pode ser
-      // usada aqui, então avisamos antes de tentar, em vez de deixar falhar.
+      // Avisa antes de tentar usar a chave secreta.
       if (CHAVE.startsWith("sb_secret_") || CHAVE.startsWith("service_role")) {
         mostrar(
           "Essa é a chave de ADMINISTRADOR, e ela não pode ser usada no navegador.\n\n" +
@@ -206,9 +191,7 @@
       return false;
     }
 
-    // Cria a conexão com o Supabase. É isso que a linha abaixo faz:
-    // entrega o endereço e a chave, e recebe de volta um objeto que sabe
-    // conversar com o seu banco de dados.
+    // Cria a conexão com o Supabase.
     let conexao = null;
     if (!ENDERECO.startsWith("COLE_AQUI")) {
       conexao = supabase.createClient(ENDERECO, CHAVE);

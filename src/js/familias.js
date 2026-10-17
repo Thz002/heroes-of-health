@@ -1,13 +1,5 @@
-/* familias.js — o sobrenome da família que mora em cada casa do mapa.
-
-   A chave é o número da casa: o campo `casa` dos HOTSPOTS em mapa.js,
-   o mesmo que vai na URL da missão (?casa=3) e escolhe a imagem
-   (src/imgs/familias/familia03.png). Mudar um número aqui troca a
-   família de casa nas duas telas, no mapa e na missão.
-
-   Lido por mapa.js ("Casa da família Alves") e por quiz.js
-   ("Família Alves", embaixo da imagem). Carregue antes deles.
-   A descrição de cada família fica em FAMILIAS_DESCRICAO, no fim. */
+/* familias.js — sobrenome da família de cada casa (chave = número da casa, o `casa` de mapa.js).
+   Usado por mapa.js e quiz.js; carregue antes deles. */
 
 window.FAMILIAS = Object.freeze({
   1: 'Alves',
@@ -32,14 +24,7 @@ window.FAMILIAS = Object.freeze({
   20: 'Nascimento',
 });
 
-/* Quem é cada família, para o modal da casa no mapa (mapa.js), no lugar
-   da descrição geral das casas. Mesma chave: o número da casa.
-
-   As de Alves, Souza, Silveira, Oliveira, Silva, Motta, Albuquerque,
-   Duarte, Andrade e Ferreira foram escritas pela equipe. As outras dez
-   seguem o mesmo molde e o desenho de cada família
-   (src/imgs/familias/familia<nn>.png) — mudar o desenho pede rever o
-   texto, e vice-versa. */
+/* Descrição de cada família para o modal da casa (mesma chave). */
 window.FAMILIAS_DESCRICAO = Object.freeze({
   1: 'É uma família animada que gosta muito de brincar e passear com seu cachorrinho Toddy, composta pela Amanda, Pedro e o Caio, filho deles de 7 anos. Eles gostam muito de sair no final de semana, passear na pracinha e jogarem futebol juntos.',
   2: 'É uma família tranquila e acolhedora, composta pelo Sr. Roberto e pela Sra. Márcia, um casal de idosos que gostam muito de passar tempo juntos e cuidar do seu gatinho Mike. Nos momentos de lazer, gostam de assistir televisão, participar das atividades físicas da UBS e fazer caminhadas pelo bairro.',

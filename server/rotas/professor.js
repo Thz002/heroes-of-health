@@ -1,11 +1,4 @@
-/**
- * server/rotas/professor.js — o painel do professor
- *
- * Estas rotas existem porque o RLS sozinho não dava conta: o professor
- * precisa ler linhas que não são dele (o progresso dos alunos), e cada
- * exceção dessas no banco é uma policy a mais para revisar. Do lado de
- * cá a regra fica em um lugar só: "é aluno de uma turma minha?".
- */
+/** Painel do professor: tudo filtrado por "é turma/aluno meu?". */
 
 const express = require('express');
 const { admin } = require('../supabase');
@@ -31,36 +24,20 @@ async function turmaEhMinha(usuario, turmaId) {
   return Boolean(data);
 }
 
-// Mesma lista de cores do seletor em dashboard.html, e o check espelhado
-// no banco (db/setup.sql). Quem manda a cor é o navegador, então ela
-// precisa ser conferida contra uma lista fechada antes de gravar.
+// Mesma lista de cores do dashboard e do check do banco.
 const CORES_VALIDAS = ['#14b8a6', '#3b82f6', '#f9c74f', '#f472b6', '#a78bfa', '#fb923c'];
 
-// O jogo atende dos 7 aos 18 anos, então a lista vai do Fundamental ao
-// 3º do Médio. Os rótulos do Médio levam "EM" para não se confundirem
-// com o 1º/2º/3º do Fundamental, e são curtos de propósito: a coluna
-// turmas.ano_escolar é varchar(10) (db/setup.sql).
+// Anos do Fundamental ao 3º do Médio (cabe em varchar(10)).
 const ANOS_VALIDOS = [
   '1º ano', '2º ano', '3º ano', '4º ano', '5º ano',
   '6º ano', '7º ano', '8º ano', '9º ano',
   '1º ano EM', '2º ano EM', '3º ano EM'
 ];
 
-// Quantos alunos cabem numa turma, para o "x/10" do card. Fixo por
-// enquanto — se um dia precisar variar por turma, vira coluna no banco.
+// Limite de alunos por turma ("x/10" do card).
 const LIMITE_ALUNOS_POR_TURMA = 10;
 
-/**
- * Ponte enquanto a coluna `descricao` de quizzes_professores não existir
- * em todo banco. Roda a consulta; se o Postgres reclamar dessa coluna,
- * roda de novo sem ela.
- *
- * É temporário. Some quando todos os bancos rodarem:
- *   alter table quizzes_professores add column if not exists descricao varchar(200);
- *
- * A descrição é a frase que o aluno lê no card — perder a frase é bem
- * menos grave do que a tela inteira de tarefas parar de carregar.
- */
+/** Repete a consulta sem `descricao` se a coluna ainda não existir no banco. */
 async function comOuSemDescricao(montar) {
   const r = await montar(true);
   if (r.error && /descricao/.test(r.error.message || '')) return montar(false);
@@ -119,15 +96,11 @@ rotas.post('/turmas', async (req, res) => {
   if (nome.length < 2) {
     return res.status(400).json({ message: 'Dê um nome à turma. Ex: 7º Ano B' });
   }
-  // Cor e ano vêm do navegador, então são conferidos contra uma lista
-  // fechada antes de gravar — o mesmo dado inválido também cairia no
-  // check do banco, mas é melhor barrar aqui com uma mensagem clara.
+  // Cor e ano conferidos contra listas fechadas.
   const cor = CORES_VALIDAS.includes(req.body?.cor) ? req.body.cor : CORES_VALIDAS[0];
   const ano_escolar = ANOS_VALIDOS.includes(req.body?.ano_escolar) ? req.body.ano_escolar : null;
 
-  // O código é gerado aqui, e não no navegador: ele é a credencial que
-  // deixa um aluno entrar na turma, então quem o inventa tem que ser o
-  // lado confiável.
+  // O código da turma é gerado no servidor.
   const codigo = gerarCodigo(nome);
 
   const { data, error } = await admin
@@ -169,10 +142,7 @@ function gerarCodigo(nomeTurma) {
   return `${prefixo}-${sufixo}`;
 }
 
-// ── Editar nome, cor e ano da turma ──────────────────────────────────
-// Só esses três campos. O código, a escola e o dono da turma ficam de
-// fora de propósito: o código é credencial de entrada e trocá-lo
-// deixaria a sala inteira sem conseguir entrar.
+// ── Editar turma ── só nome, cor e ano.
 rotas.patch('/turmas/:id', async (req, res) => {
   const turmaId = Number(req.params.id);
 
@@ -194,9 +164,7 @@ rotas.patch('/turmas/:id', async (req, res) => {
     mudancas.nome = nome;
   }
 
-  // Ao contrário do POST, aqui um valor fora da lista é recusado em vez
-  // de virar o padrão: numa edição, gravar calado uma cor diferente da
-  // pedida esconderia o erro de quem chamou.
+  // Na edição, valor inválido é recusado.
   if (req.body?.cor !== undefined) {
     if (!CORES_VALIDAS.includes(req.body.cor)) {
       return res.status(400).json({ message: 'Essa cor não está na lista.' });
@@ -230,8 +198,7 @@ rotas.patch('/turmas/:id', async (req, res) => {
     return falhou(res, 500, 'Não foi possível salvar as mudanças.', error, 'PATCH /professor/turmas/:id');
   }
 
-  // O card mostra "x/10", então a resposta precisa devolver a contagem
-  // junto — do contrário a tela teria que buscar a lista inteira de novo.
+  // Devolve a contagem de alunos junto.
   const { count } = await admin
     .from('usuarios')
     .select('id', { count: 'exact', head: true })
@@ -303,8 +270,7 @@ rotas.get('/turmas/:id/alunos', async (req, res) => {
       idade: a.idade,
       respostas: total,
       acertos,
-      // Sem respostas ainda, aproveitamento é null e não zero — zero
-      // pareceria "foi mal", quando na verdade é "ainda não começou".
+      // Sem respostas: null, não zero.
       aproveitamento: total ? Math.round((acertos / total) * 100) : null
     };
   }));
@@ -324,12 +290,7 @@ rotas.post('/quizzes', async (req, res) => {
     return res.status(403).json({ message: 'Essa turma não é sua.' });
   }
 
-  // Dois jeitos de montar o quiz:
-  //   'auto'   — o servidor sorteia entre as questões que casam com os
-  //              cenários/áreas pedidos (o jeito de sempre);
-  //   'manual' — o professor manda a lista de questões que escolheu.
-  // Nos dois, só entram questões do sistema ou do próprio professor:
-  // a de outro professor nunca vira tarefa aqui, nem mandando o id dela.
+  // Modo 'auto' (sorteio) ou 'manual' (lista escolhida). Só questões do sistema ou do próprio professor.
   const manual = req.body?.modo === 'manual';
 
   const descricao = String(req.body?.descricao || '').trim().slice(0, 200) || null;
@@ -378,13 +339,7 @@ rotas.post('/quizzes', async (req, res) => {
     .select(COLUNAS + ', descricao')
     .single();
 
-  // A `descricao` é enfeite: é a frase que o aluno lê no card. Se a
-  // coluna ainda não existe neste banco, o quiz é criado sem ela em vez
-  // de a criação inteira falhar — perder a frase é bem menos grave do
-  // que o professor não conseguir passar tarefa nenhuma.
-  //
-  // Some quando alguém rodar:
-  //   alter table quizzes_professores add column if not exists descricao varchar(200);
+  // Sem a coluna `descricao`, cria o quiz sem ela.
   if (criado.error && /descricao/.test(criado.error.message || '')) {
     console.warn(
       "  ⚠ quizzes_professores.descricao não existe neste banco — quiz criado sem a descrição.\n" +
@@ -415,11 +370,7 @@ rotas.post('/quizzes', async (req, res) => {
   res.status(201).json({ ...criado.data, total_questoes: sorteadas.length });
 });
 
-/**
- * Modo automático: sorteia `qtd` questões entre as que casam com os
- * cenários (obrigatórios) e áreas (opcionais) pedidos, na faixa etária
- * da turma. Devolve { sorteadas, cenarios, areas, qtd } ou { erro }.
- */
+/** Modo automático: sorteia `qtd` questões. Devolve { sorteadas, cenarios, areas, qtd } ou { erro }. */
 async function sortear(req, nivel) {
   const cenarios = Array.isArray(req.body?.cenarios) ? req.body.cenarios.map(String) : [];
   if (cenarios.length === 0) {
@@ -432,13 +383,7 @@ async function sortear(req, nivel) {
   if (!Number.isInteger(qtd)) qtd = 10;
   qtd = Math.min(QTD_MAX, Math.max(QTD_MIN, qtd));
 
-  // As candidatas: questões dos cenários escolhidos, na faixa etária da
-  // turma, do sistema ou do próprio professor e — se ele filtrou — que
-  // pontuem em alguma das áreas pedidas. Os "!inner" fazem o join virar
-  // filtro: questão sem o cenário (ou sem a área) não vem.
-  //
-  // Com filtro de área, a mesma questão pode casar com duas áreas e vir
-  // duas vezes; o Set logo abaixo desfaz a repetição.
+  // Candidatas: cenários, faixa etária e (se pedido) áreas; o Set tira repetidas.
   const questoes = await lerTudo(() => {
     let consulta = admin
       .from('questoes')
@@ -469,15 +414,7 @@ async function sortear(req, nivel) {
   return { sorteadas: bolo.slice(0, qtd), cenarios, areas, qtd };
 }
 
-/**
- * Modo manual: o professor mandou `questao_ids`, na ordem em que quer
- * que a turma responda. Cada uma é conferida aqui — existir, ser do
- * sistema ou dele, e ser da faixa etária da turma — porque a lista vem
- * do navegador e pode ter sido escrita no console.
- *
- * Os cenários e as áreas do quiz saem das próprias questões: são eles
- * que decidem em quais lugares do mapa a missão aparece para o aluno.
- */
+/** Modo manual: confere cada id e deriva cenários e áreas das questões. */
 async function escolherAMao(req, nivel) {
   const pedidas = Array.isArray(req.body?.questao_ids) ? req.body.questao_ids : [];
   const ids = [...new Set(pedidas.map(Number))].filter(n => Number.isInteger(n) && n > 0);
@@ -505,9 +442,7 @@ async function escolherAMao(req, nivel) {
   for (const id of ids) {
     const q = porId.get(id);
 
-    // "Não existe" e "é de outro professor" dão a MESMA mensagem: com
-    // mensagens diferentes, dava para descobrir pelo console quais ids
-    // são perguntas escondidas de colegas.
+    // Mesma mensagem para "não existe" e "é de outro professor".
     if (!q || (q.criado_por !== CRIADOR_SISTEMA && q.criado_por !== req.usuario.id)) {
       return { erro: { status: 400, message: 'Uma das perguntas escolhidas não está disponível. Recarregue a lista e escolha de novo.' } };
     }
@@ -527,21 +462,9 @@ async function escolherAMao(req, nivel) {
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   AS QUESTÕES
+/* ── Questões ── do sistema e as do próprio professor. O gabarito só vai nas dele. */
 
-   O professor vê dois montes: as do SISTEMA (equipe de Medicina, iguais
-   para todo mundo) e as DELE, que ele mesmo escreveu. As de outro
-   professor nunca aparecem — todo select aqui filtra por criado_por.
-
-   O gabarito (resposta_correta + explicacao) só vai junto nas questões
-   do próprio professor. As do sistema saem sem ele: qualquer pessoa
-   pode se cadastrar como PROFESSOR hoje (docs/banco-de-dados.md §4), e
-   entregar o gabarito aqui seria entregá-lo a qualquer aluno esperto.
-   ═══════════════════════════════════════════════════════════════════ */
-
-// Quanto uma questão de professor vale em cada área que ele marcar. O
-// conteúdo da Medicina usa pesos de 4 a 10; 10 é o padrão da tabela.
+// Pontos por área de uma questão de professor.
 const PONTOS_POR_AREA = 10;
 
 const COLUNAS_QUESTAO =
@@ -585,11 +508,7 @@ function formatarQuestao(q, usuario, ordemDasAreas) {
   return saida;
 }
 
-// ── Listar questões ──────────────────────────────────────────────────
-//   ?origem=sistema|minhas   de qual monte (padrão: sistema)
-//   ?nivel=1|2|3             faixa etária (opcional)
-//   ?cenarios=ubs,escola     só desses lugares (opcional)
-//   ?areas=Saúde,Educação    só as que pontuam em alguma destas (opcional)
+// Lista questões: ?origem=sistema|minhas, ?nivel, ?cenarios, ?areas.
 rotas.get('/questoes', async (req, res) => {
   const minhas = req.query.origem === 'minhas';
   const cenarios = lista(req.query.cenarios);
@@ -618,8 +537,7 @@ rotas.get('/questoes', async (req, res) => {
       if (nivel) consulta = consulta.eq('nivel_etario', nivel);
       if (cenarios.length) consulta = consulta.in('cenarios.slug', cenarios);
 
-      // As minhas, da mais nova para a mais velha: quem acabou de criar
-      // uma pergunta quer vê-la no topo.
+      // As minhas: mais novas primeiro.
       return consulta.order('id', { ascending: !minhas });
     }),
     lerAreas()
@@ -628,9 +546,7 @@ rotas.get('/questoes', async (req, res) => {
   const erro = questoes.error || areas.error;
   if (erro) return falhou(res, 500, 'Não foi possível carregar as perguntas.', erro, 'GET /professor/questoes');
 
-  // O filtro de área é feito aqui, e não com um !inner no banco: o
-  // !inner cortaria da resposta as OUTRAS áreas da questão, e a tela
-  // mostraria "Saúde" numa pergunta que também vale Educação.
+  // Filtro de área feito aqui para não cortar as outras áreas da questão.
   const linhas = filtroAreas.length
     ? questoes.data.filter(q => (q.questoes_areas || []).some(a => filtroAreas.includes(a.area_nome)))
     : questoes.data;
@@ -653,8 +569,7 @@ rotas.post('/questoes', async (req, res) => {
   if (!opcoes.A || !opcoes.B) return recusar('Preencha pelo menos as alternativas A e B.');
   if (!opcoes.C && opcoes.D) return recusar('Preencha a alternativa C antes da D.');
 
-  // 255 é o tamanho das colunas opcao_* (db/setup.sql). Cortar calado
-  // mudaria o sentido da alternativa sem o professor saber.
+  // Limite de 255 caracteres das colunas opcao_*.
   for (const letra of 'ABCD') {
     if (opcoes[letra].length > 255) return recusar(`A alternativa ${letra} passou de 255 letras.`);
   }
@@ -685,8 +600,7 @@ rotas.post('/questoes', async (req, res) => {
   const desconhecida = pedidas.find(a => !areas.nomes.includes(a));
   if (desconhecida) return recusar(`A área "${desconhecida}" não existe.`);
 
-  // criado_por vem do login, NUNCA do corpo da requisição: é ele que
-  // decide quem enxerga a pergunta.
+  // criado_por vem do login.
   const criada = await admin
     .from('questoes')
     .insert({
@@ -708,9 +622,7 @@ rotas.post('/questoes', async (req, res) => {
     return falhou(res, 500, 'Não foi possível salvar a pergunta.', criada.error, 'POST /professor/questoes');
   }
 
-  // Sem linha em questoes_areas, acertar a pergunta não pontua nada. Se
-  // esta parte falhar, a questão sai junto — melhor nenhuma pergunta do
-  // que uma que não vale ponto e ninguém sabe por quê.
+  // Sem pontos por área, a questão é removida.
   const pontos = await admin.from('questoes_areas').insert(
     pedidas.map(area_nome => ({ questao_id: criada.data.id, area_nome, pontos: PONTOS_POR_AREA }))
   );
@@ -727,11 +639,7 @@ rotas.post('/questoes', async (req, res) => {
   }, req.usuario, areas.nomes));
 });
 
-// ── Apagar questão ───────────────────────────────────────────────────
-// Só a própria, e só enquanto ninguém a respondeu nem a usa num quiz.
-// respostas_alunos referencia questoes com "on delete cascade": apagar
-// uma pergunta já respondida levaria junto as respostas — e o XP — dos
-// alunos, por causa de uma decisão que não foi deles.
+// ── Apagar questão ── só a própria e só se ninguém respondeu nem a usa.
 rotas.delete('/questoes/:id', async (req, res) => {
   const questaoId = Number(req.params.id);
 
@@ -772,8 +680,7 @@ rotas.delete('/questoes/:id', async (req, res) => {
 rotas.get('/quizzes', async (req, res) => {
   const turmaId = Number(req.query.turma_id);
 
-  // Sem turma_id na URL, devolve o histórico INTEIRO de quem pediu — é o
-  // que a página de quizzes usa. Com turma_id, só os daquela turma.
+  // Sem turma_id, devolve o histórico inteiro.
   const filtrarPorTurma = req.query.turma_id !== undefined && req.query.turma_id !== '';
 
   if (filtrarPorTurma) {
@@ -802,8 +709,7 @@ rotas.get('/quizzes', async (req, res) => {
 
   const ids = data.map(q => q.id);
 
-  // O nome e a cor da turma vêm junto: sem eles a página de histórico
-  // mostraria "quiz da turma 4", que não diz nada a quem tem seis turmas.
+  // Nome e cor da turma de cada quiz.
   const turmaDe = new Map();
   const idsTurmas = [...new Set(data.map(q => q.turma_id).filter(Boolean))];
 
@@ -852,24 +758,7 @@ rotas.delete('/quizzes/:id', async (req, res) => {
   res.status(204).end();
 });
 
-/* ═══════════════════════════════════════════════════════════════════
-   RANKING DAS TURMAS
-
-   Ordena as turmas do professor por desempenho. O número que o professor
-   lê é a taxa crua (acertos ÷ respostas), mas a ORDEM não pode ser essa:
-   uma turma com 3 respostas e 3 acertos daria 100% e passaria na frente
-   de uma com 400 respostas e 92%. Uma amostra de três respostas não diz
-   nada sobre a turma.
-
-   Quem resolve é uma média com peso: cada turma entra na conta já com
-   PESO_INICIAL respostas imaginárias na média geral de todas as turmas.
-   Quem respondeu pouco fica perto da média (não sobe nem desce à toa) e
-   quem respondeu muito domina a própria nota. É a mesma ideia da nota de
-   filme que exige um mínimo de votos.
-
-   As contagens usam count/head: o banco conta e devolve só o número, em
-   vez de mandar todas as respostas para cá para serem contadas aqui.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Ranking das turmas ── ordenado por média ponderada (PESO_INICIAL respostas na média geral). */
 
 const PESO_INICIAL = 10;
 
@@ -943,23 +832,7 @@ rotas.get('/ranking', async (req, res) => {
     l.nota = (l.acertos + PESO_INICIAL * mediaGeral) / (l.respostas + PESO_INICIAL);
   }
 
-  /* A ordem sai em DOIS GRUPOS, e isso conserta um bug sutil.
-
-     A fórmula acima puxa toda turma para a média geral — é o que impede
-     três acertos em três respostas de passarem na frente de quem
-     respondeu quatrocentas. Só que uma turma com ZERO respostas cai
-     exatamente SOBRE a média, e a média ganha de quem ficou um pouco
-     abaixo dela:
-
-         turma vazia  (0 de 0)   -> (0 + 10×0,828) / (0 + 10)  = 0,8280
-         turma ativa  (24 de 29) -> (24 + 8,28)   / (29 + 10)  = 0,8277
-
-     O resultado era o painel mostrando duas turmas que nunca jogaram em
-     1º e 2º, e a única que estava jogando em 3º.
-
-     A correção não é mexer no peso: é reconhecer que turma sem resposta
-     não tem o que classificar. Ela não "empata na média", ela ainda não
-     entrou. Vai para o fim, e entre elas vale a ordem alfabética. */
+  /* Turmas sem respostas vão para o fim, em ordem alfabética. */
   linhas.sort((a, b) => {
     const jogouA = a.respostas > 0;
     const jogouB = b.respostas > 0;

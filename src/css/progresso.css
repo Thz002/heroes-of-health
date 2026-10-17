@@ -1,20 +1,9 @@
-/* ═══════════════════════════════════════════════════════════════════
-   progresso.css — a tela "Meu progresso" (progresso.html)
-
-   Três blocos empilhados: os quatro números, a faixa da turma e as 8
-   barras por tema.
-
-   As cores saem todas dos tokens do style.css (--accent, --gold,
-   --glass-bg…). A única exceção é a bolinha da turma, que recebe a cor
-   escolhida pelo professor por style inline.
-   ═══════════════════════════════════════════════════════════════════ */
+/* progresso.css — tela "Meu progresso": números, faixa da turma e as 8 barras. */
 
 
 /* ── BLOCO 1 — os quatro números ──────────────────────────────────── */
 
-/* auto-fit + minmax é o que dispensa media query aqui: os cartões ficam
-   lado a lado enquanto couberem 190px cada, e quebram sozinhos no
-   celular — vira 2x2 e depois uma coluna, sem ninguém mandar. */
+/* Cards se ajustam sozinhos à largura (auto-fit). */
 .progresso-numeros {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -146,9 +135,7 @@
   gap: 14px;
 }
 
-/* Três colunas: nome | barra | rótulo. O nome tem largura fixa para as
-   oito barras começarem todas no mesmo x — desalinhadas, elas viram
-   oito gráficos soltos em vez de uma leitura só. */
+/* Nome | barra | rótulo, com o nome em largura fixa. */
 .tema {
   display: grid;
   grid-template-columns: 132px 1fr 104px;
@@ -197,21 +184,14 @@
   text-align: right;
 }
 
-/* As faixas.
-
-   A escala NÃO vai de vermelho a verde. Vermelho é a cor de erro em
-   qualquer interface, e uma barra baixa aqui não é erro nenhum — é
-   assunto que a pessoa ainda não jogou. Então o que muda do começo ao
-   fim é a intensidade, não o significado: começa num azul calmo e vai
-   esquentando até o dourado. Nenhum degrau desta escala é ruim. */
+/* Faixas de cor por porcentagem (do azul ao dourado, sem vermelho). */
 .tema--zero   { --cor-tema: rgba(255, 255, 255, 0.45); }
 .tema--inicio { --cor-tema: #7fb8d8; }
 .tema--meio   { --cor-tema: var(--primary); }
 .tema--bom    { --cor-tema: var(--accent); }
 .tema--topo   { --cor-tema: var(--gold); }
 
-/* Área que ainda não tem pergunta nenhuma no jogo. Fica apagada de
-   propósito: é a única linha que não fala sobre o aluno. */
+/* Área sem perguntas no jogo. */
 .tema--vazio {
   opacity: 0.45;
 }
@@ -222,14 +202,7 @@
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   A FAIXA DE NÍVEL (conquistas.html)
-
-   Nível à esquerda, título e barra no meio, XP à direita. A barra é do
-   TRECHO entre dois níveis, não do total — do zero ao nível 10 ela mal
-   se moveria no começo, que é justamente quando a pessoa mais precisa
-   ver que andou.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Faixa de nível (conquistas.html) ── a barra é do trecho entre dois níveis. */
 
 .nivel-faixa {
   display: flex;
@@ -328,16 +301,7 @@
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   A ESTANTE DE INSÍGNIAS (conquistas.html)
-
-   Uma peça por lugar, conquistada ou não. O lugar vazio é parte do
-   desenho: é ele que mostra o que vem a seguir.
-
-   A MESMA ARTE serve aos dois estados — a bloqueada é a imagem em
-   silhueta, por filtro. Isso poupa o outro desenvolvedor de desenhar
-   tudo duas vezes.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Estante de insígnias (conquistas.html) ── a bloqueada é a mesma arte em silhueta. */
 
 .estante {
   display: grid;
@@ -345,8 +309,7 @@
   gap: 26px 16px;
 }
 
-/* A versão do perfil: menor, sem a linha de "faltam X", só as peças.
-   É um aperitivo da estante, não uma segunda cópia dela. */
+/* Versão compacta do perfil. */
 .estante--compacta {
   grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
   gap: 18px 12px;
@@ -386,9 +349,7 @@
 
 .insignia:hover .insignia__disco { transform: translateY(-4px) scale(1.04); }
 
-/* Sem recorte circular: as artes são medalhas com fita, mais altas que
-   largas, e um círculo cortaria a fita. object-fit: contain encaixa a
-   medalha inteira no quadrado, sem esticar. */
+/* Medalha inteira no quadrado (contain, sem recorte). */
 .insignia__arte {
   display: flex;
   align-items: center;
@@ -423,16 +384,13 @@
 
 /* ── Bloqueada ────────────────────────────────────────────────────── */
 
-/* A silhueta. O desenho continua reconhecível pela FORMA, e é por isso
-   que a arte precisa funcionar sem depender só de cor. */
+/* Silhueta da insígnia bloqueada. */
 .insignia--presa .insignia__arte img {
   filter: grayscale(1) brightness(0.4);
   opacity: 0.85;
 }
 
-/* O anel de progresso, desenhado por cima da borda do disco.
-   conic-gradient vai de 0 a --pct do círculo: nenhuma imagem, nenhum
-   SVG, nenhum JavaScript desenhando arco. */
+/* Anel de progresso com conic-gradient até --pct. */
 .insignia--presa .insignia__disco::after {
   content: '';
   position: absolute;
@@ -458,8 +416,7 @@
 
 .insignia--presa .insignia__nome { color: rgba(255, 255, 255, 0.5); }
 
-/* Os degraus de uma peça de lugar: um ponto por degrau, aceso em
-   dourado quando caiu. */
+/* Um ponto por degrau, dourado quando conquistado. */
 .insignia__degraus {
   display: flex;
   gap: 5px;
@@ -492,8 +449,7 @@
   .insignia:hover .insignia__disco { transform: none; }
 }
 
-/* Na estante, a peça abre o detalhe (conquistas.js). No perfil ela não
-   é clicável, e por isso o cursor só muda onde há role="button". */
+/* Só a peça clicável muda o cursor. */
 .insignia[role="button"] { cursor: pointer; border-radius: var(--radius-md); }
 
 .insignia[role="button"]:focus-visible {
@@ -502,16 +458,9 @@
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   O DETALHE DE UMA INSÍGNIA (o modal de conquistas.html)
+/* ── Detalhe da insígnia (modal de conquistas.html) ── */
 
-   A caixa, o fundo escuro e o botão de fechar são os .modal de
-   dashboard.css; aqui fica só o miolo.
-   ═══════════════════════════════════════════════════════════════════ */
-
-/* O .modal padrão não tem respiro nas bordas: no celular a caixa
-   encostaria na tela. E a escada de degraus pode passar da altura de
-   um celular deitado, então a caixa rola. */
+/* Respiro nas bordas e rolagem no celular. */
 #modal-insignia { padding: 16px; }
 
 .detalhe-insignia {
@@ -726,9 +675,7 @@
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   O CARTÃO DO PERFIL (perfil.html)
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Cartão do perfil (perfil.html) ── */
 
 .cartao-perfil {
   display: flex;
@@ -764,8 +711,7 @@
 
 .cartao-perfil__dados { flex: 1 1 260px; min-width: 0; }
 
-/* A coluna da direita: barra de nível e o botão de editar. Nível fica
-   junto da identidade porque é identidade — não é estatística avulsa. */
+/* Coluna direita: nível e botão de editar. */
 .cartao-perfil__lado {
   display: flex;
   flex-direction: column;
@@ -782,8 +728,7 @@
   margin: 0;
 }
 
-/* ALUNO · Pequeno Aprendiz — as duas coisas que a pessoa É, lado a lado
-   e logo abaixo do nome. Quebra em duas linhas quando não couber. */
+/* Tipo e patente abaixo do nome. */
 .cartao-perfil__faixa {
   display: flex;
   align-items: center;
@@ -802,9 +747,7 @@
 
 /* A patente ganha a pílula dourada: é conquista, e a cor é a mesma do
    XP e das insígnias no resto do jogo. */
-/* O selo era dourado fixo. Agora ele veste a cor da faixa, que o
-   perfil.js acrescenta como .patente-cor--N — e o dourado continua
-   sendo o padrão de quando a faixa ainda não chegou do servidor. */
+/* Selo na cor da faixa (.patente-cor--N); dourado por padrão. */
 .cartao-perfil__patente {
   --pat: var(--gold);
 
@@ -828,8 +771,7 @@
 
 .cartao-perfil__patente svg { width: 14px; height: 14px; }
 
-/* Duas colunas: rótulo à esquerda, valor à direita. O rótulo tem largura
-   fixa para os valores alinharem — soltos, viram um parágrafo picado. */
+/* Rótulo (largura fixa) e valor. */
 .cartao-perfil__lista {
   display: grid;
   grid-template-columns: 148px 1fr;
@@ -925,9 +867,7 @@
   font-size: 11.5px;
 }
 
-/* A prévia fica ao LADO do botão de escolher, e não depois do
-   formulário: é ela que evita o "salvei e não era essa foto" — a pessoa
-   vê o recorte circular antes de gravar, no mesmo olhar do botão. */
+/* Prévia da foto ao lado do botão. */
 .editor__foto {
   display: flex;
   align-items: flex-start;
@@ -980,8 +920,7 @@
   color: #fecaca;
 }
 
-/* O mesmo balão, em verde, quando o que aconteceu deu certo. Sem isto
-   "Agora: Arquimestre" aparecia em vermelho de erro. */
+/* Aviso de sucesso em verde. */
 .editor__aviso--ok {
   background: rgba(52, 211, 153, 0.14);
   border-color: rgba(52, 211, 153, 0.32);
@@ -1002,13 +941,7 @@
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   A LISTA DA TURMA (minha-turma.html)
-
-   Mora aqui, e não num arquivo próprio, porque as duas telas do aluno
-   dividem a faixa da turma lá de cima. Separar em dois arquivos era
-   duplicar .turma-faixa e esperar que as cópias não se afastassem.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Lista da turma (minha-turma.html) ── */
 
 .colegas {
   display: flex;
@@ -1020,8 +953,7 @@
   counter-reset: none;
 }
 
-/* FOTO · POSIÇÃO · NOME+PATENTE · BARRA · XP.
-   A foto vem primeiro porque é o que a pessoa reconhece antes de ler. */
+/* Foto · posição · nome e patente · barra · XP. */
 .colega {
   display: grid;
   grid-template-columns: 38px 30px minmax(96px, 1.2fr) minmax(60px, 1.6fr) 74px;
@@ -1190,9 +1122,7 @@
   text-align: right;
 }
 
-/* O pódio. Só as três primeiras mudam de cor — a quarta em diante não
-   ganha uma cor "pior", ganha a cor padrão. Uma escala que fosse
-   piorando linha a linha transformaria a lista num boletim. */
+/* Pódio: cores só nas três primeiras. */
 .colega--ouro   { --cor-colega: var(--gold); }
 .colega--prata  { --cor-colega: #cfd8dc; }
 .colega--bronze { --cor-colega: #d8a06a; }
@@ -1203,8 +1133,7 @@
   color: var(--cor-colega);
 }
 
-/* A linha de quem está olhando. É a única informação que a pessoa
-   procura de verdade ao abrir a lista, então ela precisa saltar. */
+/* Destaque da linha de quem está olhando. */
 .colega--eu {
   background: var(--accent-soft);
   border-color: rgba(107, 223, 184, 0.28);
@@ -1219,8 +1148,7 @@
 /* ── Celular ──────────────────────────────────────────────────────── */
 
 @media (max-width: 560px) {
-  /* A barra sai: com a tela estreita ela viraria um traço de 30px, que
-     não compara nada. Sobram foto, posição, nome e XP. */
+  /* Tela estreita: sem a barra. */
   .colega {
     grid-template-columns: 34px 24px 1fr auto;
     gap: 10px;
@@ -1229,8 +1157,7 @@
   .colega__avatar { width: 34px; height: 34px; }
   .colega__barra { display: none; }
 
-  /* A barra passa para baixo do nome: com 132px de rótulo sobrariam uns
-     80px de barra, curtos demais para mostrar diferença entre 20% e 60%. */
+  /* Barra abaixo do nome. */
   .tema {
     grid-template-columns: 1fr auto;
     grid-template-areas:
@@ -1247,9 +1174,7 @@
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   BARRA COM MISSÃO NOVA, E O CONVITE PARA ESCOLHER A TURMA
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Barra com missão nova e convite para escolher a turma ── */
 
 /* A barra desceu porque chegou missão nova: um selinho ao lado do nome. */
 .tema__novo {

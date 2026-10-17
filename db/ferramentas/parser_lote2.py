@@ -111,8 +111,7 @@ def parsear(caminho, nivel_padrao):
             nivel_ctx = 1 if ini <= 10 else (2 if ini <= 14 else 3)
             continue
 
-        # Cabecalho: cita area, e esta em CAIXA ALTA (o que o separa de
-        # uma alternativa que por acaso mencione "saude")
+        # Cabeçalho: cita área e está em caixa alta.
         a = acha_areas(t)
         if a and len(t) < 90 and not RE_Q.match(t) and (maiusculo(t) > 0.6 or 'PONTUA' in t.upper()):
             areas_ctx = a
@@ -143,9 +142,7 @@ def parsear(caminho, nivel_padrao):
     if atual:
         questoes.append(atual)
 
-    # Verdadeiro/Falso: a resposta vem como UMA linha ("VERDADEIRO" ou
-    # "FALSO"), nao como quatro alternativas. Vira uma questao de duas
-    # opcoes -- o banco aceita, e a tela ja pula opcao vazia.
+    # V/F vira questão de duas opções.
     for q in questoes:
         if len(q['alts']) == 1 and q['alts'][0].strip().upper() in ('VERDADEIRO', 'FALSO'):
             certa = 0 if q['alts'][0].strip().upper() == 'VERDADEIRO' else 1

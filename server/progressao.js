@@ -1,30 +1,5 @@
-/**
- * server/progressao.js — XP, nível e insígnias
- *
- * Tudo o que decide "quanto a pessoa tem" mora aqui, do lado do
- * servidor, pelo mesmo motivo de sempre: se a conta acontecesse no
- * navegador, qualquer aluno se daria o nível 10 pelo console.
- *
- * ── DE ONDE VEM O XP ────────────────────────────────────────────────
- *
- *   10  por QUESTÃO distinta acertada   (derivado de respostas_alunos)
- *   50  por DIA em que a pessoa entrou  (gravado em xp_diario)
- *   ?   por INSÍGNIA conquistada        (gravado em insignias_usuarios)
- *
- * Repare na assimetria, que é de propósito. O XP de questão é DERIVADO:
- * respostas_alunos já é a verdade sobre o que a pessoa acertou, e somar
- * de novo numa segunda tabela criaria dois números que um dia
- * discordariam. Os outros dois são GRAVADOS porque não deixam rastro em
- * lugar nenhum — um dia em que a pessoa entrou e não respondeu nada não
- * existe em tabela alguma, e uma insígnia precisa ficar conquistada
- * mesmo que a regra mude depois.
- *
- * ── O TETO ──────────────────────────────────────────────────────────
- *
- * Hoje há 225 questões, ou seja 2.250 XP de conteúdo. É o número contra
- * o qual a escada de níveis foi dimensionada. O prêmio diário não tem
- * teto: é ele que mantém o jogo vivo depois que a pessoa termina tudo.
- */
+/** XP, nível e insígnias, calculados no servidor.
+    XP: 10 por questão distinta acertada, 50 por dia de presença, insígnias, conclusões e ajustes do admin. */
 
 const { admin } = require('./supabase');
 const { lerTudo } = require('./lerTudo');
@@ -32,24 +7,7 @@ const { lerTudo } = require('./lerTudo');
 const XP_POR_QUESTAO = 10;
 const XP_DIARIO = 50;
 
-/* ── Enquanto o banco não tiver as tabelas novas ──────────────────────
- *
- * Um banco que ainda não rodou o setup.sql mais recente não tem
- * xp_diario nem insignias. Sem esta ponte, a falta delas derruba
- * /meu-resumo inteiro — e com ele a tela de perfil, a de progresso e o
- * selo da barra, que não têm nada a ver com XP diário.
- *
- * A regra: FALTAR TABELA NÃO É ERRO DE REQUISIÇÃO. O XP volta sem a
- * parte que não dá para calcular, o resto da tela funciona, e o
- * terminal diz exatamente o que rodar. Erro de verdade continua
- * subindo normalmente.
- *
- *   PGRST205 — o PostgREST não conhece a tabela
- *   42P01    — o Postgres não conhece a tabela
- *   42703    — a coluna não existe
- *
- * É temporário. Some quando todos os bancos tiverem rodado o setup.sql.
- */
+/* Tabela que ainda não existe no banco vira lista vazia, não erro. */
 const CODIGOS_DE_FALTA = ['PGRST205', '42P01', '42703'];
 
 let jaAvisei = false;
@@ -74,82 +32,20 @@ function ouVazio(resposta) {
   return resposta;
 }
 
-// O dia "de verdade" é o de quem joga, não o do servidor. Sem fixar o
-// fuso, quem entra às 22h no Brasil já conta como o dia seguinte em UTC
-// e ganharia o prêmio duas vezes na mesma noite.
+// Dia contado no fuso de quem joga.
 const FUSO = 'America/Sao_Paulo';
 const UM_DIA = 24 * 60 * 60 * 1000;
 
-/* ═══════════════════════════════════════════════════════════════════
-   A ESCADA DE NÍVEIS
-
-   Os degraus são ABSOLUTOS e nunca mudam. A alternativa — derivar os
-   degraus do conteúdo existente, como recalcular_metas() faz com as
-   barras — tem um defeito fatal aqui: quando a equipe de Medicina
-   subisse 200 questões novas, a escada esticaria e todo mundo CAIRIA de
-   nível. Perder um nível por causa de uma mudança que não foi sua é a
-   pior coisa que um jogo pode fazer com quem joga.
-
-   Então, quando o conteúdo crescer, acrescentam-se degraus no TOPO.
-   Ninguém desce nunca.
-
-   CALIBRAGEM, COM O CONTEÚDO DE HOJE
-
-   O que amarra a conta é o filtro etário: um aluno NÃO tem as 572
-   questões à disposição, só as da faixa dele.
-
-       nível 1 (7–10)    154 questões = 1.540 XP
-       nível 2 (11–14)   279 questões = 2.790 XP   ← a faixa mais rica
-       nível 3 (15–18)   139 questões = 1.390 XP
-
-   Somando o que um aluno de 11 a 14 anos junta num ano letivo:
-
-       2.790   acertar tudo da faixa dele (uma vez só, no 1º acerto)
-      10.000   presença, 50 XP por dia, ~200 dias de aula
-       2.000   bônus de conclusão dos quizzes do professor
-      ──────
-      14.790
-
-   Os marcos caíram onde precisavam cair:
-
-       nível  10     558 XP   uma semana — o fisgão
-       nível  30   2.668 XP   ≈ todo o conteúdo da faixa do aluno
-       nível  50   5.978 XP   meio do caminho, exige voltar
-       nível  85  ~14.800 XP  o ano letivo inteiro, bem aproveitado
-       nível 100  19.503 XP   além de um ano
-
-   O nível 30 fechar junto com o conteúdo da faixa não é coincidência:
-   é o que faz "respondi tudo o que havia para mim" valer exatamente
-   três patentes. Daí para cima o jogo pede o que ele quer de verdade,
-   que é voltar — presença e os quizzes que o professor monta.
-
-   E o nível 100 fica além de um ano de propósito. "Herdeiro do Saber"
-   não deveria ser alcançável por todo mundo no primeiro semestre.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── A escada de níveis ──
+   Degraus fixos (ninguém cai de nível); novos degraus entram só no topo. */
 
 const TOTAL_DE_NIVEIS = 100;
 
-/* O custo de subir um degrau: 50 XP, mais 3 a cada nível já passado.
-   Do 1 para o 2 custa 50; do 99 para o 100, 344. */
+/* Custo de um degrau: 50 XP + 3 por nível já passado. */
 const DEGRAU_BASE = 50;
 const DEGRAU_PASSO = 3;
 
-/**
- * Os degraus, gerados por fórmula e não escritos à mão.
- *
- * O incremento cresce de 3 em 3, e não de 30 em 30 como na escada de
- * 20 níveis. Parece detalhe e é a diferença entre caber e não caber:
- * mantendo os 30, o nível 100 custaria 151.470 XP — dez anos letivos
- * de presença diária. Um nível que ninguém alcança não é objetivo, é
- * enfeite, e noventa deles seriam noventa enfeites.
- *
- * Com 3, o topo fica em 19.503. Longe, mas na mesma ordem de grandeza
- * do que um aluno junta em um ano, que é o que faz dele um horizonte
- * em vez de uma piada.
- *
- * Quando o conteúdo crescer, acrescentam-se degraus NO TOPO. Mexer nos
- * de baixo faria quem já subiu descer, e isso o jogo não faz.
- */
+/** Degraus gerados por fórmula (nível 100 = 19.503 XP). */
 const NIVEIS = Array.from({ length: TOTAL_DE_NIVEIS }, (_, i) => {
   const nivel = i + 1;
   let xp = 0;
@@ -157,19 +53,7 @@ const NIVEIS = Array.from({ length: TOTAL_DE_NIVEIS }, (_, i) => {
   return { nivel, xp };
 });
 
-/* ── As patentes ──────────────────────────────────────────────────────
- *
- * O NÚMERO do nível é o mesmo para os dois papéis; o NOME muda, porque
- * o que cada um está construindo é diferente. O aluno aprende, o
- * professor ensina — e o jogo não deveria chamar os dois da mesma coisa.
- *
- * Dez faixas de dez níveis. O `ate` é inclusivo: o 10 fecha a primeira
- * faixa e o 11 abre a segunda, para que a virada da dezena seja também
- * a troca de patente — um degrau que se sente.
- *
- * A ordem importa: patenteDe() devolve a primeira faixa cujo teto o
- * nível não ultrapassa, então elas precisam estar em ordem crescente.
- */
+/* Patentes: dez faixas de dez níveis (ate é inclusivo e em ordem crescente). */
 const PATENTES = {
   ALUNO: [
     { ate:  10, nome: 'Pequeno Aprendiz'  },
@@ -197,13 +81,7 @@ const PATENTES = {
   ]
 };
 
-/* As faixas acima são o PADRÃO. Se a tabela `patentes` existir e tiver
-   linhas, é ela que manda — é por lá que o admin renomeia, acrescenta e
-   remove faixa sem precisar de deploy.
-
-   O cache evita uma consulta por chamada: patenteDe() é usada em todo
-   ranking, e um ranking de 30 alunos faria 30 idas ao banco para ler
-   dez linhas que ninguém muda duas vezes no mesmo minuto. */
+/* Patentes da tabela `patentes` substituem as padrão (cache de 1 minuto). */
 let patentesDoBanco = null;
 let patentesLidasEm = 0;
 const VALIDADE_DO_CACHE = 60_000;
@@ -213,9 +91,7 @@ async function carregarPatentes() {
 
   const r = await admin.from('patentes').select('tipo, ate, nome').order('ate');
 
-  // Banco sem a tabela continua funcionando com as faixas do código.
-  // É o mesmo princípio de faltaTabela() lá em cima: coisa que falta
-  // vira silêncio, não erro de tela.
+  // Sem a tabela, usa as faixas do código.
   if (r.error || !r.data?.length) { patentesDoBanco = null; return; }
 
   const mapa = { ALUNO: [], PROFESSOR: [] };
@@ -227,15 +103,7 @@ async function carregarPatentes() {
 /** Esquece o cache. Chamada pela rota que grava as patentes. */
 function esquecerPatentes() { patentesDoBanco = null; patentesLidasEm = 0; }
 
-/**
- * A faixa inteira: o nome e a POSIÇÃO dela na escada (1 a 10).
- *
- * A posição existe por causa da cor. Cada faixa tem a sua, e a primeira
- * faixa do aluno e a primeira do professor compartilham a mesma — são o
- * mesmo degrau, com nomes diferentes. Mandar a posição junto evita que
- * cada tela tenha de adivinhar a cor pelo nome da patente, que o admin
- * pode renomear a qualquer momento pelo painel.
- */
+/** Faixa do nível: nome e posição (1 a 10, usada para a cor). */
 function faixaDe(nivel, tipo) {
   const chave = tipo === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO';
   const faixas = (patentesDoBanco && patentesDoBanco[chave]) || PATENTES[chave];
@@ -250,13 +118,7 @@ function patenteDe(nivel, tipo) {
   return faixaDe(nivel, tipo).nome;
 }
 
-/**
- * Em que degrau este XP cai, e quanto falta para o próximo.
- *
- * Devolve também `porcentagem`, que é o quanto a barra do nível deve
- * mostrar — e ela é do TRECHO atual, não do total. Uma barra que fosse
- * do zero ao nível 10 quase não se mexeria no começo.
- */
+/** Nível do XP, com a porcentagem do trecho atual. */
 function nivelDoXp(xp, tipo = 'ALUNO') {
   const total = Math.max(0, Number(xp) || 0);
 
@@ -267,8 +129,7 @@ function nivelDoXp(xp, tipo = 'ALUNO') {
   const faixa = faixaDe(atual.nivel, tipo);
   const patente = faixa.nome;
 
-  // No último nível a barra fica cheia: não há mais degrau, e mostrar
-  // uma barra pela metade sugeriria que falta algo que não existe.
+  // Último nível: barra cheia.
   if (!proximo) {
     return {
       nivel: atual.nivel, patente, titulo: patente, xp: total,
@@ -282,8 +143,7 @@ function nivelDoXp(xp, tipo = 'ALUNO') {
   const trecho = proximo.xp - atual.xp;
   const andado = total - atual.xp;
 
-  // A próxima patente só é anunciada quando ela está no degrau seguinte.
-  // Avisar com dez níveis de antecedência não é promessa, é ruído.
+  // Só anuncia a próxima patente quando ela está no degrau seguinte.
   const patenteDoProximo = patenteDe(proximo.nivel, tipo);
 
   return {
@@ -303,23 +163,14 @@ function nivelDoXp(xp, tipo = 'ALUNO') {
   };
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   DIAS
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Dias ── */
 
 /** '2026-10-01' no fuso de quem joga. 'en-CA' é o formato ano-mês-dia. */
 function diaLocal(quando) {
   return new Date(quando).toLocaleDateString('en-CA', { timeZone: FUSO });
 }
 
-/**
- * Há quantos dias seguidos a pessoa aparece, a partir de uma lista de
- * dias já em texto ('2026-10-01').
- *
- * A sequência continua viva se o último dia for hoje OU ontem — quem
- * entrou ontem à noite e abre o jogo hoje de manhã não pode ver a
- * sequência zerada por ainda não ter feito nada hoje.
- */
+/** Dias seguidos de presença (vale se o último foi hoje ou ontem). */
 function sequenciaDeDias(dias) {
   const ordenados = [...new Set(dias)].sort().reverse();
   if (!ordenados.length) return { dias_jogados: 0, streak_dias: 0, jogou_hoje: false };
@@ -333,8 +184,7 @@ function sequenciaDeDias(dias) {
     seguidos = 1;
 
     for (let i = 1; i < ordenados.length; i++) {
-      // O meio-dia evita a armadilha do horário de verão: somar ou tirar
-      // 24h de uma meia-noite pode cair no dia errado, do meio-dia nunca.
+      // Meio-dia evita erro do horário de verão.
       const esperado = new Date(ordenados[i - 1] + 'T12:00:00Z');
       esperado.setUTCDate(esperado.getUTCDate() - 1);
 
@@ -346,14 +196,7 @@ function sequenciaDeDias(dias) {
   return { dias_jogados: ordenados.length, streak_dias: seguidos, jogou_hoje: ordenados[0] === hoje };
 }
 
-/**
- * Marca presença de hoje e devolve se o prêmio foi ganho AGORA.
- *
- * Quem garante "uma vez por dia" é a chave primária (usuario_id, dia),
- * não um if daqui. Duas abas abertas, dois cliques no mesmo segundo, a
- * página recarregando: o banco recusa o segundo insert e `ganhou` volta
- * false. Nenhuma corrida entre requisições consegue furar isso.
- */
+/** Marca a presença de hoje; a chave (usuario_id, dia) garante um prêmio por dia. */
 async function marcarPresenca(usuarioId) {
   const hoje = diaLocal(Date.now());
 
@@ -374,9 +217,7 @@ async function marcarPresenca(usuarioId) {
   return { ganhou: true, pontos: XP_DIARIO, dia: hoje };
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   O RETRATO DE XP DE UMA PESSOA
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── XP de uma pessoa ── */
 
 /** usuario_id -> Set das questões distintas que ele acertou. */
 function acertosUnicosPorAluno(linhas) {
@@ -390,13 +231,7 @@ function acertosUnicosPorAluno(linhas) {
   return porAluno;
 }
 
-/**
- * O XP de um ALUNO, somado das três fontes, mais o nível que isso dá.
- *
- * `respostas` pode vir pronto de quem já leu a tabela — /meu-resumo lê
- * as respostas de qualquer jeito, e reler aqui seria a segunda viagem
- * ao banco para a mesma pergunta.
- */
+/** XP de um aluno, somado das fontes, mais o nível. `respostas` pode vir já lida. */
 async function xpDoAluno(usuarioId, respostas = null) {
   if (!respostas) {
     const r = await lerTudo(() => admin
@@ -439,16 +274,12 @@ async function xpDoAluno(usuarioId, respostas = null) {
   const deInsignias = (ganhas.data || []).reduce((s, i) => s + (i.insignias?.xp || 0), 0);
   const deConclusoes = feitos.reduce((s, c) => s + (c.xp_aluno || 0), 0);
 
-  // O ajuste manual do admin entra na soma como qualquer outra fonte,
-  // e pode ser negativo. `Math.max(0)` no fim porque nível negativo não
-  // existe: tirar mais do que a pessoa tem a deixa no zero, não em dívida.
+  // Ajustes do admin entram na soma; o total nunca fica negativo.
   const deAjustes = (ajustes.data || []).reduce((s, a) => s + (a.pontos || 0), 0);
 
   const total = Math.max(0, deQuestoes + deDias + deInsignias + deConclusoes + deAjustes);
 
-  // Os dias que contam para a SEQUÊNCIA são os de presença, não os de
-  // resposta: a pessoa que entra todo dia mantém a sequência mesmo nos
-  // dias em que não teve tempo de jogar.
+  // A sequência conta os dias de presença.
   const presencas = sequenciaDeDias((dias.data || []).map(d => d.dia));
 
   return {
@@ -468,30 +299,10 @@ async function xpDoAluno(usuarioId, respostas = null) {
   };
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   INSÍGNIAS
+/* ── Insígnias ──
+   As regras estão na tabela; aqui só se compara a medida com o alvo. */
 
-   A regra de cada uma está na TABELA, não aqui. Este código sabe
-   comparar um número com um alvo; quais são os alvos, quantas insígnias
-   existem e como elas se chamam é dado, e muda com um insert.
-
-   É o que permite o outro desenvolvedor acrescentar insígnias e artes
-   sem abrir um arquivo .js.
-   ═══════════════════════════════════════════════════════════════════ */
-
-/**
- * Confere a estante inteira e grava o que acabou de ser conquistado.
- *
- * `medidas` é o placar da pessoa por tipo de regra:
- *   { ACERTOS: 62, DIAS: 4, MISSOES_CENARIO: 5, 'ACERTOS_CENARIO:ubs': 12 }
- *
- * Uma regra que não estiver em `medidas` é simplesmente pulada — é
- * assim que o professor não ganha insígnia de aluno e vice-versa, mesmo
- * que alguém se engane ao cadastrar uma linha nova.
- *
- * Devolve só as NOVAS, para a tela poder comemorar. Conquistar de novo
- * não acontece: a chave primária (usuario_id, insignia_codigo) recusa.
- */
+/** Confere a estante e grava as conquistas novas. Regra fora de `medidas` é pulada. */
 async function conquistar(usuarioId, publico, medidas) {
   const catalogo = ouVazio(await admin
     .from('insignias')
@@ -518,13 +329,7 @@ async function conquistar(usuarioId, publico, medidas) {
 
   if (!merecidas.length) return [];
 
-  // upsert com ignoreDuplicates, e não insert: duas abas pedindo ao
-  // mesmo tempo chegariam aqui com a mesma lista, e um insert comum
-  // derrubaria a segunda inteira por causa de uma linha que a primeira
-  // acabou de gravar.
-  //
-  // Com resolution=ignore-duplicates o PostgREST devolve SÓ as linhas
-  // que ele realmente inseriu — que é exatamente a definição de "novas".
+  // upsert com ignoreDuplicates: devolve só as linhas realmente inseridas.
   const gravou = await admin
     .from('insignias_usuarios')
     .upsert(merecidas.map(i => ({ usuario_id: usuarioId, insignia_codigo: i.codigo })),
@@ -537,17 +342,8 @@ async function conquistar(usuarioId, publico, medidas) {
   return merecidas.filter(i => gravadas.has(i.codigo));
 }
 
-/**
- * Os segredos do mapa (regra DESCOBERTA): a TV e as HQs da banca, o
- * calendário da farmácia. Não há placar para medir — o evento É a
- * conquista —, então eles não passam por `conquistar`, que os pula por
- * não acharem a regra em `medidas`.
- *
- * Só concede linha da regra DESCOBERTA e do público de quem pede: é a
- * trava que impede usar esta porta para pegar a insígnia de 200 acertos
- * pelo console. Devolve a insígnia se ela é NOVA, null se a pessoa já a
- * tinha, e { erro } quando o código não é um segredo.
- */
+/** Concede uma insígnia DESCOBERTA (só dessa regra e do público de quem pede).
+    Devolve { nova } (null se já tinha) ou { erro }. */
 async function descobrir(usuarioId, publico, codigo) {
   const insignia = await admin
     .from('insignias')
@@ -560,8 +356,7 @@ async function descobrir(usuarioId, publico, codigo) {
   if (insignia.error && !faltaTabela(insignia.error)) return { erro: insignia.error };
   if (!insignia.data) return { erro: { naoExiste: true } };
 
-  // O mesmo upsert de `conquistar`: a segunda vez (outra aba, clique
-  // duplo) não grava nada e volta sem linha — ou seja, "já tinha".
+  // Já tinha: o upsert não devolve linha.
   const gravou = await admin
     .from('insignias_usuarios')
     .upsert({ usuario_id: usuarioId, insignia_codigo: codigo },
@@ -572,17 +367,7 @@ async function descobrir(usuarioId, publico, codigo) {
   return { nova: (gravou.data || []).length ? insignia.data : null };
 }
 
-/**
- * As insígnias recém-conquistadas, no formato do aviso da tela
- * (src/js/conquista-aviso.js).
- *
- * Degraus do mesmo grupo que caem JUNTOS — 5 e 25 acertos na Escola
- * numa resposta só, ou na primeira visita depois que o catálogo
- * cresceu — viram um aviso só: o do degrau mais alto, com o XP de todos
- * somado. É a mesma regra da estante, onde o degrau novo se sobrepõe ao
- * anterior. As conquistas continuam gravadas uma a uma; só o aviso
- * junta.
- */
+/** Formata as novas para o aviso; degraus do mesmo grupo viram um aviso só, com o XP somado. */
 function paraAviso(novas) {
   const avisos = [];
   const doGrupo = new Map();
@@ -607,27 +392,14 @@ function paraAviso(novas) {
   return avisos.map(({ alvo, ...aviso }) => aviso);
 }
 
-/**
- * O número de uma insígnia dentro do placar.
- *
- * As regras de lugar (ACERTOS_CENARIO) têm um número POR LUGAR, e a
- * chave junta os dois: 'ACERTOS_CENARIO:ubs'. As outras são uma chave
- * só. Devolve undefined para regra que a pessoa não tem — quem chama
- * decide se isso é "pula" (conquistar) ou "zero" (a estante).
- */
+/** Medida de uma insígnia no placar ('ACERTOS_CENARIO:ubs' para as de lugar). */
 function medidaDe(medidas, insignia) {
   return medidas[insignia.cenario_slug
     ? `${insignia.regra}:${insignia.cenario_slug}`
     : insignia.regra];
 }
 
-/**
- * questao_id -> slug do lugar dela, só para as questões pedidas.
- *
- * Em fatias, porque `.in()` vira a URL da requisição: as centenas de
- * acertos de um aluno dedicado num pedaço só passariam do tamanho que
- * o servidor aceita.
- */
+/** questao_id -> slug do lugar (em fatias, por causa do tamanho da URL). */
 async function lugarDasQuestoes(ids) {
   const lugar = new Map();
 
@@ -647,29 +419,7 @@ async function lugarDasQuestoes(ids) {
   return { lugar };
 }
 
-/**
- * O placar de um aluno, no formato que `conquistar` espera.
- *
- * MISSOES_CENARIO parte dos quizzes da turma em que todas as questões
- * já foram acertadas — a mesma conta de "concluído" da lista do mapa e
- * da tela de progresso; se discordassem, o aluno veria números
- * diferentes para a mesma coisa. De cada quiz concluído, conta os
- * lugares distintos das questões: um quiz da UBS e da Escola vale 2.
- *
- * (Não há mais placar MISSOES, de quizzes inteiros: as insígnias de
- * tarefas do professor foram excluídas por repetir estas. A tabela
- * ainda aceita a regra, mas nenhuma linha a usa.)
- *
- * Vem das questões, e não de quizzes_professores.cenarios, porque no
- * sorteio automático um lugar escolhido pode não ter rendido pergunta
- * nenhuma — e missão sem pergunta não foi cumprida.
- *
- * ACERTOS_CENARIO:<slug> é ACERTOS repartido por lugar.
- *
- * Se a leitura dos lugares falhar, as regras de lugar ficam de fora do
- * placar (e `conquistar` as pula): melhor adiar uma insígnia do que
- * derrubar a resposta do aluno por causa dela.
- */
+/** Placar do aluno para `conquistar`: acertos, dias, acertos por lugar e missões concluídas por lugar. */
 async function medirAluno(usuarioId, turmaId, retrato) {
   const medidas = {
     ACERTOS: retrato.acertos_unicos,
@@ -714,8 +464,7 @@ async function medirAluno(usuarioId, turmaId, retrato) {
   const concluidos = ids.filter(id =>
     (total.get(id) || 0) > 0 && (prontas.get(id) || new Set()).size >= total.get(id));
 
-  // Toda questão de um quiz concluído foi acertada, então o lugar dela
-  // já está no mapa `lugar` lido acima — não precisa de outra viagem.
+  // O lugar das questões já está no mapa `lugar`.
   if (lugar) {
     for (const id of concluidos) {
       const lugares = new Set();
@@ -729,80 +478,24 @@ async function medirAluno(usuarioId, turmaId, retrato) {
   return medidas;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   O PRÊMIO DE CONCLUIR UM QUIZ
+/* ── O prêmio de concluir um quiz ──
+   Proporcional ao tamanho do quiz e à taxa (perguntas ÷ respostas dadas). */
 
-   O evento que liga o aluno ao professor. Quando um questionário é
-   fechado, os dois ganham — e o quanto depende de quantas tentativas
-   foram precisas.
-
-   A TAXA. Concluir exige acertar todas as perguntas, então "acertos"
-   é sempre o total. O que varia é quantas RESPOSTAS a pessoa deu até
-   lá. Dez perguntas em dez respostas = 1.00, sabia tudo. Dez perguntas
-   em vinte respostas = 0.50, chegou lá tentando.
-
-   Isso fecha dois furos de uma vez. O aluno não ganha mais martelando
-   alternativa até passar; e o professor não ganha mais por ter dado uma
-   tarefa fácil, porque o que conta não é o acerto bruto, é o aluno ter
-   chegado sabendo.
-
-   POR QUE O PRÊMIO É PROPORCIONAL AO TAMANHO: sem isso, dez quizzes de
-   3 perguntas pagariam dez vezes mais que um de 30 — e criar quiz de
-   três perguntas em série viraria a forma mais rápida de subir de
-   nível. Multiplicando pelo tamanho, 10×3 e 1×30 valem igual, e a
-   fábrica de quizzes deixa de ser atalho.
-   ═══════════════════════════════════════════════════════════════════ */
-
-/* 15, e não 5.
-
-   Com 5, um quiz inteiro de 10 perguntas acertando tudo pagava 50 XP
-   — exatamente o mesmo que abrir o aplicativo e não fazer nada. O jogo
-   dizia, em números, que estudar e aparecer valiam igual.
-
-   Com 15, a mesma sessão vale 150: três logins. Errando metade do
-   caminho ainda vale 75, que é mais do que só ter aparecido.
-
-   A presença continua somando mais ao longo de um ano (10.000 contra
-   5.790), e isso é da natureza da coisa: cada questão só paga no
-   primeiro acerto, enquanto o dia seguinte sempre vem. O que não podia
-   continuar é uma SESSÃO de estudo valer o mesmo que uma de nada. */
+/* XP do aluno por pergunta de quiz concluído. */
 const XP_CONCLUSAO_ALUNO = 15;       // × perguntas × taxa
 const XP_CONCLUSAO_PROFESSOR = 20;   // × perguntas × qualidade, DIVIDIDO pela turma
 
-/**
- * @param perguntas  quantas questões o quiz tinha
- * @param respostas  quantas o aluno deu até fechar
- * @param alunos     quantos alunos existem na turma
- *
- * A DIVISÃO PELO TAMANHO DA TURMA É O PONTO. Sem ela, uma simulação de
- * um semestre mostrou o professor batendo o nível 20 na semana 12,
- * enquanto o aluno dele chegava ao 14 — porque cada aluno que terminava
- * pagava o prêmio inteiro, e vinte e cinco alunos pagavam vinte e cinco
- * vezes.
- *
- * O efeito perverso era pior do que parecer rápido: o professor subia
- * por ter turma GRANDE, não por ensinar bem. Dividindo, o prêmio total
- * de um questionário é o mesmo para uma turma de 5 e uma de 40 — e o
- * que muda entre eles passa a ser a única coisa que deveria importar,
- * que é com quanta facilidade a turma chegou lá.
- *
- * A barra continua andando a cada aluno que termina: cada um entrega
- * a sua fração.
- */
+/** Prêmio de conclusão. O do professor é dividido pelo tamanho da turma. */
 function premioDeConclusao(perguntas, respostas, alunos = 1) {
   const taxa = respostas > 0 ? Math.min(1, perguntas / respostas) : 0;
   const turma = Math.max(1, alunos);
 
-  // Metade garantida, metade pela taxa. A garantida existe porque a
-  // tarefa foi cumprida — isso já é trabalho do professor. A outra
-  // metade é o quanto a turma chegou pronta.
+  // Professor: metade garantida, metade pela taxa.
   const doQuizInteiro = perguntas * XP_CONCLUSAO_PROFESSOR * (0.5 + 0.5 * taxa);
 
   return {
     taxa,
-    // O aluno ganha pela taxa inteira: quem precisou de muitas
-    // tentativas concluiu do mesmo jeito, mas o prêmio reconhece quem
-    // chegou sabendo.
+    // O aluno ganha pela taxa inteira.
     aluno: Math.round(perguntas * XP_CONCLUSAO_ALUNO * taxa),
 
     // Pelo menos 1: numa turma muito grande a fração arredondaria para
@@ -811,27 +504,8 @@ function premioDeConclusao(perguntas, respostas, alunos = 1) {
   };
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   O PROFESSOR
-
-   Ele não responde pergunta nenhuma, então o XP dele não pode sair de
-   respostas_alunos como o do aluno. Sai inteiro de como a turma avança
-   — que é exatamente a ideia do jogo: um educador não melhora sozinho,
-   melhora tendo com quem praticar.
-
-   CRIAR QUIZ NÃO DÁ MAIS XP, e essa mudança merece explicação. Antes
-   eram 50 por quiz criado, e era um buraco: criar cinquenta quizzes que
-   ninguém respondesse valia 2.500 XP de trabalho nenhum. Agora o quiz
-   só rende quando um aluno o conclui. Tarefa que a turma não faz não
-   ensinou ninguém, e portanto não promove o professor.
-
-   Sobram duas fontes, e as duas dependem da turma:
-
-     1 XP   por questão distinta que um aluno dele acertou
-            — faz a barra andar continuamente, pergunta a pergunta
-     prêmio por quiz concluído por um aluno
-            — o marco, calculado em premioDeConclusao()
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── O professor ──
+   XP vem da turma: média de acertos por aluno + prêmios de conclusão. Criar quiz não dá XP. */
 
 const XP_POR_ACERTO_DA_TURMA = 1;
 
@@ -873,8 +547,7 @@ async function xpDoProfessor(usuarioId) {
         .order('usuario_id').order('questao_id'));
 
       if (!respostas.error) {
-        // Distintas POR ALUNO: a mesma questão acertada por dois alunos
-        // conta duas vezes, porque são dois aprendizados.
+        // Distintas por aluno.
         const porAluno = acertosUnicosPorAluno(respostas.data);
         for (const s of porAluno.values()) acertosDaTurma += s.size;
       }
@@ -886,23 +559,16 @@ async function xpDoProfessor(usuarioId) {
   const deDias = (dias.data || []).reduce((s, d) => s + (d.pontos || 0), 0);
   const deConclusoes = feitos.reduce((s, c) => s + (c.xp_professor || 0), 0);
 
-  // MÉDIA por aluno, e não soma: somar fazia uma turma de 40 render
-  // quatro vezes mais que uma de 10 ensinando igual. Assim o número
-  // significa "o quanto um aluno meu típico já aprendeu", que é o que
-  // o professor de fato constrói — e tem teto no conteúdo que existe.
+  // Média por aluno, não soma.
   const mediaDeAcertos = quantosAlunos ? Math.round(acertosDaTurma / quantosAlunos) : 0;
   const deTurmas = mediaDeAcertos * XP_POR_ACERTO_DA_TURMA;
 
-  // Hoje dá zero, porque não há insígnia de professor cadastrada. Está
-  // aqui para que, no dia em que houver, o XP dele já conte — e não vire
-  // um bug silencioso de "conquistei e o total não mudou".
+  // Ainda não há insígnias de professor.
   const deInsignias = (ganhas.data || []).reduce((s, i) => s + (i.insignias?.xp || 0), 0);
 
   const total = deTurmas + deConclusoes + deDias + deInsignias;
 
-  // A média das taxas é o número que resume o ensino dele: perto de 1,
-  // a turma chega sabendo; perto de 0,5, ela chega tentando. Vai para a
-  // tela do professor porque é a informação que ele pode USAR.
+  // Média das taxas de conclusão.
   const taxaMedia = feitos.length
     ? feitos.reduce((s, c) => s + c.taxa, 0) / feitos.length
     : null;
@@ -926,18 +592,7 @@ async function xpDoProfessor(usuarioId) {
   };
 }
 
-/**
- * O XP completo de VÁRIAS pessoas de uma vez.
- *
- * Existe porque o ranking da turma estava mentindo: ele somava só
- * `acertos × 10` e ignorava presença, insígnias e conclusões. Um aluno
- * com 250 XP no próprio perfil aparecia com 90 na lista da turma — dois
- * números para a mesma coisa, que é como ninguém acaba confiando em
- * nenhum.
- *
- * Em lote, e não um xpDoAluno() por pessoa: uma turma de 40 daria 160
- * consultas ao banco para desenhar uma lista.
- */
+/** XP completo de várias pessoas de uma vez (para o ranking). */
 async function xpDeVarios(ids) {
   const vazio = new Map(ids.map(id => [id, 0]));
   if (!ids.length) return vazio;
@@ -961,10 +616,7 @@ async function xpDeVarios(ids) {
   for (const i of ouVazio(insignias).data || []) soma(i.usuario_id, i.insignias?.xp || 0);
   for (const c of ouVazio(conclusoes).data || []) soma(c.usuario_id, c.xp_aluno || 0);
 
-  // O ajuste do admin tem de entrar aqui também, e não só em
-  // xpDoAluno(). Sem isto a mesma pessoa aparecia com 13.480 XP na
-  // ficha e com 100 na lista da turma — dois números para a mesma
-  // coisa, que é exatamente o que esta função existe para evitar.
+  // Inclui os ajustes do admin.
   for (const a of ouVazio(ajustes).data || []) soma(a.usuario_id, a.pontos || 0);
 
   // Ajuste negativo pode passar do que a pessoa tem; nível negativo não
@@ -974,23 +626,8 @@ async function xpDeVarios(ids) {
   return total;
 }
 
-/**
- * Chamada a cada acerto: se este foi o que fechou o quiz, grava o marco
- * e devolve o que os dois ganharam. Senão, devolve null.
- *
- * TRÊS COISAS QUE ELA SE RECUSA A FAZER:
- *
- * 1. Premiar o professor pelo próprio quiz. A rota /responder deixa ele
- *    responder a tarefa que criou, para testar — e sem esta trava ele
- *    subiria de nível sozinho, sem aluno nenhum, que é o oposto do que
- *    o jogo quer medir.
- *
- * 2. Gravar duas vezes. A chave (usuario_id, quiz_id) recusa a segunda,
- *    e o código trata 23505 como "já era", não como erro.
- *
- * 3. Contar um quiz vazio. Quiz sem questão tem total 0, e 0 >= 0 seria
- *    "concluído" no primeiro acesso.
- */
+/** A cada acerto: se fechou o quiz, grava a conclusão e devolve o prêmio; senão, null.
+    Não premia o próprio professor, não grava duas vezes e ignora quiz vazio. */
 async function registrarConclusao(usuario, quizId) {
   const quiz = await admin
     .from('quizzes_professores').select('professor_id').eq('id', quizId).maybeSingle();
@@ -1018,9 +655,7 @@ async function registrarConclusao(usuario, quizId) {
 
   if (certas.size < perguntas) return null;          // ainda falta pergunta
 
-  // O tamanho da turma NO MOMENTO da conclusão. Fica congelado na linha
-  // gravada: se alguém entrar ou sair da turma depois, o que já foi
-  // ganho não muda.
+  // Tamanho da turma no momento da conclusão.
   const premio = premioDeConclusao(perguntas, dadas, turma.count || 1);
 
   const r = await admin.from('quiz_concluidos').insert({

@@ -1,25 +1,9 @@
-/**
- * questoes-ui.js — as peças de tela das questões do professor
- *
- * Usado por dashboard.html (criar quiz) e quizzes.html (Minhas perguntas).
- * Expõe o objeto global `QUESTOES_UI`:
- *
- *   LUGARES, AREAS, FAIXAS        as listas fixas (nome, ícone, cor)
- *   grupoDeChips(raiz, itens, op) etiquetas que ligam e desligam
- *   seletorCenarios(raiz, op)     etiquetas de cenário + o ícone ao lado
- *   cartaoQuestao(q, op)          o cartão de uma pergunta numa lista
- *   abrirCriacao(op)              o modal "Nova pergunta" — o MESMO nas
- *                                 duas páginas, desenhado daqui
- *
- * Carregado depois de supabase.js e api.js, antes do script da página.
- */
+/** questoes-ui.js — peças das questões do professor (dashboard.html e quizzes.html), global QUESTOES_UI:
+    LUGARES/AREAS/FAIXAS, grupoDeChips, seletorCenarios, cartaoQuestao e abrirCriacao. */
 const QUESTOES_UI = (() => {
   'use strict';
 
-  // Os 12 cenários que existem no banco (db/seed.sql). Nome e ícone são
-  // os mesmos do mapa do aluno (CENARIOS em mapa.js) — o professor
-  // reconhece de cara o lugar onde a turma vai encontrar a pergunta. Se
-  // um ícone mudar lá, mude aqui também.
+  // Os 12 cenários do banco, com os ícones do mapa (manter igual a CENARIOS em mapa.js).
   const LUGARES = {
     'ubs':            { nome: 'UBS',            imagem: 'UBS.png' },
     'upa':            { nome: 'UPA',            imagem: 'UPA.png' },
@@ -35,8 +19,7 @@ const QUESTOES_UI = (() => {
     'terreno-baldio': { nome: 'Terreno baldio', imagem: 'Baldio.png' }
   };
 
-  // As 8 barras, com as cores do mapa. Os nomes são exatamente os da
-  // tabela areas — o servidor recusa qualquer outro.
+  // As 8 barras (nomes da tabela areas).
   const AREAS = {
     'Saúde':       '#f87171',
     'Educação':    '#6b8eff',
@@ -53,13 +36,7 @@ const QUESTOES_UI = (() => {
   const imagemDo = (slug) => `../imgs/${(LUGARES[slug] || LUGARES.ubs).imagem}`;
   const nomeDo = (slug, reserva) => (LUGARES[slug] || {}).nome || reserva || slug;
 
-  /* ═══════════════════════════════════════════════════════════════════
-     ETIQUETAS QUE LIGAM E DESLIGAM
-
-     `multiplo: false` faz o grupo agir como rádio: clicar numa desliga a
-     outra, e clicar na que já está ligada não a desliga (o campo nunca
-     fica sem resposta depois de escolhido).
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Etiquetas que ligam e desligam ── `multiplo: false` age como rádio. */
   function grupoDeChips(raiz, itens, { multiplo = true, aoMudar } = {}) {
     raiz.classList.add('opcoes');
     raiz.replaceChildren(...itens.map(it => {
@@ -101,13 +78,7 @@ const QUESTOES_UI = (() => {
 
   const itensDeArea = () => Object.entries(AREAS).map(([nome, cor]) => ({ valor: nome, rotulo: nome, cor }));
 
-  /* ═══════════════════════════════════════════════════════════════════
-     SELETOR DE CENÁRIOS, COM O ÍCONE AO LADO
-
-     À esquerda, as etiquetas. À direita, a "vitrine": o ícone de cada
-     cenário escolhido, o mesmo recorte que o aluno vê no mapa. O último
-     clicado entra com um pulinho, para o olho achar qual acabou de mudar.
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Seletor de cenários ── etiquetas à esquerda, ícones dos escolhidos à direita. */
   function seletorCenarios(raiz, { multiplo = true, aoMudar } = {}) {
     raiz.classList.add('cenario-picker');
     raiz.innerHTML = `
@@ -173,18 +144,8 @@ const QUESTOES_UI = (() => {
     };
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     O CARTÃO DE UMA PERGUNTA
-
-       selecionavel  -> vira <label> com caixinha de marcar (montar quiz)
-       marcada       -> já começa marcada
-       aoMarcar(q, marcada)
-       aoApagar(q)   -> mostra o × de apagar (Minhas perguntas)
-
-     A alternativa certa só aparece destacada nas perguntas do próprio
-     professor: as do sistema chegam do servidor sem o gabarito.
-     Tudo que veio do banco entra por textContent, nunca innerHTML.
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Cartão de uma pergunta ── selecionavel/marcada/aoMarcar (montar quiz), aoApagar (Minhas perguntas).
+     O gabarito só aparece nas perguntas do próprio professor. */
   function cartaoQuestao(q, { selecionavel = false, marcada = false, aoMarcar, aoApagar } = {}) {
     const cartao = document.createElement(selecionavel ? 'label' : 'article');
     cartao.className = 'questao-card';
@@ -274,17 +235,7 @@ const QUESTOES_UI = (() => {
     return tag;
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     MODAL "NOVA PERGUNTA"
-
-     Desenhado por este arquivo, e não escrito em cada página, para ser
-     literalmente o mesmo modal no "Criar quiz" do painel e no "Minhas
-     perguntas" da página de quizzes. Nasce na primeira vez que é aberto.
-
-     Ele fica POR CIMA de outro modal (o de criar quiz), então o Esc e o
-     clique fora são tratados aqui, na fase de captura: fecham só ele, e
-     o modal de baixo continua aberto com tudo o que já foi preenchido.
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Modal "Nova pergunta" ── o mesmo nas duas páginas; Esc e clique fora fecham só ele (captura). */
   let modal = null;
   let campos = null;
   let aoCriarAtual = null;
@@ -381,12 +332,7 @@ const QUESTOES_UI = (() => {
     campos.salvar.addEventListener('click', salvar);
   }
 
-  /**
-   * Abre o modal.
-   *   cenario  slug já escolhido (opcional)
-   *   nivel    1, 2 ou 3 já escolhido (opcional)
-   *   aoCriar  chamado com a pergunta criada, como o servidor a devolveu
-   */
+  /** Abre o modal ({ cenario, nivel, aoCriar }). */
   function abrirCriacao({ cenario, nivel, aoCriar } = {}) {
     if (!modal) montarModal();
 
@@ -428,8 +374,7 @@ const QUESTOES_UI = (() => {
       areas: campos.areas.valores()
     };
 
-    // As mesmas conferências do servidor, só para avisar antes da viagem.
-    // Quem decide de verdade é ele (POST /api/professor/questoes).
+    // Conferências antecipadas (quem decide é o servidor).
     if (!dados.cenario) return mostrarErro('Escolha o cenário da pergunta.');
     if (!dados.nivel_etario) return mostrarErro('Escolha o nível etário da pergunta.');
     if (dados.enunciado.length < 10) return mostrarErro('Escreva o enunciado da pergunta (pelo menos 10 letras).');

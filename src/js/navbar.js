@@ -1,38 +1,9 @@
-/**
- * navbar.js — uma barra só, desenhada aqui
- *
- * O professor e o aluno usam as mesmas páginas de estrutura, mas não têm
- * o que fazer nos mesmos lugares: "Turmas" e "Quizes" são do professor,
- * "Mapa" e "Meu progresso" são do aluno.
- *
- * O PROBLEMA QUE ISTO RESOLVE: a barra estava copiada dentro de seis
- * arquivos HTML. Acrescentar um link era editar seis lugares, e eles já
- * tinham saído de sincronia — o mapa apontava "Turmas" para missao.html
- * e "Quizes" para o próprio mapa. Agora a lista mora em um lugar só,
- * aqui embaixo, e a página só declara onde a barra entra:
- *
- *     <nav class="nav_bar" data-navbar></nav>
- *
- * PÁGINAS ANTIGAS CONTINUAM FUNCIONANDO. Sem o data-navbar, este arquivo
- * faz o que sempre fez: apaga os <li data-perfil="..."> que não são de
- * quem está logado. Assim dá para migrar uma página de cada vez.
- *
- * Carregado DEPOIS de supabase.js (usa AUTH) e antes do script da página.
- */
+/** navbar.js — desenha a barra de navegação em <nav data-navbar> conforme o tipo de usuário.
+    Carregado depois de supabase.js e antes do script da página. */
 (() => {
   'use strict';
 
-  /* ── O MENU ─────────────────────────────────────────────────────────
-     A lista inteira do projeto. Para mudar a barra, é este pedaço.
-
-     `perfil` diz para quem o item existe. ADMIN é a equipe do projeto e
-     vê tudo, sem precisar ser citado.
-
-     O professor NÃO tem Mapa: o mapa é a tela de jogar, e ele não joga.
-     O aluno NÃO tem Ranking: ranking.html é a classificação das TURMAS,
-     coisa de professor — a posição do aluno entre os colegas dele fica
-     dentro de "Meu progresso", que é onde ela faz sentido.
-     ───────────────────────────────────────────────────────────────── */
+  /* ── Menu ── `perfil` diz para quem o item existe (ADMIN vê tudo). */
   const MENU = [
     { texto: 'Turmas',        href: 'dashboard.html', perfil: ['PROFESSOR'] },
     { texto: 'Quizes',        href: 'quizzes.html',   perfil: ['PROFESSOR'] },
@@ -50,25 +21,10 @@
       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
     </svg>`;
 
-  /* ── O CANTO DO PERFIL ───────────────────────────────────────────────
-     Substituiu o botão "Sair" solto. O Sair continua existindo, mas
-     dentro do menu — tirar a conta é a ação mais destrutiva da barra e
-     não devia ser a mais fácil de acertar com o dedo.
-
-     O avatar começa com as INICIAIS. A tabela usuarios ainda não tem
-     coluna de foto, então a foto de verdade não existe em lugar nenhum
-     do sistema; a marcação já espera por ela (`avatar_url`) e troca
-     sozinha no dia em que a coluna aparecer.
-     ────────────────────────────────────────────────────────────────── */
+  /* ── Canto do perfil ── avatar (foto ou iniciais) e o menu com "Sair". */
   const ROTULO_TIPO = { ALUNO: 'Aluno', PROFESSOR: 'Professor', ADMIN: 'Equipe' };
 
-  /* ── A etiqueta de patente, para todas as telas ──────────────────
-     Mora aqui porque o navbar.js é o único arquivo que TODA tela com
-     patente já carrega, e porque a ordem das tags <script> é contrato:
-     um arquivo novo significaria mexer em sete HTMLs.
-
-     A cor vem de `nivel.faixa` (1 a 10), que o servidor manda junto —
-     e não do nome da patente, que o admin renomeia pelo painel. */
+  /* ── Etiqueta de patente ── global window.PATENTE; a cor vem de nivel.faixa. */
   window.PATENTE = {
     /** A classe da faixa, ou '' quando o servidor é antigo e não a manda. */
     classe(nivel) {
@@ -76,13 +32,7 @@
       return n >= 1 && n <= 10 ? ` patente-tag--${n}` : '';
     },
 
-    /**
-     * Transforma um <span> em etiqueta. Sem innerHTML: nome é texto.
-     *
-     * A classe original do elemento é preservada — ela costuma carregar
-     * o tamanho e o lugar dele no layout, e jogá-la fora desmonta a
-     * tela em volta.
-     */
+    /** Transforma um <span> em etiqueta (mantém a classe original). */
     pintar(elemento, nivel, mini) {
       if (!elemento) return;
       const base = this.base(elemento);
@@ -96,12 +46,7 @@
       elemento.hidden = false;
     },
 
-    /**
-     * Só a cor, para um texto que já tem lugar e tamanho próprios.
-     *
-     * É o caso da barrinha da navbar: ela é estreita, e um chip com
-     * borda ali dentro empurraria o "Nível 7/100" para fora.
-     */
+    /** Só a cor, sem o chip. */
     tingir(elemento, nivel) {
       if (!elemento) return;
       const base = this.base(elemento);
@@ -198,16 +143,13 @@
     // Nada a fazer nesta página (o login, por exemplo).
     if (!alvo && !antigos.length) return;
 
-    // Em dúvida, não esconde nada: uma barra cheia demais é um incômodo,
-    // uma barra vazia é a pessoa achando que o sistema quebrou.
+    // Na dúvida, não esconde nada.
     const tipo = String(await descobrirTipo() || '').trim().toUpperCase();
 
     if (alvo) {
       desenhar(alvo, tipo);
 
-      // Só quem desenhou o botão é que o liga. Nas páginas do modo
-      // antigo o botão veio do HTML e o script da própria página já
-      // cuidou dele — ligar de novo aqui faria o clique sair duas vezes.
+      // Só liga o "Sair" que esta barra desenhou.
       ligarSair();
       ligarMenuDoPerfil();
       preencherPerfil();
@@ -215,19 +157,11 @@
       filtrarOAntigo(antigos, tipo);
     }
 
-    // O professor também tem XP agora — o dele sobe com os quizzes que
-    // passa e com os acertos da turma. Só quem não tem conta fica fora.
+    // Aluno e professor têm barra de nível.
     if (tipo) mostrarProgresso();
   }
 
-  /**
-   * Abrir, fechar e fechar direito.
-   *
-   * Um menu que só abre e fecha no próprio botão vira armadilha: a
-   * pessoa clica fora esperando que suma, ele não some, e ela clica de
-   * novo em cima de algo que não queria. Por isso três saídas — o botão,
-   * um clique em qualquer outro lugar, e Esc.
-   */
+  /** Menu do perfil: fecha pelo botão, clique fora ou Esc. */
   function ligarMenuDoPerfil() {
     const botao = document.getElementById('perfil-botao');
     const menu = document.getElementById('perfil-menu');
@@ -256,14 +190,7 @@
     });
   }
 
-  /**
-   * O nome e as iniciais de quem está logado.
-   *
-   * Roda depois da barra já estar desenhada: os links aparecem na hora,
-   * pelo tipo lembrado, e só o avatar espera o banco. O contrário — a
-   * barra inteira esperando — era meio segundo de tela vazia em toda
-   * navegação.
-   */
+  /** Nome e avatar de quem está logado (depois da barra desenhada). */
   async function preencherPerfil() {
     const avatar = document.getElementById('perfil-avatar');
     if (!avatar) return;
@@ -272,9 +199,7 @@
     try { perfil = await AUTH.perfilAtual(); } catch (_) { /* segue com o genérico */ }
     if (!perfil) return;
 
-    // Os DOIS avatares: o do botão e o de dentro do menu. O de dentro
-    // faltava — o menu abria com o nome solto, sem a foto que o botão
-    // logo acima já estava mostrando.
+    // Avatar do botão e o de dentro do menu.
     desenharAvatar(avatar, perfil.nome, perfil.avatar_url);
     desenharAvatar(document.getElementById('perfil-avatar-menu'), perfil.nome, perfil.avatar_url);
 
@@ -286,14 +211,7 @@
     if (tipo) tipo.textContent = ROTULO_TIPO[perfil.tipo] || '';
   }
 
-  /**
-   * Foto ou iniciais, no mesmo lugar.
-   *
-   * Exposto em window.AVATAR porque o ranking da turma desenha o mesmo
-   * círculo para cada colega — e duas cópias desta regra acabariam
-   * divergindo no dia em que uma imagem quebrada precisasse de um plano
-   * B diferente em cada tela.
-   */
+  /** Foto ou iniciais (exposto em window.AVATAR). */
   function desenharAvatar(alvo, nome, url) {
     if (!alvo) return;
 
@@ -309,8 +227,7 @@
     img.src = url;
     img.alt = '';
 
-    // Endereço quebrado, site fora do ar, link que não era imagem: cai
-    // nas iniciais em vez de deixar um círculo vazio sem explicação.
+    // Imagem quebrada: volta às iniciais.
     img.onerror = () => {
       alvo.innerHTML = '';
       alvo.classList.remove('perfil__avatar--foto');
@@ -346,9 +263,7 @@
       return `<li><a href="${i.href}"${classe}${marca}>${i.texto}</a></li>`;
     }).join('');
 
-    // A barra nasce escondida: só aparece depois que o servidor disser o
-    // número. Uma barra zerada piscando antes da resposta faria quem já
-    // jogou achar que perdeu o progresso.
+    // A barra de nível nasce escondida até o servidor responder.
     nav.innerHTML = `
       <div class="topLine">
         <div class="navbar__inner">
@@ -380,14 +295,7 @@
     });
   }
 
-  /**
-   * O botão "Sair" era repetido em cada script de página, e em duas
-   * delas tinha sido esquecido. Agora quem desenha o botão também é
-   * quem o liga.
-   *
-   * A página ainda pode ligar o seu: o addEventListener empilha, e sair
-   * duas vezes dá no mesmo que sair uma.
-   */
+  /** Liga o botão "Sair". */
   function ligarSair() {
     const botao = document.getElementById('logout-btn');
     if (!botao || botao.dataset.ligado) return;
@@ -400,23 +308,7 @@
     });
   }
 
-  /* ── A BARRA DE NÍVEL, EM QUALQUER LUGAR ─────────────────────────────
-     Uma página ganha a barra escrevendo só isto:
-
-         <div data-nivel></div>
-
-     e o resto acontece aqui. Existe para resolver um problema concreto:
-     o dashboard tinha uma pílula escrita à mão dizendo "Nível Mestre da
-     Saúde", com um <span id="user-level"> que nenhum script preencheu
-     nunca. Era enfeite parado, não progresso.
-
-     Fica neste arquivo porque ele já roda em todas as páginas e já
-     busca o nível em /presenca — um arquivo novo significaria mais uma
-     tag <script> em nove HTMLs e mais uma chamada ao servidor.
-
-     window.NIVEL.atualizar() deixa qualquer tela redesenhar a barra sem
-     recarregar: é o que o quiz usa para ela subir no momento do acerto.
-     ────────────────────────────────────────────────────────────────── */
+  /* ── Barra de nível ── em qualquer <div data-nivel>; window.NIVEL.atualizar() redesenha. */
 
   let ultimoNivel = null;
 
@@ -425,9 +317,7 @@
       if (!nivel) return;
       ultimoNivel = { nivel, xp };
 
-      // Os modais de quiz e de questão usam data-nivel para outra coisa
-      // (o nível etário). Sem o :not, a barra seria desenhada por cima
-      // deles se um estivesse aberto quando a resposta chegasse.
+      // Ignora os data-nivel dos modais (nível etário).
       document.querySelectorAll('[data-nivel]:not(.modal [data-nivel])')
         .forEach(el => desenharNivel(el, nivel, xp));
 
@@ -437,23 +327,7 @@
     atual: () => ultimoNivel
   };
 
-  /* ── O "+10 XP" ao lado da barra ──────────────────────────────────────
-     QUALQUER ganho de XP passa por NIVEL.atualizar: o acerto (quiz.js),
-     a presença do dia e as insígnias (/presenca, logo abaixo), o perfil.
-     Então o ganho é medido AQUI, comparando com o último XP que esta
-     conta viu — e não em cada lugar que dá XP, onde um esquecido ficaria
-     sem animação.
-
-     O "último visto" fica no localStorage, por conta, e não só na
-     memória da página: o prêmio do dia e as insígnias da visita chegam
-     no carregamento, quando a página ainda não viu XP nenhum. Sem a
-     lembrança entre páginas, justamente esses ganhos passariam calados.
-
-     Só sobe, nunca desce. Duas respostas do servidor podem chegar fora
-     de ordem (/meu-resumo do perfil calculado um instante antes da
-     presença do dia ser gravada, por exemplo). Se a mais velha baixasse
-     o valor guardado, a página seguinte anunciaria o mesmo +50 de novo.
-     ────────────────────────────────────────────────────────────────── */
+  /* ── "+N XP" ── compara com o último XP visto (localStorage, por conta); só sobe. */
 
   const CHAVE_XP = 'herois_xp_visto:';
 
@@ -467,8 +341,7 @@
     let guardado = null;
     try { guardado = localStorage.getItem(CHAVE_XP + conta.id); } catch (_) { return; }
 
-    // Nada guardado (primeira vez neste navegador): só guarda. Anunciar
-    // o XP inteiro como "ganho" seria mentira.
+    // Primeira vez neste navegador: só guarda.
     const visto = guardado === null ? NaN : Number(guardado);
     const conhecido = Number.isFinite(visto);
 
@@ -488,8 +361,7 @@
       numero.setAttribute('aria-hidden', 'true');   // o leitor de tela já ouve o aviso do quiz
       el.appendChild(numero);
 
-      // O brilho da barra. Tirar e pôr a classe reinicia a animação
-      // quando dois ganhos chegam em sequência.
+      // Reinicia a animação de brilho.
       el.classList.remove('nivelzinho--ganhou');
       void el.offsetWidth;
       el.classList.add('nivelzinho--ganhou');
@@ -503,12 +375,10 @@
   function desenharNivel(el, nivel, xp) {
     el.classList.add('nivelzinho');
 
-    // Nasce escondida na barra de navegação: uma barra zerada piscando
-    // antes da resposta faria quem já jogou achar que perdeu o progresso.
+    // A barra nasce escondida até o servidor responder.
     el.hidden = false;
 
-    // Onde a barra aparece sozinha, sem as linhas de texto em volta (a
-    // da navbar), o título é o único lugar que explica o que ela mede.
+    // title explica a barra da navbar.
     el.title = nivel.maximo
       ? `${nivel.patente} — nível máximo`
       : `${nivel.patente} · faltam ${nivel.faltam} XP para o nível ${nivel.nivel + 1}`;
@@ -516,13 +386,7 @@
     const feito = (xp ?? 0) - nivel.xp_do_nivel;
     const trecho = nivel.maximo ? 0 : nivel.xp_do_proximo - nivel.xp_do_nivel;
 
-    // Montada UMA vez e depois só atualizada. Recriar a barra a cada
-    // chamada (era assim) fazia o traço nascer já no tamanho final, e a
-    // transição de largura do CSS nunca era vista: o acerto não fazia a
-    // barra crescer.
-    //
-    // "Nv. 5" fica ao lado da barra; o CSS só o mostra na navbar, porque
-    // a versão grande já tem "Nível 5/20" em cima.
+    // Montada uma vez e depois só atualizada (para a transição aparecer).
     if (!el.querySelector('.nivelzinho__barra')) {
       el.innerHTML = `
         <div class="nivelzinho__topo">
@@ -551,17 +415,7 @@
         (nivel.proxima_patente ? ` · depois: ${nivel.proxima_patente}` : '');
   }
 
-  /**
-   * Leva o traço até a porcentagem nova, pela transição do CSS.
-   *
-   * A barra é do TRECHO do nível, então subir de nível faria o traço
-   * ENCOLHER (de 90% do nível 5 para 10% do 6) — parecendo que a pessoa
-   * perdeu XP no momento em que ganhou. Por isso, na subida, ele enche
-   * até o fim, volta ao zero sem transição e cresce até o valor novo.
-   *
-   * `dataset.alvo` guarda sempre o último pedido: se outro ganho chegar
-   * no meio da subida, é ele que vale quando o traço recomeçar.
-   */
+  /** Leva o traço à porcentagem nova; ao subir de nível, enche até o fim e recomeça do zero. */
   function encherBarra(el, nivel) {
     const traco = el.querySelector('.nivelzinho__barra i');
     const antes = Number(el.dataset.nivelDesenhado) || 0;
@@ -588,27 +442,9 @@
     }, 950);
   }
 
-  /**
-   * Marca a presença do dia e mostra nível e XP na barra.
-   *
-   * Uma chamada só faz as duas coisas, e é de propósito: o prêmio
-   * diário precisa de um gatilho, e o único momento em que a pessoa
-   * com certeza aparece é quando abre uma página. Login não serve — quem
-   * faz login é o Supabase, sem passar pelo servidor, e quem deixa a aba
-   * aberta a semana toda nunca loga de novo.
-   *
-   * Chamar em toda visita é seguro: quem decide se vale prêmio é a
-   * chave (usuario_id, dia) do banco, não este código.
-   *
-   * Falhou? A barrinha continua escondida. A barra de navegação não é
-   * lugar de mensagem de erro — a tela de progresso é que vai dizer o
-   * que houve.
-   */
+  /** Marca a presença do dia e mostra nível e XP. Se falhar, a barra fica escondida. */
   async function mostrarProgresso() {
-    // typeof, e não window.API: o api.js declara `const API`, e um const
-    // solto no arquivo NÃO vira window.API. O teste antigo dava sempre
-    // "não existe", esta função parava aqui em toda página, e a barrinha
-    // só aparecia no perfil — que chama NIVEL.atualizar por conta própria.
+    // typeof: `const API` não vira window.API.
     if (typeof API === 'undefined' || !API.marcarPresenca) {
       console.warn('[navbar] API.marcarPresenca não existe — o api.js foi carregado antes deste arquivo?');
       return;
@@ -620,8 +456,7 @@
       // Preenche a barrinha da navbar E toda <div data-nivel> da página.
       window.NIVEL.atualizar(r.nivel, r.xp);
 
-      // A sequência de dias fecha aqui (3, 7, 30), e também caem aqui as
-      // insígnias que o catálogo ganhou desde a última visita.
+      // Insígnias de sequência e as novas do catálogo.
       if (typeof CONQUISTA_AVISO !== 'undefined') CONQUISTA_AVISO.mostrar(r.insignias_novas);
 
       if (!r.nivel) {
@@ -629,21 +464,14 @@
       }
 
     } catch (erro) {
-      // A barrinha continua escondida: ela não é lugar de mensagem de erro.
-      // Mas o motivo vai para o console — antes isto era engolido em
-      // silêncio, e "a barrinha não aparece" não tinha como ser
-      // investigado por quem estava olhando a tela.
+      // Erro vai para o console; a barra continua escondida.
       console.warn(
         `[navbar] não deu para carregar seu XP (${erro.status || 'sem resposta'}): ${erro.message}`
       );
     }
   }
 
-  /**
-   * O tipo lembrado no navegador responde na hora e evita a barra
-   * "piscar" com os itens errados enquanto o banco responde. Se não
-   * houver nada lembrado, aí sim pergunta ao banco.
-   */
+  /** Usa o tipo lembrado no navegador; senão, pergunta ao banco. */
   async function descobrirTipo() {
     const lembrado = AUTH.tipoLembrado && AUTH.tipoLembrado();
     if (lembrado) return lembrado;

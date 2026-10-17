@@ -37,13 +37,10 @@
   const tempoEl = document.getElementById('missao-tempo');
   const barraTempo = document.getElementById('quiz-tempo-barra');
 
-  // A E só vem no nível 3 (formato ENEM); nas outras a opção é nula e
-  // o laço que desenha os botões a pula.
+  // E só no nível 3.
   const LETRAS = ['A', 'B', 'C', 'D', 'E'];
 
-  // Foto de dentro de cada lugar — as mesmas de src/imgs/Interiores que o
-  // modal do mapa mostra (CENARIOS[tipo].interior em mapa.js). Mudou lá,
-  // muda aqui.
+  // Fotos dos interiores (manter igual a mapa.js).
   const INTERIORES = {
     parque: 'Parque.png',
     escola: 'Escola.jpg',
@@ -63,9 +60,7 @@
     casa: 'Casa.jpeg',
   };
 
-  // Cada casa tem o seu interior, pelo número que o mapa manda em
-  // ?casa= (o campo `casa` dos HOTSPOTS em mapa.js). O mesmo número
-  // escolhe a família: casa 3 -> familia03.png.
+  // Interior de cada casa pelo ?casa= (o mesmo número escolhe a família).
   const INTERIORES_CASAS = {
     1: 'Casa.jpeg', 2: 'Casa02.jpeg', 3: 'Casa03.jpg', 4: 'Casa04.jpg',
     5: 'Casa05.jpg', 6: 'Casa06.jpg', 7: 'Casa07.jpg', 8: 'Casa08.jpg',
@@ -75,8 +70,7 @@
     19: 'CasaLateral03.jpg', 20: 'CasaLateral04.jpg',
   };
 
-  // Segundos por pergunta, escolhidos pela professora ao criar o quiz.
-  // 0 = sem limite.
+  // Segundos por pergunta (0 = sem limite).
   let tempoLimite = 0;
   let sobrandoSeg = 0;
   let relogio = null;   // o setInterval em andamento
@@ -95,9 +89,7 @@
     const conta = await AUTH.exigirLogin();
     if (!conta) return;
 
-    // Só se joga dentro de uma missão, que é o quiz passado pelo
-    // professor: ?quiz=7. O mapa manda junto o lugar e a casa clicados
-    // (?cenario=casa&casa=3), que servem só para escolher a foto.
+    // ?quiz=<id> obrigatório; ?cenario e ?casa só escolhem a foto.
     const params = new URLSearchParams(window.location.search);
     const idQuiz = Number(params.get('quiz'));
     const slug = params.get('cenario');
@@ -117,19 +109,15 @@
     }
   }
 
-  // A lista já foi sorteada e congelada quando o professor criou o quiz,
-  // então aqui não há sorteio — só se pula o que esta pessoa já acertou,
-  // para quem parou no meio continuar de onde estava.
+  // A ordem já vem do servidor; só pula o que a pessoa já acertou.
   async function carregarQuiz(id, fotoDoQuiz) {
     const r = await API.getQuestoesDoQuiz(id);
 
     quizAtual = { id: r.id, titulo: r.titulo, descricao: r.descricao };
-    // Aberto pela lista, sem lugar clicado: a foto é a do primeiro lugar
-    // que o quiz cobre.
+    // Aberto pela lista: foto do primeiro lugar do quiz.
     if (fotoDoQuiz && r.cenarios && r.cenarios.length) mostrarFoto(r.cenarios[0], 0);
 
-    // O tempo vem do quiz, não da tela: foi o professor que escolheu, e
-    // vale igual para a turma inteira.
+    // Tempo definido pelo professor no quiz.
     tempoLimite = Number(r.tempo_limite_segundos) || 0;
 
     rodada = r.questoes || [];
@@ -184,17 +172,7 @@
     comecarRelogio();
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     O RELÓGIO DA PERGUNTA
-
-     Só existe em tarefa da professora. O tempo é o mesmo para todas as
-     perguntas do quiz — foi escolhido uma vez, na criação, e vale para a
-     turma inteira.
-
-     Quando acaba, a pergunta NÃO conta como erro: ela simplesmente fica
-     sem resposta e volta numa próxima rodada. Marcar erro por demora
-     puniria quem leu devagar, e o jogo não é sobre isso.
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Relógio da pergunta ── se o tempo acaba, a pergunta fica sem resposta (não conta como erro). */
 
   function comecarRelogio() {
     pararRelogio();
@@ -302,14 +280,10 @@
     try {
       const r = await API.responder(questao.id, letra, quizAtual.id);
 
-      // A barra de nível sobe AGORA, no acerto, e não só na próxima
-      // troca de página. É o feedback que faltava: o aluno via o XP
-      // parado e não ligava o número ao que acabou de fazer.
+      // Barra de nível sobe no acerto.
       if (r.nivel && window.NIVEL) window.NIVEL.atualizar(r.nivel, r.xp);
 
-      // Pelo mesmo motivo, as barras das áreas sobem no canto da tela no
-      // acerto que as mexeu, e a insígnia aparece no acerto que a deu.
-      // Primeiro as barras, depois a insígnia: é a ordem do que aconteceu.
+      // Avisos de progresso e de insígnia no acerto.
       if (typeof CONQUISTA_AVISO !== 'undefined') {
         CONQUISTA_AVISO.progresso((r.barras || []).map(b => ({ ...b, cor: CORES[b.area] })));
         CONQUISTA_AVISO.mostrar(r.insignias_novas);
@@ -343,8 +317,7 @@
         botao.disabled = true;
         atualizarConfirmar();
 
-        // Errou mas pode tentar outra alternativa — o relógio volta a
-        // correr de onde parou. O tempo é da pergunta, não da tentativa.
+        // Errou: o relógio continua de onde parou.
         retomarRelogio();
       }
 
@@ -362,10 +335,7 @@
     opcoes.querySelectorAll('.quiz-option').forEach(b => { b.disabled = travar; });
   }
 
-  // O interior do lugar vira o fundo das perguntas. Numa casa conhecida, a
-  // família daquela casa, contornada, ganha a coluna da direita com os
-  // botões embaixo dela. Nos outros lugares não há coluna: os botões
-  // ficam numa linha centralizada abaixo das perguntas.
+  // Interior do lugar como fundo; numa casa, a família na coluna da direita.
   function mostrarFoto(slug, casa) {
     const interiorCasa = slug === 'casa' ? INTERIORES_CASAS[casa] : null;
     const interior = interiorCasa || INTERIORES[slug];
@@ -384,8 +354,7 @@
     fotoNome.textContent = sobrenome ? `Família ${sobrenome}` : '';
     fotoNome.hidden = !sobrenome;
     fotoFigura.alt = sobrenome ? `Família ${sobrenome}` : 'Família que mora nesta casa';
-    // Sem a imagem, volta ao layout dos outros lugares: uma coluna só
-    // com botões pareceria erro.
+    // Sem a imagem da família: layout de uma coluna.
     fotoFigura.onerror = () => {
       foto.hidden = true;
       quiz.classList.remove('missao-jogo--casa');
@@ -409,12 +378,7 @@
     }
   });
 
-  /* As cores das oito áreas.
-   *
-   * A tabela `areas` não guarda cor, e inventar uma no servidor seria
-   * decisão de banco para um assunto de tela. Ficam aqui, perto de quem
-   * desenha. Nenhuma é vermelha de propósito: barra baixa neste jogo
-   * não é erro, é assunto que a pessoa ainda não jogou. */
+  /* Cores das 8 áreas (nenhuma vermelha). */
   const CORES = {
     'Saúde':       '#2ec4a9',
     'Educação':    '#5b9bd5',
@@ -444,9 +408,7 @@
     btnMais.hidden = sobrando <= 0;
     if (!linhas.length) return;
 
-    // O progresso DEPOIS da rodada. O "antes" se descobre tirando o que
-    // acabou de ser ganho — assim a barra mostra de onde a pessoa saiu e
-    // até onde chegou, em vez de só o número final.
+    // Progresso depois da rodada; o "antes" é o depois menos o ganho.
     let areas = [];
     try { areas = await API.getMeuProgresso(); } catch (_) { /* cai no modo simples */ }
 
@@ -456,9 +418,7 @@
       fimBarras.appendChild(montarGanho(area, pts, porNome.get(area)));
     }
 
-    // Um quadro depois, para o navegador desenhar as barras no tamanho
-    // antigo primeiro. Sem esta espera a largura final já entraria
-    // pronta e não haveria crescimento para ver.
+    // Espera um quadro para a barra crescer.
     requestAnimationFrame(() => requestAnimationFrame(() => {
       fimBarras.querySelectorAll('.ganho__novo').forEach(el => {
         el.style.width = el.dataset.largura;
@@ -482,15 +442,11 @@
     bloco.querySelector('.ganho__area').textContent = area;
     bloco.querySelector('.ganho__pts').textContent = `+${pontos}`;
 
-    // `pontos_possiveis` é a régua: tudo o que ESTE aluno pode somar na
-    // área com as missões dele. Não confundir com a meta global da
-    // tabela `areas`, que é o conteúdo do jogo inteiro — a régua do
-    // aluno é a que faz a barra dele significar alguma coisa.
+    // pontos_possiveis = régua do aluno na área.
     const alvo = dados?.pontos_possiveis || 0;
     const agora = dados?.pontos ?? pontos;
 
-    // Sem régua (área sem missão para este aluno) não há barra honesta a
-    // desenhar: mostra só os pontos ganhos.
+    // Sem régua: mostra só os pontos.
     if (!alvo) {
       bloco.querySelector('.ganho__barra').hidden = true;
       bloco.querySelector('.ganho__nota').textContent = `${agora} pontos`;
@@ -503,9 +459,7 @@
 
     bloco.querySelector('.ganho__antes').style.width = `${pctAntes}%`;
 
-    // O pedaço novo nasce com largura zero e cresce — é ele o feedback.
-    // O piso existe porque um ganho de 0,4% seria meio pixel: a pessoa
-    // acertou e não veria nada se mexer.
+    // O pedaço novo cresce a partir de zero (com largura mínima visível).
     const novo = bloco.querySelector('.ganho__novo');
     novo.dataset.largura = `${pontos > 0 ? Math.max(PISO, pctNovo) : 0}%`;
     novo.style.width = '0%';
@@ -535,7 +489,4 @@
     avisoAcoes.hidden = false;
   }
 
-  // O botão Sair agora é desenhado pelo navbar.js, que também o liga.
-  // O listener que existia aqui virou código morto quando esta página
-  // passou a usar <nav data-navbar>.
 })();

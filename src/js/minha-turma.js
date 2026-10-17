@@ -1,21 +1,4 @@
-/**
- * minha-turma.js — a turma do aluno (minha-turma.html)
- *
- * O que esta tela responde: "em que turma eu estou, e quem joga comigo?"
- * Para quem ainda não tem turma, é também onde ela se escolhe.
- *
- * Não confundir com turma.html, que é a mesma pergunta pelo lado do
- * professor. Aquela pede `?id=` na URL e usa rotas de /professor; esta
- * não recebe parâmetro nenhum — a turma do aluno sai da conta dele, e
- * só ela. Aluno não escolhe turma por endereço.
- *
- * O TOM DA LISTA: a ordem é por XP, que é um número que só sobe. Ficar
- * em último com 40 XP ainda é ter 40 XP. Uma coluna de "45% de acerto"
- * ao lado do nome, visível para a turma toda, seria outra conversa — e
- * é justamente a que não queremos ter com uma criança de 8 anos.
- *
- * Carregado depois de supabase.js, api.js e navbar.js.
- */
+/** minha-turma.js — a turma do aluno e os colegas (ordem por XP); quem não tem turma escolhe aqui. */
 (() => {
   'use strict';
 
@@ -74,8 +57,7 @@
     const ponto = document.getElementById('turma-cor');
     if (turma.cor) ponto.style.background = turma.cor;
 
-    // textContent e não innerHTML: nome de turma, de escola e de pessoa
-    // são texto escrito por gente, nunca código rodando na página.
+    // textContent: texto escrito por pessoas.
     escrever('turma-nome', turma.ano_escolar ? `${turma.nome} · ${turma.ano_escolar}` : turma.nome);
 
     // `turma.escola` saiu da resposta do servidor junto com as escolas.
@@ -97,14 +79,7 @@
     escrever('posicao-rot', `de ${posicao.total} na turma`);
   }
 
-  /**
-   * O perfil do professor, visto pelo aluno.
-   *
-   * O jogo é sobre uma dupla: o aluno aprende, o professor ensina, e o
-   * XP do professor vem inteiro do avanço da turma. Mostrar o nível
-   * dele aqui é o que torna isso visível — o aluno descobre que, quando
-   * ele avança, o professor avança junto.
-   */
+  /** Perfil do professor visto pelo aluno. */
   function mostrarProfessor(prof) {
     const bloco = document.getElementById('bloco-professor');
     if (!bloco || !prof) return;
@@ -138,8 +113,7 @@
     tituloColegas.hidden = false;
     blocoColegas.hidden = false;
 
-    // O maior XP da turma é a régua das barrinhas. Usar 100 fixo deixaria
-    // todas praticamente vazias enquanto ninguém tiver jogado muito.
+    // O maior XP da turma é a régua das barrinhas.
     const teto = Math.max(...colegas.map(c => c.xp), 1);
 
     lista.innerHTML = '';
@@ -166,21 +140,18 @@
       <span class="colega__xp"></span>
     `;
 
-    // A foto do colega, com as iniciais de plano B. Mesma função que
-    // desenha o avatar da barra de cima — uma regra só para o círculo.
+    // Foto do colega (ou iniciais).
     const avatar = li.querySelector('.colega__avatar');
     if (window.AVATAR) window.AVATAR.desenhar(avatar, colega.nome, colega.avatar_url);
     else avatar.textContent = inicial(colega.nome);
 
     li.querySelector('.colega__pos').textContent = `${ordem + 1}º`;
 
-    // Só o primeiro nome. A lista fica legível no celular, e o sobrenome
-    // de uma criança não precisa ficar exposto para a turma inteira.
+    // Só o primeiro nome.
     li.querySelector('.colega__nome').textContent =
       colega.eu ? `${primeiroNome(colega.nome)} (você)` : primeiroNome(colega.nome);
 
-    // Nível e patente ao lado do nome: é a mesma régua do perfil, então
-    // o aluno reconhece o próprio número quando se vê na lista.
+    // Nível e patente ao lado do nome.
     const patente = li.querySelector('.colega__patente');
     if (colega.nivel && window.PATENTE) {
       // A etiqueta é montada por PATENTE.html, que escapa o nome dela.
@@ -199,12 +170,7 @@
     return li;
   }
 
-  /* ── Entrar numa turma (só para quem está sem) ─────────────────────
-     Os mesmos dois caminhos do cadastro (auth.js): o código que o
-     professor entrega. Ele termina num
-     turma_id mandado para POST /api/minha-turma — é o servidor que
-     grava, e só para quem ainda não tem turma.
-     ─────────────────────────────────────────────────────────────── */
+  /* ── Entrar numa turma (só para quem está sem) ── pelo código; quem grava é o servidor. */
 
   let turmaDoCodigo = null;     // a turma que o código digitado achou
 
@@ -238,8 +204,7 @@
       }
     }
 
-    // ── Pela lista ──
-    // ── Entrar ──
+    // Entrar.
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 

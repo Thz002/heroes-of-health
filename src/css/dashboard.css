@@ -540,12 +540,7 @@ body {
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   FUNDO VIVO
-   Bolhas que sobem devagar, só com CSS. Cada <span> traz suas próprias
-   medidas em variáveis (--x, --tam, --dur, --atraso), então a mesma
-   regra serve para todas e nenhuma sobe igual à outra.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Fundo vivo ── bolhas animadas só com CSS (medidas em variáveis por <span>). */
 
 .blob-3 {
     top: 35%;
@@ -1056,13 +1051,7 @@ body {
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   HISTÓRICO DE QUIZES (quizzes.html)
-
-   Barras horizontais: foto do lugar | nome e etiquetas | números.
-   A grade é declarada uma vez só, no .quiz-linha — as três colunas
-   nascem dela.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Histórico de quizzes (quizzes.html) ── */
 
 .lista-quizzes {
     display: flex;
@@ -1249,9 +1238,7 @@ body {
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   O RELÓGIO DA PERGUNTA (missao.html, só em tarefa da professora)
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Relógio da pergunta (missao.html) ── */
 
 .dado--tempo .dado__num {
     font-variant-numeric: tabular-nums;   /* o número para de "pular" */
@@ -1304,12 +1291,7 @@ body {
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════
-   RANKING DAS TURMAS (ranking.html)
-
-   Mesma barra horizontal do histórico de quizes, com a foto do lugar
-   trocada pela colocação: medalha nas três primeiras, número nas outras.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Ranking das turmas (ranking.html) ── */
 
 .lista-ranking {
     display: flex;
@@ -1342,8 +1324,7 @@ body {
 }
 
 /* ── A colocação ──────────────────────────────────────────────────── */
-/* O número mora num disco do mesmo tamanho da foto do histórico de
-   quizes, para as duas telas ficarem alinhadas lado a lado. */
+/* Mesmo tamanho da foto do histórico, para alinhar. */
 
 .ranking-pos {
     display: grid;
@@ -1495,14 +1476,7 @@ body {
     .ranking-linha__taxa { font-size: 18px; }
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   CRIAR QUIZ (novo layout) E NOVA PERGUNTA
-
-   Os dois modais são mais altos que a tela de um notebook: a caixa
-   rola por dentro, e o fundo escuro continua parado atrás.
-   O modal "Nova pergunta" abre POR CIMA do de criar quiz — por isso o
-   z-index a mais em .modal--sobre.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── Criar quiz e Nova pergunta ── a caixa rola por dentro; .modal--sobre abre por cima. */
 
 .modal-quiz,
 .modal-questao { padding: 16px; }
@@ -2011,8 +1985,7 @@ label.questao-card { grid-template-columns: auto 44px 1fr; cursor: pointer; }
     .modal__caixa--larga { padding: 22px 18px; }
 }
 
-/* Os botões "+ Criar quiz" e "+ Criar pergunta", lado a lado na
-   página de quizzes. O margin-top passa a ser do grupo. */
+/* Botões "+ Criar quiz" e "+ Criar pergunta" lado a lado. */
 .welcome-acoes {
     display: flex;
     flex-wrap: wrap;

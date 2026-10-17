@@ -1,16 +1,4 @@
-/**
- * server/middleware/autenticar.js
- *
- * Descobre QUEM está fazendo o pedido, e recusa quem não souber provar.
- *
- * Como funciona o modelo híbrido: o login continua acontecendo no
- * navegador, direto com o Supabase Auth. O navegador recebe de lá um
- * token assinado e o manda para cá no cabeçalho Authorization. O
- * servidor pergunta ao Supabase se aquele token é legítimo.
- *
- * Ou seja: o servidor não guarda senha e não tem sessão própria. Ele só
- * confere o crachá que o Supabase emitiu.
- */
+/** Confere o token do Supabase (Authorization: Bearer) e carrega o perfil em req.usuario. */
 
 const { admin } = require('../supabase');
 
@@ -29,9 +17,7 @@ async function autenticar(req, res, next) {
     return res.status(401).json({ message: 'Sua sessão expirou. Entre de novo.' });
   }
 
-  // O token diz apenas quem a pessoa é. O que ela É no jogo (aluno,
-  // professor, admin) vem da tabela usuarios — nunca do que o navegador
-  // afirmou, que é informação que a própria pessoa controla.
+  // O tipo da pessoa vem da tabela usuarios, nunca do navegador.
   const { data: perfil, error: erroPerfil } = await admin
     .from('usuarios')
     .select('id, nome, tipo, idade, turma_id, suspenso, suspenso_motivo')
@@ -49,12 +35,7 @@ async function autenticar(req, res, next) {
     });
   }
 
-  // Conta suspensa para aqui.
-  //
-  // Sem esta checagem a suspensão era enfeite: a coluna mudava no banco
-  // e a pessoa continuava jogando normalmente. Bloquear no login não
-  // bastaria — o token já emitido continua válido por uma hora —, então
-  // a porta é esta, que toda chamada atravessa.
+  // Conta suspensa é bloqueada em toda chamada.
   if (perfil.suspenso) {
     return res.status(403).json({
       message: perfil.suspenso_motivo

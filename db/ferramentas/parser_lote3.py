@@ -1,28 +1,3 @@
-# -*- coding: utf-8 -*-
-"""Extrai o TERCEIRO lote de perguntas (outubro/2026).
-
-Tres .docx, tres formatos diferentes -- nenhum dos parsers anteriores
-entende estes:
-
-  Perguntas Jogo 7 a 10 ...  -> nivel 1. Cenario em titulo de secao
-                                (UBS, UPA, Farmacia). Resposta em VERDE.
-                                Verdadeiro/Falso vem como UMA frase solta,
-                                pintada de verde (verdadeira) ou vermelho
-                                (falsa), sem alternativas.
-  11-14.docx                 -> nivel 2. Cenario em "CENARIO X -- NOME".
-                                Resposta em NEGRITO (o enunciado tambem e
-                                negrito; a alternativa certa e a unica
-                                outra linha em negrito). Duas alternativas
-                                as vezes dividem o mesmo paragrafo.
-  Questoes N3 prontas.docx   -> nivel 3. Secoes em CAIXA ALTA ("UBS -
-                                SAUDE"), blocos separados por "———",
-                                resposta em VERDE, e CINCO alternativas
-                                (A a E) na maioria das questoes.
-
-NAO gera SQL e NAO decide cenario nem area: so le. Escreve
-lote3_bruto.json, com a secao de onde cada questao veio, para o passo
-seguinte (montar_lote3.py) decidir.
-"""
 import zipfile, re, sys, os, json
 from xml.etree import ElementTree as ET
 sys.stdout.reconfigure(encoding='utf-8')
@@ -45,8 +20,7 @@ def paragrafos(caminho):
     paragrafo em qualquer ponto preserva o negrito e a cor de cada lado.
     """
     xml = zipfile.ZipFile(caminho).read('word/document.xml').decode('utf-8')
-    # Figuras e caixas de texto carregam paragrafos proprios (e, no
-    # AlternateContent, em dobro). Nenhuma questao mora nelas.
+    # Ignora figuras e caixas de texto.
     xml = re.sub(r'<mc:AlternateContent>.*?</mc:AlternateContent>', '', xml, flags=re.S)
     xml = re.sub(r'<w:drawing>.*?</w:drawing>', '', xml, flags=re.S)
     xml = re.sub(r'<w:pict>.*?</w:pict>', '', xml, flags=re.S)
@@ -82,8 +56,7 @@ def marcas(letras):
             'vermelho': any(cor in VERMELHOS for _, cor in visiveis)}
 
 
-# "A) ", "B ) ", e tambem quando a letra veio grudada no fim da frase
-# anterior: "...tratar doencas.D) Nao, porque..."
+# Início de alternativa ("A) "), inclusive grudada na frase anterior.
 RE_ALT_INICIO = re.compile(r'^\s*([A-Ea-e])\s*\)\s*')
 RE_ALT_MEIO = re.compile(r'(?<=[.!?;:”"\s])[B-E]\s?\)\s')
 

@@ -1,31 +1,3 @@
-# -*- coding: utf-8 -*-
-"""Decide cenario e barras do terceiro lote e MESCLA no questoes_extraidas.json.
-
-Passo 2 de 3:
-
-  python parser_lote3.py    -> lote3_bruto.json         (so le os .docx)
-  python montar_lote3.py    -> questoes_extraidas.json  (este arquivo)
-  python gerar_sql.py ../importar-lote3.sql --lote 3
-
-Tudo o que aqui e DECISAO esta escrito em tabela, e nao espalhado em if:
-quem quiser mudar o cenario de uma questao muda uma linha e roda de novo
-(antes de importar -- depois de importado o codigo nao muda mais).
-
-De onde vieram as regras:
-
-  - O que o proprio .docx diz em cada titulo de secao ("pontuacao em
-    limpeza, felicidade", "mesma de 7-10", "ESCOLA E UBS - SAUDE...").
-  - As duas instrucoes do topo do arquivo N3: vacinacao vai para a
-    FARMACIA com pontos em Vacinacao; saneamento vai para o CORREGO com
-    pontos em Limpeza.
-  - O que nao tinha cenario (o bloco do N3 sem titulo) ou nao existe no
-    jogo (o "Rio" do 11-14) foi para os cenarios e barras que estavam
-    sem pergunta: Corrego e Terreno Baldio tinham zero, e as barras de
-    Exercicios, Vetores e Limpeza eram as mais vazias.
-
-So roda uma vez: se o lote 3 ja estiver no JSON, recusa. Os codigos
-gravados no banco nunca podem mudar (ver LEIA-ME.md).
-"""
 import json, re, sys, os
 from collections import Counter, defaultdict
 sys.stdout.reconfigure(encoding='utf-8')
@@ -62,9 +34,7 @@ def com(q, regra, area):
     return [area] if regra.search(texto_da_certa(q)) else []
 
 
-# ── 7 a 10 anos ───────────────────────────────────────────────────────
-# "pontuacao em saude e felicidade (questoes que abordam vacinas ter
-# vacinacao tbm)" -- vale para as tres secoes.
+# 7 a 10 anos.
 CENARIO_N1 = {'UBS': 'ubs', 'UPA': 'upa', 'FARMACIA': 'farmacia'}
 
 
@@ -72,8 +42,7 @@ def regra_n1(q):
     return [CENARIO_N1[q['secao']]], ['Saúde', 'Felicidade'] + com(q, VACINA, 'Vacinação')
 
 
-# Erros de digitacao no texto que a crianca le. So nome trocado,
-# concordancia e palavra repetida -- nada de conteudo.
+# Correções de digitação no texto que a criança lê.
 CORRECOES = {
     (1, 'UBS', 7): ('O que pode acontecer com João?', 'O que pode acontecer com Caio?'),
     (1, 'UPA', 2): ('procurar uma uma Unidade', 'procurar uma Unidade'),
@@ -82,9 +51,7 @@ CORRECOES = {
 }
 
 
-# ── 11 a 14 anos ──────────────────────────────────────────────────────
-# A ordem importa: "CENARIO" contem "RIO", por isso o Rio so casa depois
-# do travessao.
+# 11 a 14 anos. "CENARIO" contém "RIO": o Rio só casa depois do travessão.
 CENARIO_N2 = [
     (r'CÓRREGO', 'corrego'),
     (r'—\s*RIO\b', 'corrego'),          # nao existe cenario Rio no jogo
@@ -112,16 +79,12 @@ def regra_n2(q):
     elif slug == 'parque':
         areas = ['Limpeza', 'Felicidade', 'Saúde']
     else:
-        # Pracinha veio sem barra no titulo. O conteudo e movimento,
-        # calor e convivencia -- e Exercicios era a barra sem nenhuma
-        # questao no banco.
+        # Pracinha: movimento e convívio.
         areas = ['Saúde'] + com(q, MOVIMENTO, 'Exercícios') + com(q, CONVIVIO, 'Felicidade')
     return [slug], areas
 
 
-# ── 15 a 18 anos ──────────────────────────────────────────────────────
-# Por secao. Secao com DOIS lugares ("UBS E ESCOLA") alterna entre eles,
-# para os dois receberem nivel 3 -- uma questao so pode ter um cenario.
+# 15 a 18 anos. Seção com dois lugares alterna entre eles.
 SECOES_N3 = {
     'CONTROLE DE VETORES, SAÚDE E EDUCAÇÃO - ESCOLA': (['escola'], ['Saúde', 'Educação']),
     'UBS - SAÚDE': (['ubs'], ['Saúde']),
@@ -154,12 +117,10 @@ EXCECOES_N3 = {
     15: VACINACAO,    # gripe
     38: VACINACAO,    # programa de vacinacao contra o HPV
 
-    # "Questoes que falam de saneamento basico adicionar no corrego e
-    # pontuacao em limpeza"
+    # Saneamento básico: córrego, pontuando em Limpeza.
     10: SANEAMENTO,   # hepatite A
 
-    # O bloco SEM titulo (depois do primeiro "———"): distribuido pelos
-    # cenarios sem nivel 3, cada uma onde o assunto acontece.
+    # Bloco sem título: cada questão vai para onde o assunto acontece.
     17: (['farmacia'], ['Saúde']),                          # superbacterias
     18: (['farmacia'], ['Saúde', 'Educação']),              # antibiotico x virus
     19: SANEAMENTO,                                         # leptospirose, enchentes
@@ -224,9 +185,7 @@ for q, lugares, areas in decididas:
             'certa': q['certa'], 'lugares': lugares, 'areas': areas,
             'nivel': q['nivel'], 'vf': q['vf'], 'lote': LOTE}
 
-    # Sem resposta marcada: entra no JSON (para nao se perder), mas SEM
-    # codigo -- e o gerar_sql.py so importa quem tem codigo. Quando a
-    # Medicina marcar, preencha "certa" e de o codigo do fim da fila.
+    # Sem resposta marcada: entra no JSON sem código (não é importada).
     if isinstance(q['certa'], int):
         item['codigo'] = codigo(lugares[0], q['nivel'])
     else:

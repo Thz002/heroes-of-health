@@ -50,9 +50,7 @@ if hasattr(sys.stdout, 'reconfigure'):
 PASTA = r'C:\Users\duart\OneDrive\Documentos\Questions'
 CONSOLIDADO = 'todas as questões.docx'
 
-# Como cada lugar é escrito nos arquivos, e o slug dele no banco.
-# A ordem importa: "campo de lazer" antes de "campo", "terreno baldio"
-# antes de "terreno".
+# Nome do lugar nos arquivos -> slug. A ordem importa.
 LUGARES = [
     (r'terreno\s*-?\s*baldio', 'terreno-baldio'),
     (r'campo\s+de\s+lazer',    'quadra'),
@@ -158,8 +156,7 @@ def eh_marcador(texto):
     if not lugares:
         return False
 
-    # Sobrou muito texto além dos nomes de lugar e das palavras de
-    # pontuação? Então é frase, não marcador.
+    # Muito texto além dos nomes de lugar: é frase, não marcador.
     resto = sem_acento(texto)
     for padrao, _ in LUGARES:
         resto = re.sub(padrao, ' ', resto)
@@ -176,18 +173,7 @@ def classificar_linhas(linhas):
     for texto in linhas:
         t = sem_acento(texto)
 
-        # Cabeçalho de bloco. O "CENÁRIO <n> —" com travessão é o que
-        # separa um cabeçalho de verdade de uma questão que por acaso
-        # fala a palavra:
-        #
-        #   ⚽ CENÁRIO 8 — CAMPO DE LAZER – felicidade   <- cabeçalho
-        #   15. Qual princípio resume melhor o cenário Farmácia?  <- questão
-        #   O cenário Rio conecta preservação ambiental…          <- descrição
-        #
-        # Vários cabeçalhos começam com emoji e NÃO trazem a palavra
-        # "pontuação" ("🏥 CENÁRIO 12 — UBS – mesma de 7-10"). Exigir
-        # "pontuação" fazia o bloco anterior vazar para o seguinte: as
-        # questões de atividade física herdavam o córrego.
+        # Cabeçalho de bloco: "CENÁRIO <n> —" com travessão.
         if (re.search(r'\bcenario\b\s*\d*\s*[—–:-]|pontua|^tema\b', t)
                 and (lugares_em(texto) or areas_em(texto))):
             fora.append(('cabecalho', texto))
@@ -237,8 +223,7 @@ def ler_arquivo(caminho):
     pendente = None          # marca lida esperando a próxima questão
 
     def fechar():
-        # Duas alternativas é o mínimo: menos que isso é parágrafo solto
-        # que só pareceu enunciado.
+        # Questão precisa de pelo menos duas alternativas.
         if atual and atual['enunciado'] and atual['opcoes'] >= 2:
             questoes.append(atual)
 
@@ -260,10 +245,7 @@ def ler_arquivo(caminho):
         if tipo == 'marca':
             if marca_antes:
                 pendente = {'cenarios': lugares_em(texto), 'areas': areas_em(texto)}
-                # A marca também vira o padrão do trecho: em
-                # "Perguntas Jogo 7 a 10 ubs, upa e farmacia" um único
-                # "Unidade Básica de Saúde" abre uma seção inteira, e não
-                # só a questão seguinte.
+                # A marca de lugar vale para o trecho inteiro.
                 padrao_lugares = pendente['cenarios'] or padrao_lugares
             elif atual:
                 atual['cenarios'] = lugares_em(texto)
@@ -278,16 +260,7 @@ def ler_arquivo(caminho):
             pendente = None
             continue
 
-        # 'texto': alternativa da questão aberta, ou enunciado sem número.
-        #
-        # Boa parte dos arquivos escreve as alternativas SEM letra, como
-        # linhas soltas — e em "Questões N3 prontas" as QUESTÕES é que
-        # não têm número. Com as duas coisas juntas não há marca
-        # tipográfica para separar uma da outra.
-        #
-        # O que separa é a CONTAGEM: nenhuma questão do material passa de
-        # cinco alternativas. Então, a partir da quinta linha solta, a
-        # próxima é enunciado novo.
+        # Linha solta: alternativa até a quinta; depois disso é enunciado novo.
         if atual is not None and (RE_OPCAO.match(texto) or atual['opcoes'] < 4):
             atual['opcoes'] += 1
             continue

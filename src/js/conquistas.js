@@ -1,19 +1,4 @@
-/**
- * conquistas.js — a estante de insígnias (conquistas.html)
- *
- * A tela mostra o CATÁLOGO INTEIRO, não só o que a pessoa já tem. É
- * essa a diferença entre uma estante e uma lista: o espaço vazio da
- * próxima insígnia é o que dá vontade de continuar. Esconder o que
- * falta transformaria a tela num recibo.
- *
- * As artes são do outro desenvolvedor e chegam pelo banco, não por
- * código: cada linha de `insignias` tem uma coluna `imagem` com o nome
- * do arquivo em src/imgs/insignias/. Enquanto ela for nula, o lugar
- * aparece com a inicial do nome — a estante funciona desde o primeiro
- * dia e vai ganhando desenho conforme os arquivos chegam.
- *
- * Carregado depois de supabase.js, api.js e navbar.js.
- */
+/** conquistas.js — estante de insígnias (conquistas.html), com o catálogo inteiro. */
 (() => {
   'use strict';
 
@@ -36,10 +21,7 @@
     DESCOBERTA:    ['segredo achado', 'segredos achados']
   };
 
-  // O "Como conquistar" do modal. As descrições do banco estão no
-  // passado ("Jogou três dias seguidos"), boas para quem já tem a
-  // insígnia; quem ainda não tem precisa de uma instrução, e ela sai da
-  // regra e do alvo — que são o critério de verdade do servidor.
+  // "Como conquistar": instrução gerada pela regra e pelo alvo.
   const COMO = {
     ACERTOS: n =>
       `Acerte ${n} ${n === 1 ? 'pergunta diferente' : 'perguntas diferentes'} em qualquer lugar do bairro. Cada pergunta conta uma vez só.`,
@@ -163,9 +145,7 @@
     item.querySelector('.insignia__dica').textContent = dica(insignia);
     item.title = insignia.descricao;
 
-    // Peça de degraus (os lugares do bairro): um ponto por degrau, aceso
-    // quando caiu. É o que diz que "Nota Dez" é o 2º de 3 da Escola, e
-    // não uma insígnia solta.
+    // Um ponto por degrau.
     if (insignia.degraus > 1) {
       const pontos = document.createElement('div');
       pontos.className = 'insignia__degraus';
@@ -180,9 +160,7 @@
       item.querySelector('.insignia__nome').after(pontos);
     }
 
-    // A peça abre o detalhe. É um <article>, então o papel de botão e o
-    // teclado (Enter e espaço) vêm à mão — sem isso, quem navega por Tab
-    // não teria como saber o que falta para nenhuma insígnia.
+    // Peça clicável e acessível pelo teclado.
     item.tabIndex = 0;
     item.setAttribute('role', 'button');
     item.setAttribute('aria-haspopup', 'dialog');
@@ -310,13 +288,7 @@
     }
   }
 
-  /**
-   * A linha de baixo de cada peça.
-   *
-   * Conquistada: quando foi. Bloqueada: quanto falta — um número, nunca
-   * uma porcentagem. "Faltam 12 perguntas" é uma tarefa que a pessoa
-   * sabe cumprir; "24% da insígnia" não é.
-   */
+  /** Linha de baixo da peça: data da conquista ou quanto falta. */
   function dica(i) {
     const [um, muitos] = UNIDADE[i.regra] || ['ponto', 'pontos'];
 

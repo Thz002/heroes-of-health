@@ -1,18 +1,4 @@
-/**
- * server/email.js — o envio de e-mail do jogo
- *
- * Hoje serve a uma coisa só: mandar o código de recuperação de senha.
- *
- * Fala SMTP, não a API de um serviço específico. Isso é de propósito:
- * trocar o Gmail por Brevo, Mailgun ou o servidor da faculdade passa a
- * ser mexer no .env, sem tocar em código.
- *
- * SEM CONFIGURAÇÃO, O SERVIDOR NÃO QUEBRA. Ele escreve o código no
- * próprio terminal e avisa, bem alto, que ninguém recebeu e-mail nenhum.
- * É o que deixa a tela inteira testável antes de a conta de envio
- * existir — e é também por isso que o aviso é escandaloso: um código de
- * recuperação no log é uma chave de porta deixada embaixo do tapete.
- */
+/** Envio de e-mail por SMTP (código de recuperação). Sem configuração, mostra o código no terminal. */
 
 require('dotenv').config();
 
@@ -26,8 +12,7 @@ const REMETENTE = process.env.SMTP_FROM || USUARIO;
 
 const configurado = Boolean(SERVIDOR && USUARIO && SENHA);
 
-// A conexão é criada uma vez e reaproveitada. Abrir SMTP a cada e-mail
-// custa um handshake TLS inteiro, e o Gmail reclama de quem faz isso.
+// Conexão SMTP reaproveitada.
 const transporte = configurado
   ? nodemailer.createTransport({
       host: SERVIDOR,
@@ -47,16 +32,7 @@ if (!configurado) {
 }
 
 
-/**
- * O corpo do e-mail com o código.
- *
- * Duas versões no mesmo envio: uma em HTML e uma em texto puro. Não é
- * capricho — cliente de e-mail de escola costuma bloquear HTML, e sem a
- * versão em texto o aluno abriria uma mensagem vazia.
- *
- * O código aparece em letras grandes e espaçadas porque vai ser copiado
- * à mão, olhando de uma tela para a outra.
- */
+/** Corpo do e-mail com o código, em HTML e texto puro. */
 function corpoDoCodigo(codigo) {
   const texto =
     `Seu código para criar uma nova senha no Heróis da Saúde é:\n\n` +
@@ -88,13 +64,7 @@ function corpoDoCodigo(codigo) {
 }
 
 
-/**
- * Manda o código. Devolve `true` quando saiu de verdade.
- *
- * Quem chama não deve mudar a resposta ao usuário por causa deste
- * retorno: a tela diz a mesma frase tendo o e-mail saído ou não. O
- * retorno serve para o log do servidor, e para o modo sem SMTP.
- */
+/** Envia o código. true = enviado (a resposta ao usuário não muda). */
 async function enviarCodigo(email, codigo) {
   if (!configurado) {
     console.warn(
@@ -120,48 +90,20 @@ async function enviarCodigo(email, codigo) {
 }
 
 
-/* =====================================================================
- *  O ENDEREÇO EXISTE?
- *
- *  Até onde dá para saber, e onde para.
- *
- *    1. FORMATO       — "joao@@escola" não é endereço. Barato e certeiro.
- *    2. O DOMÍNIO     — "gmai.com" existe e recebe e-mail? É o que esta
- *                       parte faz, perguntando ao DNS quem são os
- *                       servidores de e-mail daquele domínio (registro
- *                       MX). Pega quase todo erro de digitação real:
- *                       gmai.com, hotmal.com, @outloo.com.
- *    3. A CAIXA       — "joao.silva@gmail.com" existe mesmo?
- *                       NÃO DÁ PARA SABER, e é importante não fingir
- *                       que dá. Gmail e Outlook respondem "talvez" a
- *                       qualquer pergunta sobre caixa, de propósito,
- *                       justamente para ninguém sair varrendo endereços.
- *                       Quem insiste em perguntar vira IP bloqueado.
- *
- *  Quem prova o passo 3 é o código chegando. Por isso o jogo confere o
- *  que dá para conferir e deixa o e-mail fazer o resto.
- * ===================================================================== */
+/* Validação de e-mail: formato e domínio (MX). Se a caixa existe, só o código chegando prova. */
 
 const dns = require('dns').promises;
 
-// O DNS é rápido, mas não de graça, e a escola inteira usa dois ou três
-// domínios. Guardar a resposta por uma hora evita repetir a pergunta a
-// cada cadastro.
+// Cache de domínios consultados (1 hora).
 const UMA_HORA = 3_600_000;
 const lembrados = new Map();   // domínio -> { recebe, quando }
 
 const FORMATO = /^[^\s@]+@([^\s@.]+\.[^\s@]{2,})$/i;
 
-// Quanto tempo esperar o DNS antes de desistir e deixar passar. Melhor
-// um cadastro a mais do que um aluno preso na tela porque a rede da
-// escola está lenta.
+// Tempo máximo de espera do DNS.
 const PACIENCIA_MS = 3000;
 
-// A diferença que decide tudo: "este domínio NÃO EXISTE" é resposta,
-// e vale recusar. "não consegui perguntar" é problema nosso, e recusar
-// por causa dele seria barrar gente de e-mail bom. Nesta máquina, por
-// exemplo, consultar MX direto dá ECONNREFUSED — se isso reprovasse,
-// ninguém se cadastraria.
+// Só recusa quando o DNS diz que o domínio não existe; falha de consulta deixa passar.
 const NAO_EXISTE = new Set(['ENOTFOUND', 'NXDOMAIN']);
 
 function comPrazo(promessa) {
@@ -173,16 +115,7 @@ function comPrazo(promessa) {
   ]);
 }
 
-/**
- * O domínio recebe e-mail?
- *
- * Três perguntas, em ordem de força:
- *   1. tem servidor de e-mail (registro MX)?  -> recebe
- *   2. o domínio ao menos existe?             -> provavelmente recebe
- *   3. o DNS disse que não existe?            -> não recebe
- *
- * Qualquer outra falha é tratada como "não sei", e "não sei" deixa passar.
- */
+/** O domínio recebe e-mail? MX, depois existência; na dúvida, deixa passar. */
 async function dominioRecebeEmail(dominio) {
   try {
     const mx = await comPrazo(dns.resolveMx(dominio));
@@ -192,9 +125,7 @@ async function dominioRecebeEmail(dominio) {
     // ENODATA, ECONNREFUSED, ETIMEOUT, SERVFAIL: seguimos para o plano B.
   }
 
-  // Plano B: `lookup` usa o resolvedor do sistema operacional, que
-  // costuma funcionar mesmo onde a consulta direta por MX é barrada.
-  // Domínio sem MX mas com site também recebe e-mail, de vez em quando.
+  // Plano B: resolvedor do sistema operacional.
   try {
     await comPrazo(dns.lookup(dominio));
     return true;
@@ -206,12 +137,7 @@ async function dominioRecebeEmail(dominio) {
   return true;
 }
 
-/**
- * Confere o endereço até onde é possível.
- *
- * Devolve { ok, motivo }, onde `motivo` é a frase que a tela mostra.
- * Nunca diz se a CAIXA existe — isso ninguém sabe de fora.
- */
+/** Confere formato e domínio. Devolve { ok, motivo }. */
 async function conferirEndereco(email) {
   const limpo = String(email || '').trim().toLowerCase();
   const m = FORMATO.exec(limpo);

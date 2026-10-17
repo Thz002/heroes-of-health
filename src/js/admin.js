@@ -1,15 +1,4 @@
-/**
- * admin.js — o painel da equipe (src/pages/admin.html)
- *
- * Esta tela não decide nada. Cada ação aqui é um pedido ao servidor,
- * que confere o tipo ADMIN antes de obedecer — e as travas que importam
- * (não se rebaixar, não apagar o último admin, não escolher a senha de
- * ninguém) moram lá, não aqui. O que este arquivo faz é desenhar e
- * perguntar "tem certeza?".
- *
- * Vale repetir o motivo: tudo neste arquivo está ao alcance de quem
- * abrir o console. Uma checagem escrita aqui seria enfeite.
- */
+/** admin.js — painel da equipe (admin.html). As travas de verdade ficam no servidor. */
 
 (() => {
   'use strict';
@@ -27,9 +16,7 @@
 
     const perfil = await AUTH.perfilAtual();
 
-    // A tela some para quem não é da equipe. Não é a trava de verdade —
-    // essa é o 403 do servidor — mas evita mostrar uma página inteira
-    // de botões que não vão funcionar.
+    // Esconde a tela de quem não é admin (a trava real é o 403 do servidor).
     if (!perfil || perfil.tipo !== 'ADMIN') {
       document.querySelector('.adm').innerHTML =
         '<p class="vazio">Esta área é da equipe do projeto.</p>';
@@ -42,9 +29,7 @@
     carregarPanorama();
     ligarBusca();
 
-    // Mudar o próprio nível e a própria patente é o caso mais comum de
-    // todos — é assim que se testa o jogo em qualquer ponto da escada —
-    // e procurar o próprio nome para chegar lá era trabalho à toa.
+    // Atalho para abrir a própria ficha.
     $('busca-eu').addEventListener('click', () => {
       document.querySelector('.adm__aba[data-aba="usuarios"]').click();
       abrirFicha(perfil.id, false, 'editar');
@@ -52,8 +37,7 @@
   }
 
   // ── Avisos ────────────────────────────────────────────────────────
-  /** O aviso do modal, se houver um aberto; senão o da página. Sem isto
-   *  a mensagem sai atrás da janela, onde ninguém lê. */
+  /** Mostra o aviso no modal aberto, se houver. */
   const ondeAvisar = () => $('modal-aviso') || aviso;
 
   function dizer(texto, tipo = 'ok') {
@@ -100,9 +84,7 @@
   async function carregarPanorama() {
     const r = await tentar(() => API.adminResumo());
 
-    // "Carregando…" não pode ficar eternamente na tela. Se o resumo
-    // falhou, o subtítulo diz isso; o detalhe do Postgres já saiu no
-    // terminal do servidor.
+    // Se o resumo falhar, o subtítulo avisa.
     if (!r) {
       $('adm-sub').textContent = 'Não foi possível carregar o resumo. Veja o terminal do servidor.';
       return;
@@ -131,11 +113,7 @@
       </div>`).join('');
   }
 
-  // ── Busca ─────────────────────────────────────────────────────────
-  // A aba abre vazia. Despejar a escola inteira ao entrar não ajuda
-  // ninguém — quem chega aqui já sabe de quem quer ver a ficha — e
-  // ainda fazia a tela carregar uma lista que seria descartada no
-  // primeiro clique.
+  // ── Busca ── a aba abre vazia.
   let jaProcurou = false;
 
   function ligarBusca() {
@@ -198,13 +176,7 @@
     });
   }
 
-  // ════════════════════════════════════════════════════════════════════
-  //  A FICHA, EM MODAL
-  //
-  //  Tudo que se faz com uma pessoa acontece nesta janela: ver, alterar,
-  //  punir, apagar. Em páginas separadas a ficha de quem se está mexendo
-  //  sai de vista, e trocar o nível da pessoa errada fica fácil demais.
-  // ════════════════════════════════════════════════════════════════════
+  // ── Ficha em modal ── ver, alterar, punir e apagar.
 
   let porta = 'ver';          // qual das quatro está escolhida
   let patentesCache = null;
@@ -460,8 +432,7 @@
       if (r) { abrirFicha(id, true); reprocurar(); }
     });
 
-    // Escolher a patente mexe no campo de nível e não manda nada ainda:
-    // quem aplica é o botão, para dar chance de afinar o número antes.
+    // A patente só preenche o nível; quem aplica é o botão.
     $('m-patente').addEventListener('change', (e) => {
       if (e.target.value) $('m-nivel').value = e.target.value;
     });
@@ -625,20 +596,13 @@
 
   // ── Utilidades ────────────────────────────────────────────────────
 
-  /** Nome de pessoa vai para dentro de HTML; sem isto, um nome com
-   *  `<script>` dentro viraria script de verdade nesta tela. */
+  /** Escapa HTML de textos do usuário. */
   function escapar(texto) {
     return String(texto ?? '').replace(/[&<>"']/g,
       c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
-  /**
-   * A etiqueta [PATENTE], com a cor da faixa.
-   *
-   * Quem monta é o window.PATENTE do navbar.js — a mesma etiqueta do
-   * perfil e da lista da turma, para a cor significar a mesma coisa em
-   * toda tela. Sem ele carregado, nada aparece em vez de quebrar.
-   */
+  /** Etiqueta [PATENTE] colorida (window.PATENTE do navbar.js). */
   function etiqueta(nivel, mini) {
     return window.PATENTE ? window.PATENTE.html(nivel, mini) : '';
   }

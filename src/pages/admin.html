@@ -170,9 +170,7 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
-    /* ── O modal ──
-       A caixa, o fundo escuro e o ✕ já existem no dashboard.css e são os
-       mesmos do resto do site; aqui vai só o que a ficha pede a mais. */
+    /* ── Modal ── (base em dashboard.css) */
     .modal { padding: 20px; }
     .modal__caixa {
       max-height: 88vh; overflow-y: auto;
@@ -183,9 +181,7 @@
     .modal__topo { display: flex; gap: 14px; align-items: flex-start; }
     .modal__fechar { margin-left: auto; flex: none; }
 
-    /* As quatro portas da ficha. Cada uma abre um painel abaixo; nenhuma
-       leva a outra página — era o pedido, e também evita perder de vista
-       de quem é a ficha aberta. */
+    /* As quatro portas da ficha (painéis, sem trocar de página). */
     .modal__portas { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin: 18px 0 4px; }
     .porta {
       padding: 12px 14px; text-align: left; cursor: pointer;

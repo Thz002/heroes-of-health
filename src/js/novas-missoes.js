@@ -1,31 +1,5 @@
-/**
- * novas-missoes.js — o aviso de que chegou missão nova
- *
- * As barras do aluno são relativas ao que ELE tem para fazer (GET
- * /api/meu-progresso). Quando o professor passa um quiz novo, a régua
- * cresce e a barra DESCE — e uma barra que desce sem explicação parece
- * castigo. Este arquivo transforma essa queda em notícia boa: "chegaram
- * missões novas, tem mais coisa para descobrir".
- *
- * Como sabe que a régua cresceu: guarda, no navegador, os
- * pontos_possiveis de cada área da última vez que o aluno DISPENSOU o
- * aviso, e compara com os de agora.
- *
- *   - primeira visita neste navegador: só guarda, sem aviso (não há com
- *     o que comparar, e "tudo é novo" não diz nada);
- *   - régua que encolheu (o professor apagou um quiz pendente): a
- *     memória desce junto, calada — senão um quiz novo que só
- *     devolvesse o tamanho antigo passaria sem aviso;
- *   - o aviso fica até a pessoa clicar em "Entendi" (ou "Ver missões"),
- *     então ele aparece tanto no mapa quanto na tela de progresso,
- *     onde ela olhar primeiro.
- *
- * A chave leva o id da conta: no laboratório da escola vários alunos
- * usam o mesmo computador. Se o navegador não deixar gravar (aba anônima,
- * bloqueio), o aviso simplesmente não aparece — nada mais depende dele.
- *
- * Expõe o objeto global NOVAS_MISSOES. Carregado antes do script da página.
- */
+/** novas-missoes.js — aviso de que chegou missão nova (a régua das barras cresceu).
+    Compara com o que ficou no localStorage na última vez que o aluno dispensou. Global NOVAS_MISSOES. */
 const NOVAS_MISSOES = (() => {
   'use strict';
 
@@ -41,11 +15,7 @@ const NOVAS_MISSOES = (() => {
     catch (_) { /* sem armazenamento: fica sem aviso, e só */ }
   }
 
-  /**
-   * Compara a régua de agora com a última que este aluno viu.
-   *   areas: a resposta de API.getMeuProgresso()
-   * Devolve { novas: ['Saúde', ...], dispensar() }.
-   */
+  /** Compara a régua atual com a última vista. Devolve { novas, dispensar() }. */
   function conferir(usuarioId, areas) {
     const agora = Object.fromEntries(areas.map(a => [a.area, a.pontos_possiveis || 0]));
     const antes = usuarioId ? ler(usuarioId) : null;
@@ -71,12 +41,7 @@ const NOVAS_MISSOES = (() => {
     return { novas, dispensar: () => gravar(usuarioId, agora) };
   }
 
-  /**
-   * O cartão do aviso.
-   *   novas       nomes das áreas que ganharam conteúdo
-   *   dispensar   o que conferir() devolveu
-   *   linkMapa    true = mostra "Ver missões" (fora do mapa)
-   */
+  /** Cartão do aviso ({ novas, dispensar, linkMapa }). */
   function montarAviso({ novas, dispensar, linkMapa = false }) {
     const aviso = document.createElement('div');
     aviso.className = 'aviso-missoes';

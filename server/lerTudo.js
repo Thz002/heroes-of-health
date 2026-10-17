@@ -1,20 +1,4 @@
-/**
- * server/lerTudo.js — lê uma consulta inteira, página por página
- *
- * O PostgREST (a API do Supabase) devolve no máximo 1000 linhas por
- * consulta e corta o resto SEM erro nenhum. questoes_areas tem uma linha
- * por questão × área — com o conteúdo de hoje são 999, e o próximo lote
- * de perguntas passa disso. Sem isto, o painel do mapa e o sorteio do
- * quiz perderiam linhas em silêncio.
- *
- * `montar` é uma função que devolve a consulta NOVA a cada chamada, e
- * ela precisa ter .order(): sem ordem fixa, a página 2 pode repetir ou
- * pular linhas da página 1.
- *
- *   const { data, error } = await lerTudo(() =>
- *     admin.from('questoes_areas').select('questao_id, area_nome')
- *       .order('questao_id').order('area_nome'));
- */
+/** Lê uma consulta inteira, paginando (o PostgREST corta em 1000 linhas). A consulta precisa de .order(). */
 
 const POR_PAGINA = 1000;
 

@@ -1,17 +1,4 @@
-/**
- * ranking.js — a classificação das turmas (ranking.html)
- *
- * Uma linha por turma, da que vai melhor para a que vai pior. Em cada
- * uma: a colocação (medalha nas três primeiras), o nome, quantas
- * perguntas a turma já respondeu e a taxa de acerto em porcentagem.
- *
- * A ORDEM vem pronta do servidor e não é a taxa crua — ele equilibra
- * turmas que responderam pouco. Três acertos em três respostas dariam
- * 100% e passariam na frente de quem respondeu quatrocentas; por isso a
- * conta lá inclui um peso inicial na média geral.
- *
- * Carregado depois de supabase.js, api.js e navbar.js.
- */
+/** ranking.js — classificação das turmas (ranking.html); a ordem vem pronta do servidor. */
 (() => {
   'use strict';
 
@@ -102,8 +89,7 @@
 
     linha.querySelector('.ranking-pos__num').textContent = t.posicao ?? (ordem + 1);
 
-    // textContent e não innerHTML: nome de turma é texto escrito por
-    // pessoa, nunca código rodando na página.
+    // textContent: texto escrito por pessoas.
     linha.querySelector('.ranking-linha__nome').textContent =
       t.ano_escolar ? `${t.nome} · ${t.ano_escolar}` : t.nome;
 
@@ -146,7 +132,4 @@
     return partes.join(' · ');
   }
 
-  // O botão Sair agora é desenhado pelo navbar.js, que também o liga.
-  // O listener que existia aqui virou código morto quando esta página
-  // passou a usar <nav data-navbar>.
 })();

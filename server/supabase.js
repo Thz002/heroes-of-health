@@ -1,13 +1,4 @@
-/**
- * server/supabase.js — a conexão privilegiada com o banco
- *
- * Este arquivo é o ÚNICO lugar do projeto onde a chave secreta pode
- * aparecer. Ela lê o banco inteiro e passa por cima do RLS — é isso que
- * permite ao servidor enxergar `questoes.resposta_correta`, que o
- * navegador nunca pode ver.
- *
- * Se este arquivo (ou o .env) vazar, o banco inteiro vaza junto.
- */
+/** Único lugar com a chave secreta: este cliente ignora o RLS. */
 
 require('dotenv').config();
 
@@ -35,12 +26,7 @@ if (!SEGREDO.startsWith('sb_secret_') && !SEGREDO.startsWith('eyJ')) {
   process.exit(1);
 }
 
-/**
- * Cliente administrativo. Ignora o RLS por completo.
- *
- * `persistSession: false` porque o servidor não é uma pessoa: ele não
- * tem uma sessão só dele, atende muita gente ao mesmo tempo.
- */
+/** Cliente administrativo, sem sessão própria. */
 const admin = createClient(URL, SEGREDO, {
   auth: { persistSession: false, autoRefreshToken: false }
 });

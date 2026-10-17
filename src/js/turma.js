@@ -118,7 +118,4 @@ function montarLinha(aluno, posicao) {
     if (vazio) vazio.hidden = true;
 }
 
-  // O botão Sair agora é desenhado pelo navbar.js, que também o liga.
-  // O listener que existia aqui virou código morto quando esta página
-  // passou a usar <nav data-navbar>.
 })();

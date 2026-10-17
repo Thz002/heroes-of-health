@@ -12,12 +12,7 @@
     <script src="../js/loading.js" defer></script>
 
     <style>
-        /* ═══════════════════════════════════════════════════════════
-           A tela é partida em duas: o tutorial que gira à esquerda e o
-           menu à direita. O menu vem primeiro no HTML de propósito —
-           no celular as colunas viram linhas, e quem abre o jogo quer
-           o botão de jogar, não o tutorial.
-           ═══════════════════════════════════════════════════════════ */
+        /* Tutorial à esquerda, menu à direita (no celular, o menu vem primeiro). */
         .page-main {
             min-height: 100vh;
             display: grid;
@@ -108,14 +103,7 @@
             filter: brightness(1.08);
         }
 
-        /* ═══════════════════════════════════════════════════════════
-           O CARROSSEL
-
-           `perspective` fica AQUI, no palco, e não nos cartões. É o
-           erro clássico: um `translateZ` dentro de um elemento sem
-           perspectiva no pai não afunda nada, só muda a escala — e a
-           cena inteira fica chapada sem ninguém entender por quê.
-           ═══════════════════════════════════════════════════════════ */
+        /* ── Carrossel ── perspective no palco, não nos cartões. */
         .tutorial { grid-area: carrossel; }
 
         .tutorial__palco {
@@ -147,21 +135,14 @@
             font: inherit;
             color: inherit;
 
-            /* A ordem importa: `translate(-50%,-50%)` vem primeiro na
-               escrita para ser aplicado por último, centralizando o
-               cartão depois de ele já ter girado e afundado. */
+            /* translate(-50%,-50%) aplicado por último. */
             transform: translate(-50%, -50%);
             transition: transform .85s cubic-bezier(.22, .61, .36, 1),
                         opacity   .85s cubic-bezier(.22, .61, .36, 1);
         }
 
-        /* As quatro posições. Qualquer cartão pode estar em qualquer
-           uma delas; o JS só troca a classe. */
-        /* O da frente é o que se lê, e por isso é o único sólido: o
-           fundo da página atravessando o texto atrapalha a leitura, e
-           o vidro só faz sentido em quem está atrás. A diferença de
-           material separa "este aqui" dos outros dois tanto quanto a
-           posição separa. */
+        /* As quatro posições (o JS troca data-pos). */
+        /* O cartão da frente é sólido; os de trás, vidro. */
         .tcard[data-pos="frente"] {
             transform: translate(-50%, -50%) translateZ(0) rotateY(0deg) scale(1);
             opacity: 1;
@@ -197,12 +178,7 @@
 
         .tcard:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
-        /* ── A arte de cada cartão ───────────────────────────────────
-           Uma cena do próprio jogo, de src/imgs/. O `object-fit: cover`
-           preenche a moldura cortando o excesso, então a imagem pode
-           ter qualquer proporção — mas as de 1408x768 que estão em
-           Interiores/ caem quase exatas aqui (1,83:1 contra 1,76:1 da
-           moldura), e por isso quase nada se perde no corte. */
+        /* Arte do cartão (object-fit: cover). */
         .tcard__arte {
             position: relative;
             height: 176px;
@@ -225,11 +201,7 @@
             pointer-events: none;
         }
 
-        /* Com imagem de verdade no lugar do ícone, o halo verde vira
-           estorvo: ele tingiria a arte inteira. Troca por uma sombra
-           em cima e embaixo — em cima para a etiqueta "Passo 1" ter
-           contraste sobre qualquer foto, embaixo para a imagem não
-           bater de chapa na borda do texto. */
+        /* Com imagem, troca o halo por sombras. */
         .tcard__arte:has(img) {
             background: #07373e;
         }
@@ -342,9 +314,7 @@
             .tcard[data-pos="esquerda"] { transform: translate(-50%, -50%) translateX(-96px) translateZ(-260px) rotateY(22deg) scale(.9); }
         }
 
-        /* Sem movimento: os cartões trocam secos, e o giro automático
-           é desligado pelo JS. Quem pediu menos animação não deveria
-           receber a maior da tela. */
+        /* Movimento reduzido: sem animação. */
         @media (prefers-reduced-motion: reduce) {
             .tcard { transition: opacity .2s linear; }
             .menu__emblema, .menu__logo, .menu__acoes, .tutorial { animation: none; }
@@ -373,11 +343,7 @@
                 </div>
             </div>
 
-            <!-- ── O tutorial que gira ──────────────────────────────
-                 Os cartões são escritos aqui, e não montados pelo JS,
-                 porque são conteúdo: quem for revisar o texto do
-                 tutorial encontra as frases no HTML, como em qualquer
-                 outra página. O JS só decide qual está na frente. -->
+            <!-- Cartões do tutorial (o JS só decide qual fica na frente). -->
             <section class="tutorial" aria-roledescription="carrossel" aria-label="Como jogar">
                 <div class="tutorial__palco" id="palco">
 
