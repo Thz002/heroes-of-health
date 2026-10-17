@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Referências — Heróis da Saúde</title>
+
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+
+  <style>
+    .refs { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; }
+
+    .refs__titulo {
+      font-family: var(--font-display); font-size: 30px; font-weight: 900;
+      color: var(--white); margin: 0 0 8px;
+    }
+    .refs__sub { font-size: 14px; color: var(--text-muted); margin: 0 0 4px; line-height: 1.6; }
+    .refs__conta { font-size: 12.5px; color: var(--text-faint); margin: 10px 0 22px; }
+
+    .refs__busca {
+      width: 100%; padding: 12px 16px; margin-bottom: 14px;
+      border-radius: var(--radius-md); background: var(--input-bg);
+      border: 1.5px solid var(--input-border); color: var(--white);
+      font-family: var(--font-body); font-size: 14.5px; outline: none;
+    }
+    .refs__busca:focus { border-color: var(--accent); }
+
+    .refs__letras { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 24px; }
+    .refs__letras a {
+      display: grid; place-items: center; width: 30px; height: 30px;
+      border-radius: 8px; background: rgba(46,196,169,.10);
+      border: 1px solid rgba(107,223,184,.16);
+      color: var(--accent); font-size: 12.5px; font-weight: 700; text-decoration: none;
+    }
+    .refs__letras a:hover { background: rgba(46,196,169,.24); color: var(--white); }
+
+    .refs__lista { list-style: none; padding: 0; margin: 0; }
+
+    /* Recuo pendente: a segunda linha entra, como manda a ABNT em lista
+       de referências, e é o que deixa o sobrenome saltando à esquerda. */
+    .ref {
+      padding: 14px 16px 14px 34px; text-indent: -18px;
+      margin-bottom: 8px; border-radius: var(--radius-md);
+      background: rgba(46,196,169,.06);
+      border: 1px solid rgba(107,223,184,.10);
+      font-size: 14px; line-height: 1.7; color: rgba(255,255,255,.86);
+      scroll-margin-top: 90px;
+    }
+    .ref[hidden] { display: none; }
+    .ref a { color: var(--accent); word-break: break-all; }
+    .ref a:hover { color: var(--white); }
+
+    .refs__nada { padding: 28px; text-align: center; color: var(--text-faint); font-size: 13.5px; }
+    .refs__nada[hidden] { display: none; }
+
+    .refs__volta { display: inline-block; margin-top: 28px; font-size: 13.5px; color: var(--accent); }
+
+    @media (max-width: 560px) {
+      .refs__titulo { font-size: 24px; }
+      .ref { padding: 12px 13px 12px 28px; font-size: 13.5px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <nav class="nav_bar" data-navbar></nav>
+
+  <main class="refs">
+    <h1 class="refs__titulo">Referências</h1>
+    <p class="refs__sub">
+      Tudo o que o jogo pergunta sai daqui. As questões e as explicações
+      foram escritas pela equipe de Medicina da PUC Betim a partir destas
+      fontes — manuais do Ministério da Saúde, diretrizes das sociedades
+      médicas, legislação e livros-texto.
+    </p>
+    <p class="refs__sub">
+      Se uma explicação do jogo não convencer, a fonte está nesta página.
+      Confira, e avise a equipe se encontrar divergência.
+    </p>
+    <p class="refs__conta">51 referências, em normas da ABNT.</p>
+
+    <input class="refs__busca" id="refs-busca" type="search" autocomplete="off"
+           placeholder="Procurar por autor, título, órgão ou assunto…"
+           aria-label="Procurar nas referências">
+
+    <nav class="refs__letras" aria-label="Ir para a letra">
+          <a href="#letra-A">A</a>
+          <a href="#letra-B">B</a>
+          <a href="#letra-C">C</a>
+          <a href="#letra-F">F</a>
+          <a href="#letra-G">G</a>
+          <a href="#letra-J">J</a>
+          <a href="#letra-K">K</a>
+          <a href="#letra-M">M</a>
+          <a href="#letra-O">O</a>
+          <a href="#letra-S">S</a>
+          <a href="#letra-T">T</a>
+          <a href="#letra-W">W</a>
+    </nav>
+
+    <ul class="refs__lista" id="refs-lista">
+        <li class="ref" id="letra-A" data-letra="A">ABBAS, A. K.; LICHTMAN, A. H.; PILLAI, S. Imunologia celular e molecular. 10. ed. Rio de Janeiro: Elsevier, 2023.</li>
+        <li class="ref" data-letra="A">AGÊNCIA NACIONAL DE VIGILÂNCIA SANITÁRIA (Brasil). Hoje é dia nacional do uso racional de medicamentos. Brasília, DF: Anvisa, 5 maio 2023. Disponível em: <a href="https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2023/hoje-e-dia-nacional-do-uso-racional-de-medicamentos" target="_blank" rel="noopener noreferrer">https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2023/hoje-e-dia-nacional-do-uso-racional-de-medicamentos</a>. 28 set. 2026.</li>
+        <li class="ref" data-letra="A">AGÊNCIA NACIONAL DE VIGILÂNCIA SANITÁRIA (Brasil). Uso racional de medicamentos: um alerta à população. Brasília, DF: Anvisa, 5 maio 2020. Atualizado em: 5 mar. 2025. Disponível em: <a href="https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2020/uso-racional-de-medicamentos-um-alerta-a-populacao" target="_blank" rel="noopener noreferrer">https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2020/uso-racional-de-medicamentos-um-alerta-a-populacao</a>. 28 set. 2026.</li>
+        <li class="ref" data-letra="A">AGÊNCIA NACIONAL DE VIGILÂNCIA SANITÁRIA (Brasil); ORGANIZAÇÃO MUNDIAL DA SAÚDE (OMS). Como higienizar as mãos com água e sabonete? [Cartaz]. [S. l.: s. n.], [s. d.]. Disponível em: <a href="https://www.gov.br/anvisa/pt-br/assuntos/servicosdesaude/prevencao-e-controle-de-infeccao-e-resistenciamicrobiana/CartazAzulA3_LogosAtualizadas22.pdf" target="_blank" rel="noopener noreferrer">https://www.gov.br/anvisa/pt-br/assuntos/servicosdesaude/prevencao-e-controle-de-infeccao-e-resistenciamicrobiana/CartazAzulA3_LogosAtualizadas22.pdf</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" data-letra="A">AMABIS, José Mariano; MARTHO, Gilberto Rodrigues. Ciências: biologia dos organismos. 5. ed. São Paulo: Moderna, 2018.</li>
+        <li class="ref" data-letra="A">ARAÚJO, Ana Cecília. Olho na dica! Entenda quando procurar uma UBS ou uma UPA! Contagem: Prefeitura Municipal de Contagem, 9 fev. 2023. Disponível em: <a href="https://portal.contagem.mg.gov.br/portal/noticias/0/3/77109/olho-na-dica-entenda-quando-procurar-uma-ubsou-uma-upa" target="_blank" rel="noopener noreferrer">https://portal.contagem.mg.gov.br/portal/noticias/0/3/77109/olho-na-dica-entenda-quando-procurar-uma-ubsou-uma-upa</a>. 26 set. 2026.</li>
+        <li class="ref" data-letra="A">ASSOCIAÇÃO BRASILEIRA DE PSIQUIATRIA (ABP). Materiais sobre ansiedade, depressão e transtornos alimentares. [S. l.], [s. d.]. Disponível em: <a href="https://www.abp.org.br" target="_blank" rel="noopener noreferrer">https://www.abp.org.br</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" id="letra-B" data-letra="B">BANDEIRA, Romero Chartuni; BASTOS, Ronaldo Rocha; CAMPOS, Estela Marcia Saraiva; O’DWYER, Gisele. Unidade de Pronto Atendimento e Atenção Primária à Saúde: uma integração possível. Saúde em Debate, Rio de Janeiro, v. 49, n. 145, e9543, 2025. DOI: <a href="https://doi.org/10.1590/2358-289820251459543P" target="_blank" rel="noopener noreferrer">https://doi.org/10.1590/2358-289820251459543P</a>. Disponível em: <a href="https://www.scielo.br/j/sdeb/a/gP9kFPPtfzHBjgRJJsW7GXM/?lang=pt" target="_blank" rel="noopener noreferrer">https://www.scielo.br/j/sdeb/a/gP9kFPPtfzHBjgRJJsW7GXM/?lang=pt</a>. 19 set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Constituição (1988). Constituição da República Federativa do Brasil de 1988. Art. 7º, XXXIII, com redação dada pela Emenda Constitucional nº 20, de 1998. Brasília, DF: Presidência da República, 1988.</li>
+        <li class="ref" data-letra="B">BRASIL. Decreto-Lei nº 5.452, de 1º de maio de 1943. Aprova a Consolidação das Leis do Trabalho (CLT). Art. 403, com redação dada pela Lei nº 10.097, de 2000. Brasília, DF: Presidência da República, 1943.</li>
+        <li class="ref" data-letra="B">BRASIL. Lei nº 8.069, de 13 de julho de 1990. Dispõe sobre o Estatuto da Criança e do Adolescente e dá outras providências. Brasília, DF: Presidência da República, 1990.</li>
+        <li class="ref" data-letra="B">BRASIL. Lei nº 10.097, de 19 de dezembro de 2000. Altera dispositivos da Consolidação das Leis do Trabalho (CLT). Brasília, DF: Presidência da República, 2000.</li>
+        <li class="ref" data-letra="B">BRASIL. Lei nº 12.305, de 2 de agosto de 2010. Institui a Política Nacional de Resíduos Sólidos. Brasília, DF: Presidência da República, 2010.</li>
+        <li class="ref" data-letra="B">BRASIL. Lei nº 13.431, de 4 de abril de 2017. Estabelece o sistema de garantia de direitos da criança e do adolescente vítima ou testemunha de violência. Brasília, DF: Presidência da República, 2017.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Educação. Base Nacional Comum Curricular: ensino fundamental. Brasília, DF: MEC, 2018.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Educação. Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira (Inep). Provas e gabaritos. Brasília, DF: Inep, 3 set. 2020. Atualizado em: 3 jul. 2026. Disponível em: <a href="https://www.gov.br/inep/pt-br/areas-de-atuacao/avaliacao-e-exames-educacionais/enem/provas-e-gabaritos" target="_blank" rel="noopener noreferrer">https://www.gov.br/inep/pt-br/areas-de-atuacao/avaliacao-e-exames-educacionais/enem/provas-e-gabaritos</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Aedes aegypti. Brasília, DF: Ministério da Saúde, [s. d.]. Disponível em: <a href="https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/a/aedes-aegypti" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/a/aedes-aegypti</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Calendário Nacional de Vacinação 2026: adolescentes e jovens. Brasília, DF: Ministério da Saúde, 2026. Disponível em: <a href="https://www.gov.br/saude/pt-br/vacinacao/arquivos/calendario-nacional-de-vacinacao-adolescentes-jovens/view" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude/pt-br/vacinacao/arquivos/calendario-nacional-de-vacinacao-adolescentes-jovens/view</a>. Acesso em 29 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Como se prevenir da dengue? Brasília, DF: Ministério da Saúde, 2022. Atualizado em: 9 ago. 2024. Disponível em: <a href="https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/d/dengue/faq/dengue/como-se-prevenir-da-dengue" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/d/dengue/faq/dengue/como-se-prevenir-da-dengue</a>. 28 set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Dengue. Brasília, DF: Ministério da Saúde, [s. d.]. Disponível em: <a href="https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/d/dengue" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/d/dengue</a>. Acesso em 25 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Doenças infecciosas e parasitárias: guia de bolso. 8. ed. rev. Brasília, DF: Ministério da Saúde, 2010.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Guia de Vigilância em Saúde. 6. ed. rev. Brasília, DF: Ministério da Saúde, 2024. Disponível em: <a href="https://bvsms.saude.gov.br/bvs/publicacoes/guia_vigilancia_saude_6edrev_v1.pdf" target="_blank" rel="noopener noreferrer">https://bvsms.saude.gov.br/bvs/publicacoes/guia_vigilancia_saude_6edrev_v1.pdf</a>. Acesso em 17 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Ministério da Saúde adota esquema de vacinação em dose única contra o HPV. Brasília, DF: Ministério da Saúde, abr. 202 4. Disponível em: <a href="https://www.gov.br/saude/pt-br/assuntos/noticias/2024/abril/ministerio-da-saude-adota-esquema-de-vacinacao-em-dose-unica-contra-o-hpv" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude/pt-br/assuntos/noticias/2024/abril/ministerio-da-saude-adota-esquema-de-vacinacao-em-dose-unica-contra-o-hpv</a>. Acesso em 17 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Noções de primeiros socorros. Brasília, DF: Ministério da Saúde, 2025. (Programa Saúde com Agente). Disponível em: <a href="https://bvsms.saude.gov.br/bvs/publicacoes/nocoes_primeiros_socorros.pdf" target="_blank" rel="noopener noreferrer">https://bvsms.saude.gov.br/bvs/publicacoes/nocoes_primeiros_socorros.pdf</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Nota Técnica nº 5/2026 - COAIA/CGESCO/DESF/SAPS/MS. Brasília, DF: Ministério da Saúde, 2026. Disponível em: <a href="https://www.gov.br/saude/pt-br/centrais-de-conteudo/publicacoes/notas-tecnicas/2026/nota-tecnica-no-5-2026-coaia-cgesco-desf-saps-ms.pdf/view" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude/pt-br/centrais-de-conteudo/publicacoes/notas-tecnicas/2026/nota-tecnica-no-5-2026-coaia-cgesco-desf-saps-ms.pdf/view</a>. Acesso em 14 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. O que é dengue? Brasília, DF: Ministério da Saúde, 2022. Atualizado em: 9 ago. 2024. Disponível em: <a href="https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/d/dengue/faq/dengue/o-que-e-dengue" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/d/dengue/faq/dengue/o-que-e-dengue</a>. 28 set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Programa Saúde na Escola (PSE). Brasília, DF: Ministério da Saúde, [s. d.]. Disponível em: <a href="https://www.gov.br/saude/pt-br/composicao/saps/pse" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude/pt-br/composicao/saps/pse</a>. Acesso em 26 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Protocolo clínico e diretrizes terapêuticas para atenção integral às pessoas com infecções sexualmente transmissíveis (PCDT-IST). Brasília, DF: Ministério da Saúde, 2022. Disponível em: <a href="https://bvsms.saude.gov.br/bvs/publicacoes/protocolo_clinico_atecao_integral_ist.pdf" target="_blank" rel="noopener noreferrer">https://bvsms.saude.gov.br/bvs/publicacoes/protocolo_clinico_atecao_integral_ist.pdf</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Quais são as ações do PSE? Brasília, DF: Ministério da Saúde, [s. d.]. Disponível em: <a href="https://www.gov.br/saude/pt-br/composicao/saps/pse/faq/quais-sao-as-acoes-do" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude/pt-br/composicao/saps/pse/faq/quais-sao-as-acoes-do</a>. Acesso em 25 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. UPA 24h. Brasília, DF: Ministério da Saúde, [s. d.]. Disponível em: <a href="https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/u/upa-24h" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/u/upa-24h</a>. 26 set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério da Saúde. Secretaria de Vigilância em Saúde. Páginas temáticas sobre dengue, Zika, chikungunya, febre amarela, malária, tuberculose, hanseníase, HIV/AIDS e hepatites virais. Brasília, DF: Ministério da Saúde, [s. d.]. Disponível em: <a href="https://www.gov.br/saude" target="_blank" rel="noopener noreferrer">https://www.gov.br/saude</a>. Acesso em 29 de set. 2026.</li>
+        <li class="ref" data-letra="B">BRASIL. Ministério dos Direitos Humanos e da Cidadania. Denunciar violação de direitos humanos — Disque 100. Brasília, DF: Ministério dos Direitos Humanos e da Cidadania, [s. d.]. Disponível em: <a href="https://www.gov.br/pt-br/servicos/denunciar-violacao-de-direitos-humanos" target="_blank" rel="noopener noreferrer">https://www.gov.br/pt-br/servicos/denunciar-violacao-de-direitos-humanos</a>. Acesso em 22 de set. 2026.</li>
+        <li class="ref" id="letra-C" data-letra="C">CAMPBELL, Neil A. et al. Biologia de Campbell. 10. ed. Porto Alegre: Artmed, 2015.</li>
+        <li class="ref" data-letra="C">CENTERS FOR DISEASE CONTROL AND PREVENTION (CDC). Disease and condition fact sheets. Atlanta: CDC, [s. d.]. Disponível em: <a href="https://www.cdc.gov" target="_blank" rel="noopener noreferrer">https://www.cdc.gov</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" data-letra="C">CONSELHO NACIONAL DO MEIO AMBIENTE (Brasil). Resolução nº 275, de 25 de abril de 2001. Estabelece o código de cores para os diferentes tipos de resíduos na coleta seletiva. Brasília, DF: CONAMA, 2001. Disponível em: <a href="https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf" target="_blank" rel="noopener noreferrer">https://www.uff.br/wp-content/uploads/2024/05/conama_275_2001_0.pdf</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" id="letra-F" data-letra="F">FITTIPALDI, Ana Lúcia de Magalhães; O’DWYER, Gisele; HENRIQUES, Patrícia. Educação em saúde na atenção primária: um olhar sob a perspectiva dos usuários do sistema de saúde. Saúde e Sociedade, São Paulo, v. 32, n. 4, e211009pt, 2023. DOI: <a href="https://doi.org/10.1590/S0104-12902023211009pt" target="_blank" rel="noopener noreferrer">https://doi.org/10.1590/S0104-12902023211009pt</a>. Disponível em: <a href="https://www.scielosp.org/article/sausoc/2023.v32n4/e211009pt/pt/" target="_blank" rel="noopener noreferrer">https://www.scielosp.org/article/sausoc/2023.v32n4/e211009pt/pt/</a>. 19 set. 2026.</li>
+        <li class="ref" id="letra-G" data-letra="G">GUYTON, A. C.; HALL, J. E. Tratado de fisiologia médica. 14. ed. Rio de Janeiro: GEN, 2021.</li>
+        <li class="ref" id="letra-J" data-letra="J">JUNQUEIRA, Luiz Carlos Uchoa; CARNEIRO, José. Biologia celular e molecular. 10. ed. Rio de Janeiro: Guanabara Koogan, 2023.</li>
+        <li class="ref" id="letra-K" data-letra="K">KUMAR, V.; ABBAS, A. K.; ASTER, J. C. Robbins &amp; Cotran: patologia: bases patológicas das doenças. 10. ed. Rio de Janeiro: Elsevier, 2023.</li>
+        <li class="ref" id="letra-M" data-letra="M">MURRAY, P. R.; ROSENTHAL, K. S.; PFALLER, M. A. Microbiologia médica. 8. ed. Rio de Janeiro: Elsevier, 2017.</li>
+        <li class="ref" id="letra-O" data-letra="O">OLIVEIRA, Maria Auxiliadora; LIMA, Mariana de; et al. Assistência farmacêutica no cuidado à saúde na Atenção Primária: tão perto, tão longe. Physis: Revista de Saúde Coletiva, Rio de Janeiro, v. 30, n. 1, e300107, 2020. DOI: <a href="https://doi.org/10.1590/S0103-73312020300107" target="_blank" rel="noopener noreferrer">https://doi.org/10.1590/S0103-73312020300107</a>. Disponível em: <a href="https://www.scielo.br/j/physis/a/CkXJM6zrGq7XF58W68bzNXR/?lang=pt" target="_blank" rel="noopener noreferrer">https://www.scielo.br/j/physis/a/CkXJM6zrGq7XF58W68bzNXR/?lang=pt</a>. 19 set. 2026.</li>
+        <li class="ref" data-letra="O">ORGANIZAÇÃO MUNDIAL DA SAÚDE (OMS). Fact sheets temáticas: dengue, malária, tuberculose, hanseníase, hepatites, raiva, HPV, HIV/AIDS, doenças não transmissíveis, saúde mental e resistência antimicrobiana. Genebra: OMS, [s. d.]. Disponível em: <a href="https://www.who.int" target="_blank" rel="noopener noreferrer">https://www.who.int</a>. Acesso em 24 de set. 2026.</li>
+        <li class="ref" data-letra="O">ORGANIZAÇÃO PAN-AMERICANA DA SAÚDE (OPAS). Materiais técnicos sobre arboviroses e doenças negligenciadas. [S. l.]: OPAS, [s. d.]. Disponível em: <a href="https://www.paho.org" target="_blank" rel="noopener noreferrer">https://www.paho.org</a>. Acesso em 22 de set. 2026.</li>
+        <li class="ref" id="letra-S" data-letra="S">SÃO PAULO (Município). Secretaria Municipal da Saúde. Manual de primeiros socorros para leigos — SAMU 192. São Paulo: Secretaria Municipal da Saúde, 2022. Disponível em: <a href="https://drive.prefeitura.sp.gov.br/cidade/secretarias/upload/saude/MANUAL_PRIMEIROS_SOCORROS_PARA_LEIGOS.pdf" target="_blank" rel="noopener noreferrer">https://drive.prefeitura.sp.gov.br/cidade/secretarias/upload/saude/MANUAL_PRIMEIROS_SOCORROS_PARA_LEIGOS.pdf</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" data-letra="S">SOCIEDADE BRASILEIRA DE CARDIOLOGIA (SBC). Diretrizes sobre hipertensão e doenças cardiovasculares. [S. l.]: SBC, [s. d.]. Disponível em: <a href="https://www.cardiol.br" target="_blank" rel="noopener noreferrer">https://www.cardiol.br</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" data-letra="S">SOCIEDADE BRASILEIRA DE DIABETES (SBD). Diretrizes sobre diabetes tipo 1 e tipo 2. [S. l.]: SBD, [s. d.]. Disponível em: <a href="https://diabetes.org.br" target="_blank" rel="noopener noreferrer">https://diabetes.org.br</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" data-letra="S">SOCIEDADE BRASILEIRA DE PEDIATRIA (SBP). Manuais e diretrizes sobre saúde da criança e do adolescente. Rio de Janeiro: SBP, [s. d.]. Disponível em: <a href="https://www.sbp.com.br" target="_blank" rel="noopener noreferrer">https://www.sbp.com.br</a>. Acesso em 23 de set. 2026.</li>
+        <li class="ref" id="letra-T" data-letra="T">TORTORA, Gerard J.; DERRICKSON, Bryan. Princípios de anatomia e fisiologia. 15. ed. Rio de Janeiro: Guanabara Koogan, 2019.</li>
+        <li class="ref" id="letra-W" data-letra="W">WORLD HEALTH ORGANIZATION. Drinking-water. Geneva: World Health Organization, 13 Sept. 2023. Disponível em: <a href="https://www.who.int/news-room/fact-sheets/detail/drinking-water/" target="_blank" rel="noopener noreferrer">https://www.who.int/news-room/fact-sheets/detail/drinking-water/</a>. 28 set. 2026.</li>
+        <li class="ref" data-letra="W">WORLD HEALTH ORGANIZATION. Guidelines for drinking-water quality: fourth edition incorporating the first, second and third addenda. Geneva: World Health Organization, 2026. Disponível em: <a href="https://www.who.int/publications/i/item/9789240121225" target="_blank" rel="noopener noreferrer">https://www.who.int/publications/i/item/9789240121225</a>. 28 set. 2026.</li>
+        <li class="ref" data-letra="W">WORLD HEALTH ORGANIZATION. Physical activity. Geneva: World Health Organization, 26 June 2024. Disponível em: <a href="https://www.who.int/news-room/fact-sheets/physical-activity" target="_blank" rel="noopener noreferrer">https://www.who.int/news-room/fact-sheets/physical-activity</a>. 28 set. 2026.</li>
+    </ul>
+
+    <p class="refs__nada" id="refs-nada" hidden>Nenhuma referência com esse termo.</p>
+
+    <a class="refs__volta" href="mapa.html">← Voltar ao mapa</a>
+  </main>
+
+  <script src="/vendor/supabase.js"></script>
+  <script src="../js/supabase.js" defer></script>
+  <script src="../js/api.js" defer></script>
+  <script src="../js/navbar.js" defer></script>
+  <script src="../js/referencias.js" defer></script>
+</body>
+
+</html>

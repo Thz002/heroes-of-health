@@ -77,6 +77,7 @@
   const ICONES = {
     perfil: '<path d="M12 12a4 4 0 100-8 4 4 0 000 8z"/><path d="M4 20c0-3.3 3.6-5.5 8-5.5s8 2.2 8 5.5"/>',
     troferu: '<path d="M8 4h8v5a4 4 0 01-8 0V4z"/><path d="M8 6H5v1a3 3 0 003 3M16 6h3v1a3 3 0 01-3 3"/><path d="M10 17h4M12 13v4M9 20h6"/>',
+    livro: '<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>',
     sair: '<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>'
   };
 
@@ -114,6 +115,14 @@
           <li>
             <a href="conquistas.html" class="perfil__item">
               ${icone('troferu')}<span>Minhas conquistas</span>
+            </a>
+          </li>
+          <li>
+            <!-- A bibliografia das questoes. Fica aqui, e nao na barra
+                 de links, porque ela esta em toda pagina do jogo e a
+                 barra ja tem sete itens para o ADMIN. -->
+            <a href="referencias.html" class="perfil__item">
+              ${icone('livro')}<span>Referências</span>
             </a>
           </li>
           <li>
