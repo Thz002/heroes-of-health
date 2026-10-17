@@ -1,256 +1,253 @@
-# 🦸‍♂️ Heróis da Saúde — Documento de Contexto Técnico & Arquitetura de Software
+# 🦸 Heróis da Saúde
 
-> **Documentação de Contexto do Sistema para o Claude Code / Agentes de IA**  
-> **Projeto Interdisciplinar II** | Ciência da Computação (PUC Minas - 2º Período) & Medicina (PUC Betim - 2º Período)  
-> **Prazo de Entrega Final:** 20 de Outubro de 2026  
-> **Stack Principal:** Node.js (JavaScript puro + Express + EJS) + MySQL (`mysql2`) + Bootstrap / CSS3
+**Um bairro inteiro para cuidar.** Heróis da Saúde é um jogo educativo para crianças e adolescentes de 7 a 18 anos: o aluno explora um bairro em pixel art, entra na UBS, na farmácia, na escola e na casa de vinte famílias diferentes, e em cada lugar responde missões sobre saúde, prevenção e cuidado — enquanto o professor acompanha a turma de perto.
+
+> **Projeto Interdisciplinar II** — Ciência da Computação (PUC Minas) & Medicina (PUC Betim)  
+> O conteúdo pedagógico é escrito pela equipe de Medicina; o jogo, pela equipe de Computação.
+
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white)
+![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)
+![JavaScript](https://img.shields.io/badge/Front--end-HTML%20%2B%20CSS%20%2B%20JS-F7DF1E?logo=javascript&logoColor=black)
+
+<p align="center">
+  <img src="docs/prints/mapa-do-bairro.png" alt="O mapa do bairro, com as construções em pixel art e a lista de missões ativas embaixo" width="900">
+</p>
 
 ---
 
 ## 📋 Sumário
-1. [Visão Geral e Contexto do Projeto](#1-visão-geral-e-contexto-do-projeto)
-2. [Arquitetura Simplificada do Sistema](#2-arquitetura-simplificada-do-sistema)
-3. [Modelagem do Banco de Dados Relacional (MySQL)](#3-modelagem-do-banco-de-dados-relacional-mysql)
-4. [Estrutura de Pastas no VS Code](#4-estrutura-de-pastas-no-vs-code)
-5. [Regras de Negócio e Mecânicas do Jogo](#5-regras-de-negócio-e-mecânicas-do-jogo)
-6. [Instruções para o Claude Code (Padrões de Código)](#6-instruções-para-o-claude-code-padrões-de-código)
-7. [Guia de Configuração e Execução Local](#7-guia-de-configuração-e-execução-local)
+
+1. [O jogo em imagens](#-o-jogo-em-imagens)
+2. [O que dá para fazer](#-o-que-dá-para-fazer)
+3. [O conteúdo, em números](#-o-conteúdo-em-números)
+4. [Como o sistema funciona](#-como-o-sistema-funciona)
+5. [Tecnologias](#-tecnologias)
+6. [Estrutura do projeto](#-estrutura-do-projeto)
+7. [Rodando localmente](#-rodando-localmente)
+8. [Banco de dados](#-banco-de-dados)
+9. [Deploy na Vercel](#-deploy-na-vercel)
+10. [Documentação](#-documentação)
 
 ---
 
-## 1. Visão Geral e Contexto do Projeto
+## 🎮 O jogo em imagens
 
-O **Heróis da Saúde** é um jogo educativo web e interativo desenvolvido no âmbito do **Projeto Interdisciplinar II**, unindo estudantes de **Ciência da Computação da PUC Minas** e **Medicina da PUC Betim**.
+### Cada casa, uma família
+Ao clicar num lugar do mapa, o aluno entra nele: a foto do interior, quem mora ali e as missões disponíveis. As vinte casas do bairro têm famílias diferentes — com suas histórias, rotinas e jeitos de cuidar da saúde.
 
-### 1.1 Propósito e Objetivos
-- **Educação em Saúde Infantojuvenil:** Apresentar temas de saúde pública, higiene, prevenção de doenças e imunização de forma lúdica (para idades de 7 a 18 anos).
-- **Inclusão do SUS e Atenção Primária:** Ensinar o papel da Unidade Básica de Saúde (UBS) e de seus profissionais (Médico de Família, Enfermeiro, Técnico de Enfermagem, ACS, Psicólogo, Nutricionista e Dentista).
-- **Abordagem Pedagógica por Níveis:**
-  - **Nível 1 (7 a 10 anos):** Higiene pessoal, combate ao Aedes aegypti, descarte de lixo e noções básicas do corpo.
-  - **Nível 2 (11 a 14 anos):** ISTs, sistema reprodutor, introdução ao SUS, primeiros socorros e saúde mental.
-  - **Nível 3 (15 a 18 anos):** Microbiologia, imunologia, parasitologia, fisiologia e questões estilo ENEM.
-- **Painel do Professor:** Acompanhamento do progresso de turmas e alunos, criação de quizzes rápidos (estilo Kahoot) e dinâmicas coletivas.
+<p align="center">
+  <img src="docs/prints/casa-da-familia.png" alt="Modal da casa da família Alves, com a família no centro do interior, a descrição dela e as missões para escolher" width="850">
+</p>
 
----
+### Missões com o lugar de fundo
+As perguntas aparecem sobre o interior do lugar visitado. Errar não é castigo: o jogo devolve uma explicação que dá a pista sem entregar a resposta, e a pergunta volta numa próxima rodada. O professor pode dar um tempo por pergunta — quando ele acaba, nada é descontado.
 
-## 2. Arquitetura Simplificada do Sistema
+<p align="center">
+  <img src="docs/prints/missao.png" alt="Tela de missão com a pergunta e as alternativas sobre a foto da casa, e a família Ferreira na coluna da direita" width="850">
+</p>
 
-A aplicação adota o modelo **MVC (Model-View-Controller)** dentro de um projeto Node.js único e monolítico:
+### Conquistas, níveis e patentes
+Cada acerto vale XP, e o XP sobe de nível (são 100). A estante mostra todas as 64 insígnias desde o começo — as bloqueadas em silhueta, com o quanto falta para cada uma. Algumas são **segredos**: estão escondidas dentro dos lugares do bairro, e o jogo só dá dicas de onde procurar.
 
-```
-  ┌─────────────────────────────────────────────────────────────┐
-  │                 Navegador (HTML5 / Bootstrap / JS)           │
-  └──────────────────────────────┬──────────────────────────────┘
-                                 │ Requisições HTTP (GET/POST)
-                                 ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │                 Servidor Node.js + Express                  │
-  │   - Mapeamento de Rotas (routes/)                           │
-  │   - Regras de Negócio / Lógica do Jogo (controllers/)       │
-  │   - Renderização de Telas EJS (views/)                      │
-  └──────────────────────────────┬──────────────────────────────┘
-                                 │ Consultas SQL (Driver mysql2)
-                                 ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │                   Banco de Dados MySQL                      │
-  └─────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="docs/prints/conquistas.png" alt="Estante de conquistas com o nível do aluno, a barra de XP e as insígnias conquistadas e bloqueadas" width="850">
+</p>
+
+### O painel do professor
+O professor cria as turmas, entrega um código curto para a sala entrar e monta os quizzes — sorteados pelo jogo ou escolhidos pergunta por pergunta. Ele também tem nível: o XP dele vem do avanço da turma.
+
+<p align="center">
+  <img src="docs/prints/painel-do-professor.png" alt="Painel do professor com as turmas, os códigos de entrada e a barra de nível" width="850">
+</p>
 
 ---
 
-## 3. Modelagem do Banco de Dados Relacional (MySQL)
+## ✨ O que dá para fazer
 
-Script SQL completo para criação do banco de dados `herois_da_saude`:
+### 🧒 Aluno
+- **Explorar o bairro:** 16 lugares e 20 casas no mapa, com zoom, arraste e o progresso de cada lugar ao passar o mouse.
+- **Jogar missões** passadas pelo professor, com a foto do lugar de fundo e explicação depois de cada resposta.
+- **Acompanhar o próprio progresso** em 8 áreas da saúde — Saúde, Educação, Vacinação, Vetores, Limpeza, Alimentação, Exercícios e Felicidade —, sempre com rótulos gentis, nunca com nota vermelha.
+- **Subir de nível e ganhar insígnias**, com o aviso "Conquista desbloqueada!" na hora do acerto.
+- **Descobrir os segredos do bairro:** os quadrinhos educativos e os vídeos da Fiocruz na banca de jornal, o Calendário das Cores da Saúde na farmácia.
+- **Ver a turma:** os colegas, a posição no ranking por XP e o professor, também com o nível dele.
 
-```sql
-CREATE DATABASE IF NOT EXISTS herois_da_saude DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE herois_da_saude;
+### 👩‍🏫 Professor
+- **Criar turmas** com cor, ano escolar e um código de entrada (ex.: `MIN-3ZEH`).
+- **Montar quizzes** em dois modos: *automático* (o jogo sorteia entre os cenários e áreas escolhidos, na faixa etária da turma) ou *manual* (o professor marca as perguntas uma a uma).
+- **Escrever as próprias perguntas**, que só ele vê, ao lado das do sistema.
+- **Acompanhar cada turma** e o **ranking das turmas**, ordenado por uma média que não deixa três respostas certas passarem na frente de quatrocentas.
 
--- Tabela de Escolas
-CREATE TABLE IF NOT EXISTS escolas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(150) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+### 🛠️ Equipe (admin)
+- Painel para procurar pessoas, ajustar nível e XP (sempre com registro de quem fez e por quê), suspender contas, disparar recuperação de senha e renomear as patentes.
 
--- Tabela de Turmas
-CREATE TABLE IF NOT EXISTS turmas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(50) NOT NULL, -- Ex: '7º Ano B'
-    escola_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (escola_id) REFERENCES escolas(id) ON DELETE CASCADE
-);
+### 🔓 Para todos
+- **Referências:** a bibliografia do conteúdo, com busca, aberta a qualquer pessoa — mesmo sem conta.
+- **Recuperação de senha** por um código de 5 caracteres enviado por e-mail.
 
--- Tabela de Usuários (Alunos e Professores)
-CREATE TABLE IF NOT EXISTS usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    tipo ENUM('ALUNO', 'PROFESSOR', 'ADMIN') DEFAULT 'ALUNO',
-    idade INT NULL,
-    turma_id INT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (turma_id) REFERENCES turmas(id) ON DELETE SET NULL
-);
+---
 
--- Tabela de Progresso por Área Temática do Jogo
-CREATE TABLE IF NOT EXISTS progresso_areas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    area_nome VARCHAR(50) NOT NULL, -- Saúde, Educação, Vacinação, Vetores, Limpeza, Alimentação, Exercícios, Felicidade
-    porcentagem FLOAT DEFAULT 0.0,
-    pontos INT DEFAULT 0,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-    UNIQUE KEY uq_usuario_area (usuario_id, area_nome)
-);
+## 📊 O conteúdo, em números
 
--- Tabela de Cenários do Mapa (Bairro)
-CREATE TABLE IF NOT EXISTS cenarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    slug VARCHAR(50) UNIQUE NOT NULL, -- ex: 'ubs', 'mercado', 'farmacia', 'escola'
-    nome VARCHAR(100) NOT NULL,
-    descricao TEXT NOT NULL
-);
+| | |
+|---|---|
+| **571** perguntas da equipe de Medicina | 154 para 7–10 anos · 278 para 11–14 · 139 para 15–18 (formato ENEM) |
+| **8** áreas da saúde | cada pergunta pontua em uma ou mais |
+| **16** lugares e **20** famílias no mapa | cada família com desenho, casa e descrição próprios |
+| **64** insígnias | acertos, dias seguidos, missões por lugar e 4 segredos |
+| **100** níveis | em 10 patentes, de *Pequeno Aprendiz* a *Herdeiro do Saber* |
+| **12** HQs educativas | lidas dentro da banca de jornal |
 
--- Tabela de Missões do Jogo
-CREATE TABLE IF NOT EXISTS missoes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    cenario_id INT NOT NULL,
-    titulo VARCHAR(150) NOT NULL,
-    descricao TEXT NOT NULL,
-    nivel_etario INT NOT NULL DEFAULT 1, -- 1 (7-10 anos), 2 (11-14 anos), 3 (15-18 anos)
-    eh_especial BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (cenario_id) REFERENCES cenarios(id) ON DELETE CASCADE
-);
+O conteúdo é sempre escrito pela equipe de Medicina — nenhuma pergunta é inventada pelo código.
 
--- Tabela de Questões/Perguntas
-CREATE TABLE IF NOT EXISTS questoes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    missao_id INT NOT NULL,
-    enunciado TEXT NOT NULL,
-    opcao_a VARCHAR(255) NOT NULL,
-    opcao_b VARCHAR(255) NOT NULL,
-    opcao_c VARCHAR(255) NOT NULL,
-    opcao_d VARCHAR(255) NOT NULL,
-    resposta_correta CHAR(1) NOT NULL, -- 'A', 'B', 'C' ou 'D'
-    explicacao TEXT NOT NULL, -- Feedback educativo após responder
-    FOREIGN KEY (missao_id) REFERENCES missoes(id) ON DELETE CASCADE
-);
+---
 
--- Tabela de Histórico de Respostas dos Alunos
-CREATE TABLE IF NOT EXISTS respostas_alunos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    questao_id INT NOT NULL,
-    acertou BOOLEAN NOT NULL,
-    data_resposta TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-    FOREIGN KEY (questao_id) REFERENCES questoes(id) ON DELETE CASCADE
-);
+## 🧠 Como o sistema funciona
 
--- Tabela do Paciente Virtual
-CREATE TABLE IF NOT EXISTS pacientes_virtuais (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT UNIQUE NOT NULL,
-    nome_paciente VARCHAR(100) NOT NULL,
-    idade_paciente INT NOT NULL,
-    estado_saude VARCHAR(100) DEFAULT 'Estável',
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-);
+O navegador conversa com **dois lugares diferentes, de propósito**, e essa divisão é a principal regra de segurança do projeto:
 
--- Tabela de Quizzes Customizados criados pelo Professor
-CREATE TABLE IF NOT EXISTS quizzes_professores (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    turma_id INT NOT NULL,
-    professor_id INT NOT NULL,
-    titulo VARCHAR(150) NOT NULL,
-    tempo_limite_segundos INT DEFAULT 15,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (turma_id) REFERENCES turmas(id) ON DELETE CASCADE,
-    FOREIGN KEY (professor_id) REFERENCES usuarios(id) ON DELETE CASCADE
-);
+```mermaid
+flowchart LR
+    N["🌐 Navegador<br/>HTML + CSS + JS"]
+    A["🔐 Supabase Auth<br/>login e cadastro"]
+    E["⚙️ Servidor Express<br/>regras do jogo"]
+    B[("🗄️ PostgreSQL<br/>Supabase")]
+
+    N -- "login direto (chave pública)" --> A
+    N -- "API + token (Bearer)" --> E
+    E -- "chave secreta (passa pelo RLS)" --> B
+    N -. "só leituras públicas" .-> B
 ```
 
+- **O login vai direto ao Supabase.** O servidor nunca vê uma senha; ele recebe um token e pergunta ao Supabase se ele vale.
+- **Toda regra de jogo passa pelo servidor.** É lá que a resposta é corrigida, os pontos são somados e as insígnias são dadas. O gabarito nunca chega ao navegador — nem depois de errar.
+- **O banco tem a sua própria tranca.** Mesmo com o servidor no meio, cada tabela tem políticas de RLS e permissões por coluna: o navegador não lê o gabarito, não troca a própria turma e não se dá pontos, nem pelo console.
+- **O progresso é relativo a cada aluno.** As barras medem o que *as missões da turma dele* valem; quando chega missão nova, a barra desce e o jogo avisa que há coisa nova para descobrir.
+
+Os detalhes de cada decisão estão em [`docs/banco-de-dados.md`](docs/banco-de-dados.md).
+
 ---
 
-## 4. Estrutura de Pastas no VS Code
+## 🧰 Tecnologias
+
+| Camada | O que usa |
+|---|---|
+| Front-end | HTML, CSS e JavaScript puro — sem framework e sem etapa de build |
+| Servidor | Node.js 20+ e Express 5 |
+| Banco e login | Supabase (PostgreSQL, Auth, RLS) |
+| E-mail | Nodemailer via SMTP (código de recuperação de senha) |
+| Hospedagem | Vercel (site pela CDN, API como função) |
+| Conteúdo | Scripts Python em `db/ferramentas/` que convertem os `.docx` da Medicina em SQL |
+
+---
+
+## 🗂️ Estrutura do projeto
 
 ```text
-herois-da-saude/
-├── src/
-│   ├── pages/               # Cada tela .html
-│   │   ├── index.html       # Login
-│   │   ├── mapa.html        # Bairro interativo
-│   │   └── missao.html      # Tela de quiz
+heroes-of-health/
+├── api/
+│   └── index.js            # Função da Vercel (reaproveita o app Express)
+├── server/
+│   ├── app.js              # O app Express: API e arquivos do site
+│   ├── index.js            # Liga o servidor localmente
+│   ├── supabase.js         # Único lugar com a chave secreta
+│   ├── progressao.js       # XP, níveis, patentes e insígnias
+│   ├── middleware/         # Autenticação pelo token do Supabase
+│   └── rotas/              # jogo, professor, admin e recuperação de senha
+├── src/                    # O site (servido como arquivos estáticos)
+│   ├── pages/              # Uma página .html por tela
+│   ├── js/                 # Um script por página + módulos compartilhados
 │   ├── css/
-│   │   └── style.css        # Estilos próprios (
-│   ├── js/
-│   │   ├── supabase.js      # Cliente Supabase (config única, importada por todos)
-│   │   ├── auth.js          # Login, cadastro, logout
-│   │   ├── api.js           # Todas as queries ao banco ficam aqui
-│   │   ├── quiz.js          # Lógica do jogo (pontuação, streak, validação)
-│   │   └── mapa.js          # Interações do mapa
-│   └── assets/
-│       ├── img/
-│       └── audio/           # Sons de acerto/erro
-│
+│   └── imgs/               # Mapa, interiores, famílias, insígnias e HQs
 ├── db/
-│   ├── schema.sql           # Criação das tabelas (versionado!)
-│   └── seed.sql             # Dados iniciais (perguntas, doenças)
-│
-├── docs/                    # Entregáveis da disciplina
-│   ├── personas.md
-│   └── user-story-map.md
-│
-├── .env.example             # Modelo das variáveis (sem as chaves reais!)
-├── .gitignore
-└── README.md
+│   ├── setup.sql           # O banco inteiro: tabelas, funções e RLS
+│   ├── seed.sql            # Os cenários do mapa
+│   ├── insignias.sql       # O catálogo de insígnias
+│   ├── importar-*.sql      # As perguntas da equipe de Medicina
+│   ├── fazer-backup.js     # npm run backup
+│   └── ferramentas/        # Conversores .docx -> SQL (Python)
+├── docs/                   # Documentação técnica e os prints deste README
+├── scripts/vendor.js       # Build da Vercel
+└── vercel.json
 ```
 
 ---
 
-## 5. Regras de Negócio e Mecânicas do Jogo
+## 💻 Rodando localmente
 
-1. **Atribuição de Pontuação Multi-Área:**
-   Ao responder corretamente uma questão de missão, o controlador distribui pontos nas 8 barras de progresso (`progresso_areas`): *Saúde, Educação, Vacinação, Vetores, Limpeza, Alimentação, Exercícios e Felicidade*.
-2. **Navegação do Bairro:**
-   A página `mapa.ejs` renderiza o bairro com pontos clicáveis (UBS, Escola, Mercado, Farmácia, Córrego, Terreno Baldio, etc.). Clicar em um cenário abre as missões compatíveis com a faixa etária/nível do aluno.
-3. **Mecanismo de Feedback Educativo:**
-   Caso o aluno erre uma pergunta, a aplicação exibe a explicação elaborada pela equipe de Medicina de forma positiva e motivadora, incentivando a nova tentativa.
-4. **Paciente Virtual:**
-   Cada aluno é vinculado a um paciente virtual. O sistema registra o status do paciente à medida que o aluno avança nas missões da UBS e da Farmácia.
-5. **Acessibilidade Nativa no Front-end:**
-   Implementação de Web Speech API (JavaScript nativo `window.speechSynthesis`) nas páginas de missão para leitura em áudio das questões para deficientes visuais.
+**Pré-requisitos:** Node.js 20 ou mais e um projeto no [Supabase](https://supabase.com).
+
+1. **Instale as dependências:**
+   ```bash
+   npm install
+   ```
+
+2. **Crie o `.env`** a partir do modelo e preencha com os dados do seu projeto Supabase (*Project Settings → API Keys*):
+   ```bash
+   cp .env.example .env
+   ```
+   | Variável | Para quê |
+   |---|---|
+   | `SUPABASE_URL` | Endereço do projeto |
+   | `SUPABASE_SERVICE_KEY` | Chave secreta (`sb_secret_...`) — **nunca** vai para o git |
+   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Envio do código de recuperação. Sem eles, o código aparece no terminal |
+
+3. **Prepare o banco** (veja [Banco de dados](#-banco-de-dados)).
+
+4. **Suba o servidor:**
+   ```bash
+   npm run dev      # com recarga automática
+   # ou
+   npm start
+   ```
+
+5. Abra **http://localhost:3000** — o próprio servidor entrega o site e a API.
 
 ---
 
-## 6. Guia de Configuração e Execução Local
+## 🗄️ Banco de dados
 
-### 6.1 Instalação de Dependências
-No terminal da raiz do projeto, instale as dependências essenciais:
-```bash
-npm init -y
-npm install express ejs mysql2 dotenv express-session bcryptjs
-npm install --save-dev nodemon
-```
+O banco inteiro é descrito por arquivos SQL, colados no **SQL Editor** do Supabase, nesta ordem:
 
-### 6.2 Arquivo de Configuração `.env`
-Crie o arquivo `.env` com as configurações do MySQL local:
-```env
-PORT=3000
-DB_HOST=localhost
-DB_USER=root
-DB_PASS=sua_senha
-DB_NAME=herois_da_saude
-SESSION_SECRET=chave_secreta_herois
-```
+| Ordem | Arquivo | O que faz |
+|---|---|---|
+| 1 | `db/setup.sql` | Tabelas, funções, gatilho de cadastro e todas as políticas de segurança. Pode rodar quantas vezes quiser; não apaga dados. |
+| 2 | `db/seed.sql` | Os cenários do mapa. |
+| 3 | `db/insignias.sql` | O catálogo de insígnias. |
+| 4 | `db/importar-questoes.sql`, `db/importar-lote3.sql`, `db/feedback-questoes.sql`, `db/importar-faltantes.sql` | As perguntas da equipe de Medicina e os dois feedbacks de cada uma, nesta ordem. O cabeçalho de cada arquivo diz do que ele depende. |
 
-### 6.3 Execução
-1. Importe o arquivo `schema.sql` no seu MySQL (via MySQL Workbench, phpMyAdmin ou linha de comando).
-2. Inicie o servidor em modo de desenvolvimento:
-```bash
-npx nodemon server.js
-```
-3. Acesse `http://localhost:3000` no seu navegador.
+Para conferir se as travas de segurança estão de pé, rode `db/00-testSecurity.sql` (só leitura).
+
+> **Backup:** o plano grátis do Supabase não faz backup. Antes de qualquer mudança no banco, rode `npm run backup` — ele copia todas as tabelas para `backups/<data>/` (JSON + um `restaurar.sql`). Essa pasta tem dados de alunos e fica fora do git.
+
+---
+
+## 🚀 Deploy na Vercel
+
+O projeto já vem configurado (`vercel.json`): o site sai pela CDN, a `/api` roda como função e um cron diário mantém o Supabase grátis ativo.
+
+1. Na Vercel, **Add New → Project** e importe este repositório (*Framework Preset: Other*).
+2. Em **Settings → Environment Variables**, cadastre `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SMTP_*` e um `CRON_SECRET` (uma senha longa qualquer).
+3. Faça o deploy e teste em `https://<seu-projeto>.vercel.app/api/saude`.
+4. No Supabase, em *Authentication → URL Configuration*, troque o **Site URL** pelo endereço publicado.
+
+A região da função (`gru1`, São Paulo) está junto do banco (`sa-east-1`), para cada consulta viajar o mínimo.
+
+---
+
+## 📚 Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [`documento-de-concepcao.md`](documento-de-concepcao.md) | A concepção do jogo pela equipe de Medicina: temas, faixas etárias e mecânicas |
+| [`docs/banco-de-dados.md`](docs/banco-de-dados.md) | O banco e a segurança em detalhe — e o porquê de cada decisão |
+| [`db/ferramentas/LEIA-ME.md`](db/ferramentas/LEIA-ME.md) | Como as perguntas saem dos `.docx` e viram SQL |
+| [`src/imgs/insignias/LEIA-ME.md`](src/imgs/insignias/LEIA-ME.md) | Como criar uma insígnia e ligar a arte a ela |
+
+---
+
+<p align="center">
+  Feito com 💚 por estudantes de <b>Ciência da Computação (PUC Minas)</b> e <b>Medicina (PUC Betim)</b>.
+</p>
