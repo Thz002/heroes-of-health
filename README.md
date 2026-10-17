@@ -11,9 +11,14 @@
 ![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/Front--end-HTML%20%2B%20CSS%20%2B%20JS-F7DF1E?logo=javascript&logoColor=black)
 
+https://github.com/user-attachments/assets/a7e9b74c-87f2-49c5-8c95-cb0ea45b23cf
+
+
+
 <p align="center">
   <img src="docs/prints/mapa-do-bairro.png" alt="O mapa do bairro, com as construções em pixel art e a lista de missões ativas embaixo" width="900">
 </p>
+
 
 ---
 
