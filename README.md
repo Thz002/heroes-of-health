@@ -220,34 +220,9 @@ O banco inteiro é descrito por arquivos SQL, colados no **SQL Editor** do Supab
 
 Para conferir se as travas de segurança estão de pé, rode `db/00-testSecurity.sql` (só leitura).
 
-> **Backup:** o plano grátis do Supabase não faz backup. Antes de qualquer mudança no banco, rode `npm run backup` — ele copia todas as tabelas para `backups/<data>/` (JSON + um `restaurar.sql`). Essa pasta tem dados de alunos e fica fora do git.
+> **Backup:** rode `npm run backup` — ele copia todas as tabelas para `backups/<data>/` (JSON + um `restaurar.sql`). Essa pasta tem dados de alunos e fica fora do git.
 
 ---
-
-## 🚀 Deploy na Vercel
-
-O projeto já vem configurado (`vercel.json`): o site sai pela CDN, a `/api` roda como função e um cron diário mantém o Supabase grátis ativo.
-
-1. Na Vercel, **Add New → Project** e importe este repositório (*Framework Preset: Other*).
-2. Em **Settings → Environment Variables**, cadastre `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SMTP_*` e um `CRON_SECRET` (uma senha longa qualquer).
-3. Faça o deploy e teste em `https://<seu-projeto>.vercel.app/api/saude`.
-4. No Supabase, em *Authentication → URL Configuration*, troque o **Site URL** pelo endereço publicado.
-
-A região da função (`gru1`, São Paulo) está junto do banco (`sa-east-1`), para cada consulta viajar o mínimo.
-
----
-
-## 📚 Documentação
-
-| Documento | Conteúdo |
-|---|---|
-| [`documento-de-concepcao.md`](documento-de-concepcao.md) | A concepção do jogo pela equipe de Medicina: temas, faixas etárias e mecânicas |
-| [`docs/banco-de-dados.md`](docs/banco-de-dados.md) | O banco e a segurança em detalhe — e o porquê de cada decisão |
-| [`db/ferramentas/LEIA-ME.md`](db/ferramentas/LEIA-ME.md) | Como as perguntas saem dos `.docx` e viram SQL |
-| [`src/imgs/insignias/LEIA-ME.md`](src/imgs/insignias/LEIA-ME.md) | Como criar uma insígnia e ligar a arte a ela |
-
----
-
 <p align="center">
   Feito com 💚 por estudantes de <b>Ciência da Computação (PUC Minas)</b> e <b>Medicina (PUC Betim)</b>.
 </p>
