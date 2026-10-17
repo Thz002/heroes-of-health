@@ -193,7 +193,7 @@
   // HQs da banca (src/imgs/hqs/), na ordem de leitura.
   const HQS = [
     "hq01.jpeg", "hq02.jpeg", "hq-03.jpeg", "hq04.jpeg", "hq05.jpeg", "hq06.jpeg",
-    "hq07.jpeg", "hq08.jpeg", "hq09.jpeg", "hq10.jpeg", "hq11.jpeg",
+    "hq07.jpeg", "hq08.jpeg", "hq09.jpeg", "hq10.jpeg",
   ];
 
   // ── Segredos e dicas ── cada corrente mostra a dica do primeiro elo não conquistado.
