@@ -74,10 +74,20 @@
     const onde = [turma.professor && `Prof. ${turma.professor}`].filter(Boolean);
     escrever('turma-onde', onde.join(' · '));
 
+    // `total_alunos` conta só alunos. Para quem é da equipe a frase
+    // muda de dono: ela não é um deles, está acompanhando.
     const quantos = turma.total_alunos || 0;
-    subtitulo.textContent = quantos === 1
-      ? 'Você é o primeiro da turma por aqui.'
-      : `Você e mais ${quantos - 1} ${plural(quantos - 1, 'colega', 'colegas')} nesta turma.`;
+    const souAluno = !souEu || souEu.tipo === 'ALUNO';
+
+    if (!souAluno) {
+      subtitulo.textContent = quantos === 1
+        ? '1 aluno nesta turma.'
+        : `${quantos} ${plural(quantos, 'aluno', 'alunos')} nesta turma.`;
+    } else {
+      subtitulo.textContent = quantos === 1
+        ? 'Você é o primeiro da turma por aqui.'
+        : `Você e mais ${quantos - 1} ${plural(quantos - 1, 'colega', 'colegas')} nesta turma.`;
+    }
 
     mostrarProfessor(turma.professor_perfil);
 
@@ -123,8 +133,12 @@
     tituloColegas.hidden = false;
     blocoColegas.hidden = false;
 
-    // O maior XP da turma é a régua das barrinhas.
-    const teto = Math.max(...colegas.map(c => c.xp), 1);
+    // A régua das barrinhas sai do maior XP ENTRE OS ALUNOS. Uma conta
+    // de equipe com XP ajustado à mão encostaria todas as barras da
+    // turma no chão, e a tela deixaria de dizer qualquer coisa sobre
+    // quem está jogando.
+    const daTurma = colegas.filter(c => !c.equipe);
+    const teto = Math.max(...(daTurma.length ? daTurma : colegas).map(c => c.xp), 1);
 
     lista.innerHTML = '';
     colegas.forEach((c, i) => lista.appendChild(montarLinha(c, i, teto)));
@@ -136,7 +150,10 @@
     li.style.setProperty('--i', ordem);
 
     // Medalha só para quem já pontuou: três zeros não são um pódio.
-    if (colega.xp > 0 && PODIO[ordem]) li.classList.add(PODIO[ordem]);
+    // E nunca para a equipe, que está na lista mas fora da disputa —
+    // numa turma de dois alunos ela cairia no pódio por sobra de vaga.
+    if (!colega.equipe && colega.xp > 0 && PODIO[ordem]) li.classList.add(PODIO[ordem]);
+    if (colega.equipe) li.classList.add('colega--equipe');
     if (colega.eu) li.classList.add('colega--eu');
 
     li.innerHTML = `
@@ -155,7 +172,9 @@
     if (window.AVATAR) window.AVATAR.desenhar(avatar, colega.nome, colega.avatar_url);
     else avatar.textContent = inicial(colega.nome);
 
-    li.querySelector('.colega__pos').textContent = `${ordem + 1}º`;
+    // A equipe não recebe número: ela está sempre por último de
+    // propósito, e um "4º" ali seria lido como quarto lugar.
+    li.querySelector('.colega__pos').textContent = colega.equipe ? '—' : `${ordem + 1}º`;
 
     // Só o primeiro nome.
     li.querySelector('.colega__nome').textContent =
@@ -166,7 +185,8 @@
     if (colega.nivel && window.PATENTE) {
       // A etiqueta é montada por PATENTE.html, que escapa o nome dela.
       patente.innerHTML = window.PATENTE.html(colega.nivel, true) +
-        '<span class="colega__nv"></span>';
+        '<span class="colega__nv"></span>' +
+        (colega.equipe ? '<span class="colega__equipe">equipe</span>' : '');
       patente.querySelector('.colega__nv').textContent = `Nv ${colega.nivel.nivel}`;
     } else {
       patente.textContent = colega.nivel

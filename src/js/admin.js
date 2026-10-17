@@ -188,7 +188,10 @@
       catch (_) { patentesCache = []; }
     }
 
-    const minhas = patentesCache.filter(p => p.tipo === tipo).sort((a, b) => a.ate - b.ate);
+    // Só existem faixas de ALUNO e de PROFESSOR. A equipe entra pela
+    // de aluno, que é a que o servidor usa para contar o XP dela.
+    const escada = tipo === 'PROFESSOR' ? 'PROFESSOR' : 'ALUNO';
+    const minhas = patentesCache.filter(p => p.tipo === escada).sort((a, b) => a.ate - b.ate);
     let de = 1;
     return minhas.map(p => { const faixa = { ...p, de }; de = p.ate + 1; return faixa; });
   }
