@@ -103,7 +103,7 @@ O professor cria as turmas, entrega um código curto para a sala entrar e monta 
 | **16** lugares e **20** famílias no mapa | cada família com desenho, casa e descrição próprios |
 | **64** insígnias | acertos, dias seguidos, missões por lugar e 4 segredos |
 | **100** níveis | em 10 patentes, de *Pequeno Aprendiz* a *Herdeiro do Saber* |
-| **12** HQs educativas | lidas dentro da banca de jornal |
+| **11** HQs educativas | lidas dentro da banca de jornal |
 
 O conteúdo é sempre escrito pela equipe de Medicina — nenhuma pergunta é inventada pelo código.
 

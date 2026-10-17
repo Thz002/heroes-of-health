@@ -10,7 +10,7 @@
     parque: {
       nome: "Parque",
       imagem: "Parque.png",
-      descricao: "Áreas arborizadas para caminhadas, com missões de limpeza e reforço da separação correta do lixo.",
+      descricao: "Você sabia que passar um tempo em áreas verdes faz bem para o corpo e para a mente? Caminhar e brincar no parque incentiva a atividade física — e separar o lixo e preservar o verde protege a saúde da comunidade.",
       interior: "Parque.png",
     },
     escola: {
@@ -22,19 +22,19 @@
     farmacia: {
       nome: "Farmácia",
       imagem: "Farmacia.jpg",
-      descricao: "Calendário anual de campanhas de saúde, avisos de cobertura vacinal e atividades que relacionam vacinas às doenças que elas previnem.",
+      descricao: "Você sabia que os medicamentos ajudam a tratar doenças, mas precisam ser usados com cuidado? Remédio por conta própria traz riscos: seguir a orientação dos profissionais, respeitar doses e horários e manter as vacinas em dia é o caminho seguro.",
       interior: "Farmacia.jpeg",
     },
     upa: {
       nome: "UPA",
       imagem: "UPA.png",
-      descricao: "Casos urgentes que exigem atendimento rápido, ensinando o jogador a identificar prioridades em situações de emergência.",
+      descricao: "Você sabia que algumas situações de saúde precisam de atendimento mais rápido? A UPA cuida das urgências, e saber reconhecê-las ajuda a buscar o serviço certo — a UPA e a UBS têm papéis diferentes na rede de saúde.",
       interior: "UPA.jpg",
     },
     ubs: {
       nome: "UBS",
       imagem: "UBS.png",
-      descricao: "Centro de referência do bairro, onde o jogador acompanha consultas, campanhas e o cuidado contínuo do seu paciente virtual.",
+      descricao: "Você sabia que não é preciso estar doente para procurar uma UBS? Ela é o principal lugar de cuidado do bairro: consultas, vacinação, campanhas e orientações que ajudam a prevenir problemas antes que eles apareçam.",
       interior: "UBS.jpg",
     },
     banca: {
@@ -52,13 +52,13 @@
     mercado: {
       nome: "Mercado",
       imagem: "Mercado.png",
-      descricao: "Missões sobre alimentação saudável, leitura de rótulos, segurança alimentar, conservação e higiene dos alimentos.",
+      descricao: "Você sabia que as escolhas feitas no mercado influenciam a sua saúde? Ler os rótulos, conferir a validade e guardar bem os alimentos ajuda a evitar intoxicações e a ter uma alimentação equilibrada e segura.",
       interior: "Mercado.jpg",
     },
     creche: {
       nome: "Creche",
       imagem: "Creche.png",
-      descricao: "Missões voltadas ao cuidado infantil, desenvolvimento na primeira infância e prevenção de doenças comuns nessa fase.",
+      descricao: "Você sabia que os primeiros anos de vida são muito importantes para o crescimento? Na creche, alimentação, higiene, vacinação, sono e um ambiente acolhedor protegem a saúde e o desenvolvimento das crianças pequenas.",
       interior: "Creche.jpg",
     },
     igreja: {
@@ -82,19 +82,19 @@
     corrego: {
       nome: "Córrego",
       imagem: "Corrego.png",
-      descricao: "O jogador aprende a reportar às autoridades civis situações de risco, como surtos de doenças ligadas à água contaminada.",
+      descricao: "Você sabia que o saneamento básico é uma das formas mais importantes de proteger a saúde? Esgoto tratado impede que micróbios contaminem a água e o solo. Já esgoto a céu aberto favorece doenças e animais transmissores.",
       interior: "Corrego.png",
     },
     rio: {
       nome: "Rio",
       imagem: "Rio.png",
-      descricao: "Missões de educação ambiental e mutirões de limpeza, ligando meio ambiente e saúde pública.",
+      descricao: "Você sabia que a saúde das pessoas também depende da saúde dos rios? Rios preservados mantêm a água limpa; lixo e esgoto neles aumentam o risco de doenças. Evitar a poluição e ajudar na limpeza protege todos.",
       interior: "Rio.png",
     },
     ruas: {
       nome: "Rua",
       imagem: "Ruas.png",
-      descricao: "Missões de caminhada e separação de lixo por cor, reforçando hábitos sustentáveis no dia a dia.",
+      descricao: "Você sabia que cuidar das ruas também protege a saúde do bairro? Ruas limpas, seguras e sem lixo acumulado previnem acidentes e afastam animais que transmitem doenças — e respeitar o trânsito também é cuidado.",
       // Uma foto só para todas as ruas clicáveis do mapa.
       interior: "Ruas.jpg",
     },
@@ -193,7 +193,7 @@
   // HQs da banca (src/imgs/hqs/), na ordem de leitura.
   const HQS = [
     "hq01.jpeg", "hq02.jpeg", "hq-03.jpeg", "hq04.jpeg", "hq05.jpeg", "hq06.jpeg",
-    "hq07.jpeg", "hq08.jpeg", "hq09.jpeg", "hq10.jpeg", "hq11.jpeg", "hq12.jpeg",
+    "hq07.jpeg", "hq08.jpeg", "hq09.jpeg", "hq10.jpeg", "hq11.jpeg",
   ];
 
   // ── Segredos e dicas ── cada corrente mostra a dica do primeiro elo não conquistado.
